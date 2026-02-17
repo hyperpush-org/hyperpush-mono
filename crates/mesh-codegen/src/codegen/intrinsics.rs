@@ -1066,6 +1066,13 @@ pub fn declare_intrinsics<'ctx>(module: &Module<'ctx>) {
         ptr_type.fn_type(&[ptr_type.into(), ptr_type.into()], false),
         Some(inkwell::module::Linkage::External));
 
+    // ── Phase 109: Subquery WHERE ──────────────────────────────────────
+
+    // mesh_query_where_sub(q: ptr, field: ptr, sub_query: ptr) -> ptr
+    module.add_function("mesh_query_where_sub",
+        ptr_type.fn_type(&[ptr_type.into(), ptr_type.into(), ptr_type.into()], false),
+        Some(inkwell::module::Linkage::External));
+
     // ── Phase 98: Repo Read Operations ───────────────────────────────
 
     // mesh_repo_all(pool: i64, query: ptr) -> ptr
@@ -1139,6 +1146,18 @@ pub fn declare_intrinsics<'ctx>(module: &Module<'ctx>) {
 
     // mesh_repo_execute_raw(pool: i64, sql: ptr, params: ptr) -> ptr
     module.add_function("mesh_repo_execute_raw",
+        ptr_type.fn_type(&[i64_type.into(), ptr_type.into(), ptr_type.into()], false),
+        Some(inkwell::module::Linkage::External));
+
+    // ── Phase 109: Upsert, RETURNING, Subquery ──────────────────────────
+
+    // mesh_repo_insert_or_update(pool: i64, table: ptr, fields: ptr, conflict_targets: ptr, update_fields: ptr) -> ptr
+    module.add_function("mesh_repo_insert_or_update",
+        ptr_type.fn_type(&[i64_type.into(), ptr_type.into(), ptr_type.into(), ptr_type.into(), ptr_type.into()], false),
+        Some(inkwell::module::Linkage::External));
+
+    // mesh_repo_delete_where_returning(pool: i64, table: ptr, query: ptr) -> ptr
+    module.add_function("mesh_repo_delete_where_returning",
         ptr_type.fn_type(&[i64_type.into(), ptr_type.into(), ptr_type.into()], false),
         Some(inkwell::module::Linkage::External));
 
@@ -1667,6 +1686,10 @@ mod tests {
         assert!(module.get_function("mesh_query_select_avg").is_some());
         assert!(module.get_function("mesh_query_select_min").is_some());
         assert!(module.get_function("mesh_query_select_max").is_some());
+        // Phase 109: Upsert, RETURNING, Subquery
+        assert!(module.get_function("mesh_repo_insert_or_update").is_some());
+        assert!(module.get_function("mesh_repo_delete_where_returning").is_some());
+        assert!(module.get_function("mesh_query_where_sub").is_some());
     }
 
     #[test]

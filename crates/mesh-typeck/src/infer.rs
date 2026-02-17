@@ -1191,6 +1191,12 @@ fn stdlib_modules() -> HashMap<String, HashMap<String, Scheme>> {
             vec![ptr_t.clone(), atom_t.clone()],
             ptr_t.clone(),
         )));
+        // ── Phase 109: Subquery WHERE ─────────────────────────────────────
+        // Query.where_sub(Ptr, Atom, Ptr) -> Ptr  (query, field, sub_query)
+        query_mod.insert("where_sub".to_string(), Scheme::mono(Ty::fun(
+            vec![ptr_t.clone(), atom_t.clone(), ptr_t.clone()],
+            ptr_t.clone(),
+        )));
         modules.insert("Query".to_string(), query_mod);
     }
 
@@ -1270,6 +1276,17 @@ fn stdlib_modules() -> HashMap<String, HashMap<String, Scheme>> {
         repo_mod.insert("execute_raw".to_string(), Scheme::mono(Ty::fun(
             vec![pool_t.clone(), Ty::string(), Ty::list(Ty::string())],
             Ty::result(Ty::int(), Ty::string()),
+        )));
+        // ── Phase 109: Upsert, RETURNING, Subquery ────────────────────────
+        // Repo.insert_or_update(PoolHandle, String, Map<String,String>, List<String>, List<String>) -> Ptr
+        repo_mod.insert("insert_or_update".to_string(), Scheme::mono(Ty::fun(
+            vec![pool_t.clone(), Ty::string(), Ty::map(Ty::string(), Ty::string()), Ty::list(Ty::string()), Ty::list(Ty::string())],
+            ptr_t.clone(),
+        )));
+        // Repo.delete_where_returning(PoolHandle, String, Ptr) -> Ptr
+        repo_mod.insert("delete_where_returning".to_string(), Scheme::mono(Ty::fun(
+            vec![pool_t.clone(), Ty::string(), ptr_t.clone()],
+            ptr_t.clone(),
         )));
         // ── Phase 99: Repo Changeset Operations ────────────────────────
         // Repo.insert_changeset(PoolHandle, String, Ptr) -> Ptr  (pool, table, changeset -> Result<Map, Changeset>)

@@ -300,6 +300,8 @@ fn register_runtime_symbols() {
     // Raw ORDER BY / GROUP BY (Phase 106)
     add_sym("mesh_query_order_by_raw", mesh_rt::mesh_query_order_by_raw as *const ());
     add_sym("mesh_query_group_by_raw", mesh_rt::mesh_query_group_by_raw as *const ());
+    // Subquery WHERE (Phase 109)
+    add_sym("mesh_query_where_sub", mesh_rt::mesh_query_where_sub as *const ());
 
     // Repo Read Operations (Phase 98)
     add_sym("mesh_repo_all", mesh_rt::mesh_repo_all as *const ());
@@ -319,6 +321,10 @@ fn register_runtime_symbols() {
     add_sym("mesh_repo_delete_where", mesh_rt::mesh_repo_delete_where as *const ());
     add_sym("mesh_repo_query_raw", mesh_rt::mesh_repo_query_raw as *const ());
     add_sym("mesh_repo_execute_raw", mesh_rt::mesh_repo_execute_raw as *const ());
+
+    // Upsert, RETURNING, Subquery (Phase 109)
+    add_sym("mesh_repo_insert_or_update", mesh_rt::mesh_repo_insert_or_update as *const ());
+    add_sym("mesh_repo_delete_where_returning", mesh_rt::mesh_repo_delete_where_returning as *const ());
 
     // Repo Preloading (Phase 100)
     add_sym("mesh_repo_preload", mesh_rt::mesh_repo_preload as *const ());

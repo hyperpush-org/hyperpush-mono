@@ -5021,3 +5021,62 @@ end
     let stdout = String::from_utf8_lossy(&run_output.stdout);
     assert_eq!(stdout, "scaffold_compiles\n");
 }
+
+// ── Phase 109 Plan 01: Upsert, RETURNING, Subquery E2E tests ─────────
+
+#[test]
+fn e2e_repo_insert_or_update() {
+    // Verifies Repo.insert_or_update compiles through full pipeline
+    // (typechecker + MIR lowering + codegen + JIT symbol resolution).
+    // Does not call at runtime since we need a PoolHandle (not SqliteConn).
+    let output = compile_and_run(r#"
+import Repo
+import Map
+
+fn upsert_demo(pool, fields) do
+  Repo.insert_or_update(pool, "items", fields, ["id"], ["qty"])
+end
+
+fn main() do
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
+#[test]
+fn e2e_query_builder_where_sub() {
+    // Verifies subquery WHERE compiles through full pipeline
+    let output = compile_and_run(r#"
+fn main() do
+  let sub = Query.from("projects")
+    |> Query.select(["id"])
+    |> Query.where(:org_id, "abc")
+  let _q = Query.from("issues")
+    |> Query.where_sub(:project_id, sub)
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
+#[test]
+fn e2e_repo_delete_where_returning() {
+    // Verifies Repo.delete_where_returning compiles through full pipeline
+    // (typechecker + MIR lowering + codegen + JIT symbol resolution).
+    // Does not call at runtime since we need a PoolHandle (not SqliteConn).
+    let output = compile_and_run(r#"
+import Repo
+import Query
+
+fn delete_demo(pool) do
+  let q = Query.from("logs") |> Query.where(:id, "l1")
+  Repo.delete_where_returning(pool, "logs", q)
+end
+
+fn main() do
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}

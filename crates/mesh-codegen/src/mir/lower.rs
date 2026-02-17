@@ -910,6 +910,9 @@ impl<'a> Lowerer<'a> {
         self.known_functions.insert("mesh_query_select_raw".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
         // mesh_query_where_raw(q: ptr, clause: ptr, params: ptr) -> ptr
         self.known_functions.insert("mesh_query_where_raw".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
+        // ── Phase 109: Subquery WHERE ─────────────────────────────────────
+        // mesh_query_where_sub(q: ptr, field: ptr, sub_query: ptr) -> ptr
+        self.known_functions.insert("mesh_query_where_sub".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
         // ── Phase 98: Repo Read Operations ───────────────────────────────
         // mesh_repo_all(pool: i64, query: ptr) -> ptr
         self.known_functions.insert("mesh_repo_all".to_string(), MirType::FnPtr(vec![MirType::Int, MirType::Ptr], Box::new(MirType::Ptr)));
@@ -941,6 +944,11 @@ impl<'a> Lowerer<'a> {
         self.known_functions.insert("mesh_repo_query_raw".to_string(), MirType::FnPtr(vec![MirType::Int, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
         // mesh_repo_execute_raw(pool: i64, sql: ptr, params: ptr) -> ptr
         self.known_functions.insert("mesh_repo_execute_raw".to_string(), MirType::FnPtr(vec![MirType::Int, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
+        // ── Phase 109: Upsert, RETURNING, Subquery ────────────────────────
+        // mesh_repo_insert_or_update(pool: i64, table: ptr, fields: ptr, conflict_targets: ptr, update_fields: ptr) -> ptr
+        self.known_functions.insert("mesh_repo_insert_or_update".to_string(), MirType::FnPtr(vec![MirType::Int, MirType::Ptr, MirType::Ptr, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
+        // mesh_repo_delete_where_returning(pool: i64, table: ptr, query: ptr) -> ptr
+        self.known_functions.insert("mesh_repo_delete_where_returning".to_string(), MirType::FnPtr(vec![MirType::Int, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
         // ── Phase 99: Repo Changeset Operations ─────────────────────────
         // mesh_repo_insert_changeset(pool: i64, table: ptr, changeset: ptr) -> ptr
         self.known_functions.insert("mesh_repo_insert_changeset".to_string(), MirType::FnPtr(vec![MirType::Int, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
@@ -10545,6 +10553,8 @@ fn map_builtin_name(name: &str) -> String {
         // ── Phase 106: Raw ORDER BY / GROUP BY ──────────────────────────
         "query_order_by_raw" => "mesh_query_order_by_raw".to_string(),
         "query_group_by_raw" => "mesh_query_group_by_raw".to_string(),
+        // ── Phase 109: Subquery WHERE ─────────────────────────────────────
+        "query_where_sub" => "mesh_query_where_sub".to_string(),
         // ── Phase 98: Repo Read Operations ──────────────────────────────
         "repo_all" => "mesh_repo_all".to_string(),
         "repo_one" => "mesh_repo_one".to_string(),
@@ -10562,6 +10572,9 @@ fn map_builtin_name(name: &str) -> String {
         "repo_delete_where" => "mesh_repo_delete_where".to_string(),
         "repo_query_raw" => "mesh_repo_query_raw".to_string(),
         "repo_execute_raw" => "mesh_repo_execute_raw".to_string(),
+        // ── Phase 109: Upsert, RETURNING, Subquery ────────────────────────
+        "repo_insert_or_update" => "mesh_repo_insert_or_update".to_string(),
+        "repo_delete_where_returning" => "mesh_repo_delete_where_returning".to_string(),
         // ── Phase 100: Repo Preloading ──────────────────────────────────
         "repo_preload" => "mesh_repo_preload".to_string(),
         // ── Phase 99: Repo Changeset Operations ─────────────────────────
