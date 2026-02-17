@@ -188,7 +188,7 @@ See milestones/v9.0-ROADMAP.md for full phase details.
 
 **Milestone Goal:** Expand the Mesh ORM with comprehensive query builder capabilities (JOINs, aggregations, upserts, advanced WHERE, raw SQL fragments, RETURNING, subqueries) and rewrite all 68+ Mesher raw SQL data queries to use the ORM, validating every addition end-to-end.
 
-- [ ] **Phase 106: Advanced WHERE Operators and Raw SQL Fragments** - Comparison operators, IN/NULL/BETWEEN/LIKE/OR, and Query.fragment() for PG-specific expressions
+- [x] **Phase 106: Advanced WHERE Operators and Raw SQL Fragments** - Comparison operators, IN/NULL/BETWEEN/LIKE/OR, and Query.fragment() for PG-specific expressions (shipped 2026-02-17)
 - [ ] **Phase 107: JOINs** - Inner and left join with on-clause expressions, multi-join, and joined-table column access
 - [ ] **Phase 108: Aggregations** - count/sum/avg/min/max, group_by, having clause
 - [ ] **Phase 109: Upserts, RETURNING, and Subqueries** - INSERT ON CONFLICT, RETURNING clause, subqueries in WHERE
@@ -330,7 +330,7 @@ Phases execute in numeric order: 106 -> 107 -> 108 -> 109 -> 110 -> 111 -> 112 -
 | 87-95 | v9.0 | 38/38 | Complete | 2026-02-15 |
 | 96-103 | v10.0 | 25/25 | Complete | 2026-02-17 |
 | 104-105.1 | v10.1 | 6/6 | Complete | 2026-02-17 |
-| 106. Advanced WHERE + Fragments | v11.0 | 0/TBD | Not started | - |
+| 106. Advanced WHERE + Fragments | v11.0 | 2/2 | Complete | 2026-02-17 |
 | 107. JOINs | v11.0 | 0/TBD | Not started | - |
 | 108. Aggregations | v11.0 | 0/TBD | Not started | - |
 | 109. Upserts/RETURNING/Subqueries | v11.0 | 0/TBD | Not started | - |
@@ -340,4 +340,4 @@ Phases execute in numeric order: 106 -> 107 -> 108 -> 109 -> 110 -> 111 -> 112 -
 | 113. Rewrite: Retention & Cleanup | v11.0 | 0/TBD | Not started | - |
 | 114. Verification | v11.0 | 0/TBD | Not started | - |
 
-**Total: 105 phases shipped across 20 milestones. 311 plans completed. 9 new phases planned for v11.0.**
+**Total: 106 phases shipped across 20 milestones. 313 plans completed. 8 phases remaining for v11.0.**
