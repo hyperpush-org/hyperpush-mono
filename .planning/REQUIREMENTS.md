@@ -88,44 +88,44 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| JOIN-01 | TBD | Pending |
-| JOIN-02 | TBD | Pending |
-| JOIN-03 | TBD | Pending |
-| JOIN-04 | TBD | Pending |
-| AGG-01 | TBD | Pending |
-| AGG-02 | TBD | Pending |
-| AGG-03 | TBD | Pending |
-| AGG-04 | TBD | Pending |
-| WHERE-01 | TBD | Pending |
-| WHERE-02 | TBD | Pending |
-| WHERE-03 | TBD | Pending |
-| WHERE-04 | TBD | Pending |
-| WHERE-05 | TBD | Pending |
-| WHERE-06 | TBD | Pending |
-| UPS-01 | TBD | Pending |
-| UPS-02 | TBD | Pending |
-| UPS-03 | TBD | Pending |
-| FRAG-01 | TBD | Pending |
-| FRAG-02 | TBD | Pending |
-| FRAG-03 | TBD | Pending |
-| FRAG-04 | TBD | Pending |
-| REWR-01 | TBD | Pending |
-| REWR-02 | TBD | Pending |
-| REWR-03 | TBD | Pending |
-| REWR-04 | TBD | Pending |
-| REWR-05 | TBD | Pending |
-| REWR-06 | TBD | Pending |
-| REWR-07 | TBD | Pending |
-| REWR-08 | TBD | Pending |
-| VER-01 | TBD | Pending |
-| VER-02 | TBD | Pending |
-| VER-03 | TBD | Pending |
+| WHERE-01 | Phase 106 | Pending |
+| WHERE-02 | Phase 106 | Pending |
+| WHERE-03 | Phase 106 | Pending |
+| WHERE-04 | Phase 106 | Pending |
+| WHERE-05 | Phase 106 | Pending |
+| WHERE-06 | Phase 106 | Pending |
+| FRAG-01 | Phase 106 | Pending |
+| FRAG-02 | Phase 106 | Pending |
+| FRAG-03 | Phase 106 | Pending |
+| FRAG-04 | Phase 106 | Pending |
+| JOIN-01 | Phase 107 | Pending |
+| JOIN-02 | Phase 107 | Pending |
+| JOIN-03 | Phase 107 | Pending |
+| JOIN-04 | Phase 107 | Pending |
+| AGG-01 | Phase 108 | Pending |
+| AGG-02 | Phase 108 | Pending |
+| AGG-03 | Phase 108 | Pending |
+| AGG-04 | Phase 108 | Pending |
+| UPS-01 | Phase 109 | Pending |
+| UPS-02 | Phase 109 | Pending |
+| UPS-03 | Phase 109 | Pending |
+| REWR-01 | Phase 110 | Pending |
+| REWR-02 | Phase 111 | Pending |
+| REWR-07 | Phase 111 | Pending |
+| REWR-03 | Phase 112 | Pending |
+| REWR-04 | Phase 112 | Pending |
+| REWR-05 | Phase 112 | Pending |
+| REWR-06 | Phase 113 | Pending |
+| REWR-08 | Phase 113 | Pending |
+| VER-01 | Phase 114 | Pending |
+| VER-02 | Phase 114 | Pending |
+| VER-03 | Phase 114 | Pending |
 
 **Coverage:**
 - v11.0 requirements: 32 total
-- Mapped to phases: 0
-- Unmapped: 32 ⚠️
+- Mapped to phases: 32
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-17*
-*Last updated: 2026-02-17 after initial definition*
+*Last updated: 2026-02-17 after roadmap creation (phases 106-114)*

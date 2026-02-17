@@ -21,7 +21,8 @@
 - [x] **v8.0 Developer Tooling** - Phases 81-86 (shipped 2026-02-14)
 - [x] **v9.0 Mesher** - Phases 87-95 (shipped 2026-02-15)
 - [x] **v10.0 ORM** - Phases 96-103 (shipped 2026-02-17)
-- [x] **v10.1 Stabilization** - Phases 104-105 (shipped 2026-02-17)
+- [x] **v10.1 Stabilization** - Phases 104-105.1 (shipped 2026-02-17)
+- [ ] **v11.0 Query Builder** - Phases 106-114 (in progress)
 
 ## Phases
 
@@ -176,47 +177,133 @@ See milestones/v9.0-ROADMAP.md for full phase details.
 
 </details>
 
-### v10.1 Stabilization (Complete)
+<details>
+<summary>v10.1 Stabilization (Phases 104-105.1) - SHIPPED 2026-02-17</summary>
 
-**Milestone Goal:** Fix all 47 Mesher compilation errors introduced during the v10.0 ORM integration (phases 96-103), rebuild Mesher successfully, and verify all HTTP/WebSocket endpoints work correctly end-to-end.
+6 plans across 3 phases. Fixed all Mesher compilation errors, verified runtime, and fixed struct-in-Result ABI pointer-boxing.
 
-- [x] **Phase 104: Fix Mesher Compilation Errors** - Resolve all 47 errors across 6 files to achieve zero-error build
-- [x] **Phase 105: Verify Mesher Runtime** - Confirm Mesher runs, connects to PostgreSQL, and all endpoints work
+</details>
+
+### v11.0 Query Builder (In Progress)
+
+**Milestone Goal:** Expand the Mesh ORM with comprehensive query builder capabilities (JOINs, aggregations, upserts, advanced WHERE, raw SQL fragments, RETURNING, subqueries) and rewrite all 68+ Mesher raw SQL data queries to use the ORM, validating every addition end-to-end.
+
+- [ ] **Phase 106: Advanced WHERE Operators and Raw SQL Fragments** - Comparison operators, IN/NULL/BETWEEN/LIKE/OR, and Query.fragment() for PG-specific expressions
+- [ ] **Phase 107: JOINs** - Inner and left join with on-clause expressions, multi-join, and joined-table column access
+- [ ] **Phase 108: Aggregations** - count/sum/avg/min/max, group_by, having clause
+- [ ] **Phase 109: Upserts, RETURNING, and Subqueries** - INSERT ON CONFLICT, RETURNING clause, subqueries in WHERE
+- [ ] **Phase 110: Mesher Rewrite -- Auth and Users** - User, session, and API-key queries rewritten with ORM + fragments
+- [ ] **Phase 111: Mesher Rewrite -- Issues and Events** - Issue management (upserts) and event writer/extraction (JSONB fragments)
+- [ ] **Phase 112: Mesher Rewrite -- Search, Dashboard, and Alerts** - FTS search, aggregation dashboards, alert system with JSONB
+- [ ] **Phase 113: Mesher Rewrite -- Retention and Final Cleanup** - Retention/storage queries, zero remaining raw SQL data queries
+- [ ] **Phase 114: Compile, Run, and End-to-End Verification** - Zero-error build, all HTTP/WS endpoints verified
 
 ## Phase Details
 
-### Phase 104: Fix Mesher Compilation Errors
-**Goal**: Mesher compiles with zero errors -- all type mismatches, undefined variables, incorrect `?` usage, missing module references, and argument count errors across queries.mpl, org.mpl, project.mpl, user.mpl, team.mpl, and main.mpl are resolved
-**Depends on**: Nothing (first phase of v10.1)
-**Requirements**: FIX-01, FIX-02, FIX-03, FIX-04, FIX-05, FIX-06
+### Phase 106: Advanced WHERE Operators and Raw SQL Fragments
+**Goal**: Mesh programs can express rich query conditions -- comparisons, set membership, nullability, ranges, pattern matching, boolean logic -- and embed arbitrary PostgreSQL expressions (crypt, JSONB, FTS) via raw SQL fragments with parameter binding
+**Depends on**: Nothing (first phase of v11.0; builds on existing Query.where infrastructure)
+**Requirements**: WHERE-01, WHERE-02, WHERE-03, WHERE-04, WHERE-05, WHERE-06, FRAG-01, FRAG-02, FRAG-03, FRAG-04
 **Success Criteria** (what must be TRUE):
-  1. `meshc build mesher` completes with zero compilation errors and produces a binary
-  2. All Repo/Query calls in queries.mpl use correct return types (Map and Result) with no Ptr-vs-Map or Map-vs-Result mismatches
-  3. All service files (org.mpl, project.mpl, user.mpl) reference only variables that are in scope -- no undefined variable errors from ORM migration artifacts
-  4. The `?` operator is used only on expressions returning Result or Option types -- no E0037 errors remain
-  5. All module imports resolve correctly in team.mpl and main.mpl, and all function calls pass the correct number of arguments
-**Plans**: 1 plan
-Plans:
-- [x] 104-01-PLAN.md -- Fix Repo typeck signatures and verify zero-error Mesher build
+  1. A Mesh program can build a query with `>`, `<`, `>=`, `<=`, `!=` comparisons in WHERE clauses, and the generated SQL uses the correct PostgreSQL operators
+  2. A Mesh program can use `IN`, `IS NULL`, `IS NOT NULL`, `BETWEEN`, `LIKE`, `ILIKE` in WHERE clauses, each generating correct parameterized SQL
+  3. A Mesh program can combine WHERE conditions with `OR` and grouped parenthesized conditions (not just implicit AND chaining)
+  4. A Mesh program can use `Query.fragment("crypt($1, gen_salt('bf'))", [password])` and the raw SQL is embedded verbatim with bound parameters in the generated query
+  5. Fragments work in WHERE, SELECT, ORDER BY, and GROUP BY positions -- a program using `Query.select(fragment("count(*)"))` and `Query.where(fragment("metadata @> $1::jsonb", [json]))` generates correct SQL
+**Plans**: TBD
 
-### Phase 105: Verify Mesher Runtime
-**Goal**: Mesher runs as a working application -- it starts, connects to PostgreSQL, serves HTTP API requests with correct responses, and accepts WebSocket connections
-**Depends on**: Phase 104
+### Phase 107: JOINs
+**Goal**: Mesh programs can query across related tables using inner and left joins with typed on-clause expressions, including multi-join queries that access columns from all joined tables
+**Depends on**: Phase 106 (WHERE operators needed for on-clause expressions)
+**Requirements**: JOIN-01, JOIN-02, JOIN-03, JOIN-04
+**Success Criteria** (what must be TRUE):
+  1. A Mesh program can write `Query.from(Issue) |> Query.join(:inner, Project, on: issue.project_id == project.id)` and the generated SQL includes `INNER JOIN projects ON issues.project_id = projects.id`
+  2. A Mesh program can write a left join and rows with no match on the joined side return NULL/None values for joined columns
+  3. A Mesh program can chain multiple joins in a single query (e.g., issues JOIN projects JOIN organizations) and all three tables' columns are accessible in select/where
+  4. E2E test: a query joining two tables returns rows with fields from both tables correctly mapped to Mesh structs or maps
+**Plans**: TBD
+
+### Phase 108: Aggregations
+**Goal**: Mesh programs can compute aggregate statistics -- counts, sums, averages, min/max -- with grouping and filtered aggregation via having clauses
+**Depends on**: Phase 106 (WHERE operators and fragments needed for having conditions)
+**Requirements**: AGG-01, AGG-02, AGG-03, AGG-04
+**Success Criteria** (what must be TRUE):
+  1. A Mesh program can write `Query.from(Issue) |> Query.select(count())` and receive an integer count of matching rows
+  2. A Mesh program can use `sum()`, `avg()`, `min()`, `max()` on numeric columns and receive correct aggregate results
+  3. A Mesh program can group results with `Query.group_by("project_id")` and receive one aggregated row per group
+  4. A Mesh program can filter groups with `Query.having(count() > 5)` and only groups meeting the condition appear in results
+**Plans**: TBD
+
+### Phase 109: Upserts, RETURNING, and Subqueries
+**Goal**: Mesh programs can perform upsert operations (insert-or-update on conflict), retrieve affected rows via RETURNING, and use subqueries for complex filtering
+**Depends on**: Phase 106 (WHERE operators needed for subquery conditions)
+**Requirements**: UPS-01, UPS-02, UPS-03
+**Success Criteria** (what must be TRUE):
+  1. A Mesh program can write `Repo.insert(changeset, on_conflict: :update, conflict_target: ["unique_col"])` and it inserts a new row or updates the existing one, generating `INSERT ... ON CONFLICT (unique_col) DO UPDATE SET ...`
+  2. A Mesh program can add `returning: true` (or `returning: ["id", "inserted_at"]`) to insert/update/delete and receive the affected row(s) back as typed structs
+  3. A Mesh program can use a subquery in WHERE (e.g., `Query.where(sub: Query.from(Project) |> Query.select("id") |> Query.where(...))`) and the generated SQL nests the subquery correctly with proper parameter binding
+**Plans**: TBD
+
+### Phase 110: Mesher Rewrite -- Auth and Users
+**Goal**: All Mesher user, session, and API-key queries use the ORM instead of raw SQL -- authentication, session management, and API key validation flow through Query/Repo APIs
+**Depends on**: Phase 109 (needs WHERE operators, fragments for crypt/gen_random_bytes, RETURNING for inserts)
+**Requirements**: REWR-01
+**Success Criteria** (what must be TRUE):
+  1. User lookup by email uses `Repo.get_by(User, email: email)` instead of `Repo.query_raw("SELECT * FROM users WHERE email = $1", ...)`
+  2. Password verification uses `Query.fragment("crypt($1, password_hash)", [password])` in a WHERE clause instead of raw SQL with crypt()
+  3. Session creation and API key generation use `Repo.insert` with `Query.fragment("gen_random_bytes(32)")` for token generation instead of raw SQL
+  4. All 8 auth/user/session/API-key queries in queries.mpl are replaced with ORM calls -- zero raw SQL remains for this domain
+**Plans**: TBD
+
+### Phase 111: Mesher Rewrite -- Issues and Events
+**Goal**: All Mesher issue management queries use the ORM with upserts, and event writer/extraction queries use fragments for JSONB operations
+**Depends on**: Phase 110 (sequential rewrite after auth domain validates the pattern)
+**Requirements**: REWR-02, REWR-07
+**Success Criteria** (what must be TRUE):
+  1. Issue creation uses `Repo.insert(changeset, on_conflict: :update, conflict_target: ["fingerprint"])` instead of raw `INSERT ... ON CONFLICT DO UPDATE`
+  2. Issue queries use `Query.join` for project lookups and `Query.where` with comparison operators instead of raw SQL JOINs and WHERE clauses
+  3. Event extraction uses `Query.fragment("payload->>'$1'", [field])` for JSONB field access instead of raw SQL JSONB operators
+  4. All 12 issue + event queries in queries.mpl are replaced with ORM calls
+**Plans**: TBD
+
+### Phase 112: Mesher Rewrite -- Search, Dashboard, and Alerts
+**Goal**: All Mesher search/filtering, dashboard/analytics, and alert system queries use the ORM -- full-text search via fragments, dashboard stats via aggregations, alert rules via JSONB fragments
+**Depends on**: Phase 111 (sequential rewrite; needs all ORM features proven on simpler domains first)
+**Requirements**: REWR-03, REWR-04, REWR-05
+**Success Criteria** (what must be TRUE):
+  1. Search queries use `Query.fragment("to_tsvector('english', $1) @@ plainto_tsquery('english', $2)", ...)` for full-text search instead of raw SQL FTS
+  2. Dashboard queries use `Query.select(count())` with `Query.group_by` and `Query.fragment("date_trunc('hour', $1)", ...)` for time-bucketed analytics
+  3. Alert queries use `Query.fragment("metadata @> $1::jsonb", [filter])` for JSONB containment checks and `Query.fragment("metadata ? $1", [key])` for key existence
+  4. All 23 search + dashboard + alert queries in queries.mpl are replaced with ORM calls
+**Plans**: TBD
+
+### Phase 113: Mesher Rewrite -- Retention and Final Cleanup
+**Goal**: All remaining Mesher data queries use the ORM -- retention/storage queries are rewritten, and zero Repo.query_raw/execute_raw calls remain for data operations
+**Depends on**: Phase 112 (final rewrite phase after all other domains complete)
+**Requirements**: REWR-06, REWR-08
+**Success Criteria** (what must be TRUE):
+  1. Retention cleanup queries use `Repo.delete` with `Query.where` comparison operators (e.g., `inserted_at < cutoff`) instead of raw `DELETE FROM ... WHERE`
+  2. Storage calculation queries use `Query.select(count())` or aggregation fragments instead of raw SQL
+  3. A search of queries.mpl for `Repo.query_raw` and `Repo.execute_raw` returns zero matches for data queries (DDL/partition queries excluded)
+  4. All callers of the rewritten query functions across Mesher's 32 .mpl files compile without changes to their call signatures
+**Plans**: TBD
+
+### Phase 114: Compile, Run, and End-to-End Verification
+**Goal**: Mesher compiles with zero errors using the fully rewritten ORM query layer, starts successfully, and all HTTP API and WebSocket endpoints return correct responses
+**Depends on**: Phase 113 (all rewrite phases complete)
 **Requirements**: VER-01, VER-02, VER-03
 **Success Criteria** (what must be TRUE):
-  1. Mesher binary starts without runtime crashes and successfully connects to a PostgreSQL database (prints connection confirmation or serves first request)
-  2. HTTP GET endpoints (e.g., organization list, project list) return valid JSON responses with correct status codes
-  3. HTTP POST endpoints (e.g., create organization, create project) accept JSON payloads and persist data to the database
-  4. WebSocket endpoint accepts connections, completes the upgrade handshake, and responds to messages
-**Plans**: 2 plans
-Plans:
-- [x] 105-01-PLAN.md -- Database setup, migration, and Mesher binary startup verification
-- [x] 105-02-PLAN.md -- HTTP endpoint testing and WebSocket connectivity verification
+  1. `meshc build mesher` completes with zero compilation errors and produces a binary
+  2. Mesher starts, connects to PostgreSQL, and runs migrations without error
+  3. All HTTP API endpoints (org/project/issue CRUD, search, dashboard, alerts, retention) return correct JSON responses with expected data
+  4. WebSocket endpoint accepts connections, completes upgrade, and delivers real-time events
+  5. The EventProcessor service call SIGSEGV from v10.1 is either fixed or confirmed not to affect ORM-rewritten query paths
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 104 -> 105
+Phases execute in numeric order: 106 -> 107 -> 108 -> 109 -> 110 -> 111 -> 112 -> 113 -> 114
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -239,18 +326,15 @@ Phases execute in numeric order: 104 -> 105
 | 81-86 | v8.0 | 11/11 | Complete | 2026-02-14 |
 | 87-95 | v9.0 | 38/38 | Complete | 2026-02-15 |
 | 96-103 | v10.0 | 25/25 | Complete | 2026-02-17 |
-| 104 | v10.1 | 1/1 | Complete | 2026-02-17 |
-| 105 | v10.1 | 2/2 | Complete | 2026-02-17 |
+| 104-105.1 | v10.1 | 6/6 | Complete | 2026-02-17 |
+| 106. Advanced WHERE + Fragments | v11.0 | 0/TBD | Not started | - |
+| 107. JOINs | v11.0 | 0/TBD | Not started | - |
+| 108. Aggregations | v11.0 | 0/TBD | Not started | - |
+| 109. Upserts/RETURNING/Subqueries | v11.0 | 0/TBD | Not started | - |
+| 110. Rewrite: Auth & Users | v11.0 | 0/TBD | Not started | - |
+| 111. Rewrite: Issues & Events | v11.0 | 0/TBD | Not started | - |
+| 112. Rewrite: Search/Dashboard/Alerts | v11.0 | 0/TBD | Not started | - |
+| 113. Rewrite: Retention & Cleanup | v11.0 | 0/TBD | Not started | - |
+| 114. Verification | v11.0 | 0/TBD | Not started | - |
 
-**Total: 105 phases shipped across 21 milestones. 308 plans completed.**
-
-### Phase 105.1: Fix codegen ABI issues and workarounds from Phase 105 (INSERTED)
-
-**Goal:** Fix struct-in-Result sum type layout mismatch and service call reply serialization so that all Mesher endpoints work correctly, including the event ingestion pipeline that was crashing due to ABI segfaults
-**Depends on:** Phase 105
-**Plans:** 3 plans
-
-Plans:
-- [ ] 105.1-01-PLAN.md -- Fix struct-in-Result ABI: pointer-box struct payloads in sum type variant construction/destructuring
-- [ ] 105.1-02-PLAN.md -- Fix service call reply serialization for complex return types
-- [ ] 105.1-03-PLAN.md -- Remove auth workaround, rebuild Mesher, verify all endpoints
+**Total: 105 phases shipped across 20 milestones. 311 plans completed. 9 new phases planned for v11.0.**
