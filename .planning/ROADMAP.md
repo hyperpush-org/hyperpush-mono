@@ -238,7 +238,10 @@ Plans:
   2. A Mesh program can use `sum()`, `avg()`, `min()`, `max()` on numeric columns and receive correct aggregate results
   3. A Mesh program can group results with `Query.group_by("project_id")` and receive one aggregated row per group
   4. A Mesh program can filter groups with `Query.having(count() > 5)` and only groups meeting the condition appear in results
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 108-01-PLAN.md -- Aggregate select functions (count/sum/avg/min/max) with full pipeline registration and unit/E2E tests
+- [ ] 108-02-PLAN.md -- Runtime SQLite aggregate verification (count, sum, avg, min, max, GROUP BY, HAVING)
 
 ### Phase 109: Upserts, RETURNING, and Subqueries
 **Goal**: Mesh programs can perform upsert operations (insert-or-update on conflict), retrieve affected rows via RETURNING, and use subqueries for complex filtering
