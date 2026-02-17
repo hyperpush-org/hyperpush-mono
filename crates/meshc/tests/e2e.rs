@@ -4092,6 +4092,107 @@ end
     assert_eq!(output, "ok\n");
 }
 
+// ── Phase 107 Plan 01: JOIN alias support and comprehensive join E2E tests ──
+
+/// Basic inner join compiles and runs through the full pipeline.
+#[test]
+fn e2e_query_builder_inner_join() {
+    let output = compile_and_run(r#"
+import Query
+
+fn main() do
+  let q = Query.from("issues")
+    |> Query.join(:inner, "projects", "projects.id = issues.project_id")
+    |> Query.select(["issues.id", "projects.name"])
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
+/// Left join compiles and runs.
+#[test]
+fn e2e_query_builder_left_join() {
+    let output = compile_and_run(r#"
+import Query
+
+fn main() do
+  let q = Query.from("users")
+    |> Query.join(:left, "profiles", "profiles.user_id = users.id")
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
+/// Two joins chained in one query.
+#[test]
+fn e2e_query_builder_multi_join() {
+    let output = compile_and_run(r#"
+import Query
+
+fn main() do
+  let q = Query.from("issues")
+    |> Query.join(:inner, "projects", "projects.id = issues.project_id")
+    |> Query.join(:inner, "organizations", "organizations.id = projects.org_id")
+    |> Query.select(["issues.id", "projects.name", "organizations.name"])
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
+/// Aliased join via Query.join_as compiles and runs.
+#[test]
+fn e2e_query_builder_join_as_alias() {
+    let output = compile_and_run(r#"
+import Query
+
+fn main() do
+  let q = Query.from("issues")
+    |> Query.join_as(:inner, "projects", "p", "p.id = issues.project_id")
+    |> Query.select(["issues.id", "p.name"])
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
+/// Join combined with WHERE, ORDER BY, and LIMIT.
+#[test]
+fn e2e_query_builder_join_with_where() {
+    let output = compile_and_run(r#"
+import Query
+
+fn main() do
+  let q = Query.from("issues")
+    |> Query.join(:inner, "projects", "projects.id = issues.project_id")
+    |> Query.where(:status, "active")
+    |> Query.order_by(:name, :asc)
+    |> Query.limit(10)
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
+/// Two aliased joins in one query.
+#[test]
+fn e2e_query_builder_multi_alias_join() {
+    let output = compile_and_run(r#"
+import Query
+
+fn main() do
+  let q = Query.from("alerts")
+    |> Query.join_as(:inner, "alert_rules", "r", "r.id = alerts.rule_id")
+    |> Query.join_as(:inner, "projects", "p", "p.id = alerts.project_id")
+    |> Query.where(:status, "active")
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
 // ── Phase 99: Changeset e2e tests ────────────────────────────────────
 
 /// Test 1: Changeset.cast creates changeset from params, filtering to allowed fields.

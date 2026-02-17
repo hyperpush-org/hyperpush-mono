@@ -283,6 +283,7 @@ fn register_runtime_symbols() {
     add_sym("mesh_query_limit", mesh_rt::mesh_query_limit as *const ());
     add_sym("mesh_query_offset", mesh_rt::mesh_query_offset as *const ());
     add_sym("mesh_query_join", mesh_rt::mesh_query_join as *const ());
+    add_sym("mesh_query_join_as", mesh_rt::mesh_query_join_as as *const ());
     add_sym("mesh_query_group_by", mesh_rt::mesh_query_group_by as *const ());
     add_sym("mesh_query_having", mesh_rt::mesh_query_having as *const ());
     add_sym("mesh_query_fragment", mesh_rt::mesh_query_fragment as *const ());

@@ -880,6 +880,8 @@ impl<'a> Lowerer<'a> {
         self.known_functions.insert("mesh_query_offset".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Int], Box::new(MirType::Ptr)));
         // mesh_query_join(q: ptr, type: ptr, table: ptr, on_clause: ptr) -> ptr
         self.known_functions.insert("mesh_query_join".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
+        // mesh_query_join_as(q: ptr, type: ptr, table: ptr, alias: ptr, on_clause: ptr) -> ptr
+        self.known_functions.insert("mesh_query_join_as".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr, MirType::Ptr, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
         // mesh_query_group_by(q: ptr, field: ptr) -> ptr
         self.known_functions.insert("mesh_query_group_by".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
         // mesh_query_having(q: ptr, clause: ptr, value: ptr) -> ptr
@@ -10513,6 +10515,7 @@ fn map_builtin_name(name: &str) -> String {
         "query_limit" => "mesh_query_limit".to_string(),
         "query_offset" => "mesh_query_offset".to_string(),
         "query_join" => "mesh_query_join".to_string(),
+        "query_join_as" => "mesh_query_join_as".to_string(),
         "query_group_by" => "mesh_query_group_by".to_string(),
         "query_having" => "mesh_query_having".to_string(),
         "query_fragment" => "mesh_query_fragment".to_string(),

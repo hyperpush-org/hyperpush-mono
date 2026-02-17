@@ -990,6 +990,11 @@ pub fn declare_intrinsics<'ctx>(module: &Module<'ctx>) {
         ptr_type.fn_type(&[ptr_type.into(), ptr_type.into(), ptr_type.into(), ptr_type.into()], false),
         Some(inkwell::module::Linkage::External));
 
+    // mesh_query_join_as(q: ptr, type: ptr, table: ptr, alias: ptr, on_clause: ptr) -> ptr
+    module.add_function("mesh_query_join_as",
+        ptr_type.fn_type(&[ptr_type.into(), ptr_type.into(), ptr_type.into(), ptr_type.into(), ptr_type.into()], false),
+        Some(inkwell::module::Linkage::External));
+
     // mesh_query_group_by(q: ptr, field: ptr) -> ptr
     module.add_function("mesh_query_group_by",
         ptr_type.fn_type(&[ptr_type.into(), ptr_type.into()], false),
@@ -1616,6 +1621,7 @@ mod tests {
         assert!(module.get_function("mesh_query_limit").is_some());
         assert!(module.get_function("mesh_query_offset").is_some());
         assert!(module.get_function("mesh_query_join").is_some());
+        assert!(module.get_function("mesh_query_join_as").is_some());
         assert!(module.get_function("mesh_query_group_by").is_some());
         assert!(module.get_function("mesh_query_having").is_some());
         assert!(module.get_function("mesh_query_fragment").is_some());

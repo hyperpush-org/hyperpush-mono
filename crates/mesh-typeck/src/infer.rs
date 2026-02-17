@@ -1120,6 +1120,11 @@ fn stdlib_modules() -> HashMap<String, HashMap<String, Scheme>> {
             vec![ptr_t.clone(), atom_t.clone(), Ty::string(), Ty::string()],
             ptr_t.clone(),
         )));
+        // Query.join_as(Ptr, Atom, String, String, String) -> Ptr  (type atom, table, alias, on_clause)
+        query_mod.insert("join_as".to_string(), Scheme::mono(Ty::fun(
+            vec![ptr_t.clone(), atom_t.clone(), Ty::string(), Ty::string(), Ty::string()],
+            ptr_t.clone(),
+        )));
         // Query.group_by(Ptr, Atom) -> Ptr  (field atom)
         query_mod.insert("group_by".to_string(), Scheme::mono(Ty::fun(
             vec![ptr_t.clone(), atom_t.clone()],
