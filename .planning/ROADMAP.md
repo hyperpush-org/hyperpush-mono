@@ -251,7 +251,9 @@ Plans:
   1. A Mesh program can write `Repo.insert(changeset, on_conflict: :update, conflict_target: ["unique_col"])` and it inserts a new row or updates the existing one, generating `INSERT ... ON CONFLICT (unique_col) DO UPDATE SET ...`
   2. A Mesh program can add `returning: true` (or `returning: ["id", "inserted_at"]`) to insert/update/delete and receive the affected row(s) back as typed structs
   3. A Mesh program can use a subquery in WHERE (e.g., `Query.where(sub: Query.from(Project) |> Query.select("id") |> Query.where(...))`) and the generated SQL nests the subquery correctly with proper parameter binding
-**Plans**: TBD
+**Plans**:
+  - Plan 109-01 (Wave 1): Upsert, RETURNING, Subqueries -- full pipeline (runtime functions + compiler registration + E2E)
+  - Plan 109-02 (Wave 2): Runtime SQLite E2E verification (upsert, delete verification, subquery WHERE)
 
 ### Phase 110: Mesher Rewrite -- Auth and Users
 **Goal**: All Mesher user, session, and API-key queries use the ORM instead of raw SQL -- authentication, session management, and API key validation flow through Query/Repo APIs
@@ -339,7 +341,7 @@ Phases execute in numeric order: 106 -> 107 -> 108 -> 109 -> 110 -> 111 -> 112 -
 | 106. Advanced WHERE + Fragments | v11.0 | 2/2 | Complete | 2026-02-17 |
 | 107. JOINs | 2/2 | Complete    | 2026-02-17 | - |
 | 108. Aggregations | 2/2 | Complete    | 2026-02-17 | - |
-| 109. Upserts/RETURNING/Subqueries | v11.0 | 0/TBD | Not started | - |
+| 109. Upserts/RETURNING/Subqueries | 1/2 | In Progress|  | - |
 | 110. Rewrite: Auth & Users | v11.0 | 0/TBD | Not started | - |
 | 111. Rewrite: Issues & Events | v11.0 | 0/TBD | Not started | - |
 | 112. Rewrite: Search/Dashboard/Alerts | v11.0 | 0/TBD | Not started | - |

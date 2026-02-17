@@ -32,9 +32,9 @@ Requirements for Query Builder milestone. Expand ORM with comprehensive query ca
 
 ### Upsert, RETURNING, Subqueries
 
-- [ ] **UPS-01**: Repo supports upsert (INSERT ON CONFLICT DO UPDATE) with conflict target
-- [ ] **UPS-02**: Repo insert/update/delete support RETURNING clause
-- [ ] **UPS-03**: Query builder supports subqueries in WHERE clause
+- [x] **UPS-01**: Repo supports upsert (INSERT ON CONFLICT DO UPDATE) with conflict target
+- [x] **UPS-02**: Repo insert/update/delete support RETURNING clause
+- [x] **UPS-03**: Query builder supports subqueries in WHERE clause
 
 ### Raw SQL Fragments
 
@@ -106,9 +106,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AGG-02 | Phase 108 | Complete |
 | AGG-03 | Phase 108 | Complete |
 | AGG-04 | Phase 108 | Complete |
-| UPS-01 | Phase 109 | Pending |
-| UPS-02 | Phase 109 | Pending |
-| UPS-03 | Phase 109 | Pending |
+| UPS-01 | Phase 109 | Complete |
+| UPS-02 | Phase 109 | Complete |
+| UPS-03 | Phase 109 | Complete |
 | REWR-01 | Phase 110 | Pending |
 | REWR-02 | Phase 111 | Pending |
 | REWR-07 | Phase 111 | Pending |

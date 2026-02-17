@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v11.0 Query Builder -- Phase 108
+**Current focus:** v11.0 Query Builder -- Phase 109
 
 ## Current Position
 
-Phase: 108 of 114 (v11.0 Query Builder)
-Plan: 2 of 2 in current phase (phase complete)
-Status: Phase Complete
-Last activity: 2026-02-17 -- Completed 108-02 (Aggregate runtime verification)
+Phase: 109 of 114 (v11.0 Query Builder)
+Plan: 1 of 2 in current phase
+Status: In Progress
+Last activity: 2026-02-17 -- Completed 109-01 (Upsert, RETURNING, subquery runtime + pipeline)
 
 Progress: [███░░░░░░░] 30% (v11.0)
 
@@ -41,6 +41,7 @@ Progress: [███░░░░░░░] 30% (v11.0)
 | 107   | 02   | 1min     | 1     | 4     |
 | 108   | 01   | 4min     | 2     | 8     |
 | 108   | 02   | 1min     | 1     | 2     |
+| 109   | 01   | 10min    | 2     | 9     |
 
 ## Accumulated Context
 
@@ -62,6 +63,8 @@ Recent decisions affecting current work:
 - [Phase 108]: RAW: prefix reused for aggregate SELECT expressions -- consistent with existing select_raw pattern
 - [Phase 108]: select_count (no args) and select_count_field (with field) split for cleaner API
 - [Phase 108]: Raw SQL strings in runtime E2E tests match query builder output -- Plan 01 verifies pipeline, Plan 02 verifies SQL semantics
+- [Phase 109]: Subquery WHERE uses inline SQL serialization at where_sub call time, stored as RAW: clause with ? placeholders
+- [Phase 109]: E2E tests verify compilation pipeline without runtime execution since Repo functions expect PoolHandle not SqliteConn
 
 ### Roadmap Evolution
 
@@ -78,6 +81,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 108-02-PLAN.md (Aggregate runtime verification) -- Phase 108 complete
+Stopped at: Completed 109-01-PLAN.md (Upsert, RETURNING, subquery runtime + pipeline)
 Resume file: None
-Next action: Plan phase 109
+Next action: Execute 109-02-PLAN.md
