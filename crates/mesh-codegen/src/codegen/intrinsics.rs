@@ -950,6 +950,21 @@ pub fn declare_intrinsics<'ctx>(module: &Module<'ctx>) {
         ptr_type.fn_type(&[ptr_type.into(), ptr_type.into()], false),
         Some(inkwell::module::Linkage::External));
 
+    // mesh_query_where_not_in(q: ptr, field: ptr, values: ptr) -> ptr
+    module.add_function("mesh_query_where_not_in",
+        ptr_type.fn_type(&[ptr_type.into(), ptr_type.into(), ptr_type.into()], false),
+        Some(inkwell::module::Linkage::External));
+
+    // mesh_query_where_between(q: ptr, field: ptr, low: ptr, high: ptr) -> ptr
+    module.add_function("mesh_query_where_between",
+        ptr_type.fn_type(&[ptr_type.into(), ptr_type.into(), ptr_type.into(), ptr_type.into()], false),
+        Some(inkwell::module::Linkage::External));
+
+    // mesh_query_where_or(q: ptr, fields: ptr, values: ptr) -> ptr
+    module.add_function("mesh_query_where_or",
+        ptr_type.fn_type(&[ptr_type.into(), ptr_type.into(), ptr_type.into()], false),
+        Some(inkwell::module::Linkage::External));
+
     // mesh_query_select(q: ptr, fields: ptr) -> ptr
     module.add_function("mesh_query_select",
         ptr_type.fn_type(&[ptr_type.into(), ptr_type.into()], false),

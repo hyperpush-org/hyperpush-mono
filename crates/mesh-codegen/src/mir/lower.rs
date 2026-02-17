@@ -864,6 +864,12 @@ impl<'a> Lowerer<'a> {
         self.known_functions.insert("mesh_query_where_null".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
         // mesh_query_where_not_null(q: ptr, field: ptr) -> ptr
         self.known_functions.insert("mesh_query_where_not_null".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
+        // mesh_query_where_not_in(q: ptr, field: ptr, values: ptr) -> ptr
+        self.known_functions.insert("mesh_query_where_not_in".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
+        // mesh_query_where_between(q: ptr, field: ptr, low: ptr, high: ptr) -> ptr
+        self.known_functions.insert("mesh_query_where_between".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
+        // mesh_query_where_or(q: ptr, fields: ptr, values: ptr) -> ptr
+        self.known_functions.insert("mesh_query_where_or".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
         // mesh_query_select(q: ptr, fields: ptr) -> ptr
         self.known_functions.insert("mesh_query_select".to_string(), MirType::FnPtr(vec![MirType::Ptr, MirType::Ptr], Box::new(MirType::Ptr)));
         // mesh_query_order_by(q: ptr, field: ptr, direction: ptr) -> ptr
@@ -10495,6 +10501,9 @@ fn map_builtin_name(name: &str) -> String {
         "query_where_in" => "mesh_query_where_in".to_string(),
         "query_where_null" => "mesh_query_where_null".to_string(),
         "query_where_not_null" => "mesh_query_where_not_null".to_string(),
+        "query_where_not_in" => "mesh_query_where_not_in".to_string(),
+        "query_where_between" => "mesh_query_where_between".to_string(),
+        "query_where_or" => "mesh_query_where_or".to_string(),
         "query_select" => "mesh_query_select".to_string(),
         "query_order_by" => "mesh_query_order_by".to_string(),
         "query_limit" => "mesh_query_limit".to_string(),

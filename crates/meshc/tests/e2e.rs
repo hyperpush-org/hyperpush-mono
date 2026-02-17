@@ -3912,6 +3912,82 @@ end
     assert_eq!(output, "ok\n");
 }
 
+// ── Phase 106: Advanced WHERE operators e2e tests ────────────────────
+
+/// Query.where_not_in compiles and produces valid query.
+#[test]
+fn e2e_query_builder_where_not_in() {
+    let output = compile_and_run(r#"
+fn main() do
+  let q = Query.from("issues")
+    |> Query.where_not_in(:status, ["archived", "deleted"])
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
+/// Query.where_between compiles and produces valid query.
+#[test]
+fn e2e_query_builder_where_between() {
+    let output = compile_and_run(r#"
+fn main() do
+  let q = Query.from("events")
+    |> Query.where_between(:age, "18", "65")
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
+/// Query.where_op with :ilike compiles.
+#[test]
+fn e2e_query_builder_where_ilike() {
+    let output = compile_and_run(r#"
+fn main() do
+  let q = Query.from("users")
+    |> Query.where_op(:name, :ilike, "%alice%")
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
+/// Query.where_or compiles with grouped OR conditions.
+#[test]
+fn e2e_query_builder_where_or() {
+    let output = compile_and_run(r#"
+fn main() do
+  let q = Query.from("issues")
+    |> Query.where(:project_id, "abc")
+    |> Query.where_or([:status, :level], ["active", "error"])
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
+/// Combined: all new WHERE operators in one pipe chain.
+#[test]
+fn e2e_query_builder_advanced_where_combined() {
+    let output = compile_and_run(r#"
+fn main() do
+  let q = Query.from("events")
+    |> Query.where(:project_id, "abc")
+    |> Query.where_op(:level, :neq, "debug")
+    |> Query.where_not_in(:status, ["archived", "deleted"])
+    |> Query.where_between(:age, "18", "65")
+    |> Query.where_op(:message, :ilike, "%error%")
+    |> Query.where_or([:status, :priority], ["active", "high"])
+    |> Query.where_null(:deleted_at)
+    |> Query.order_by(:received_at, :desc)
+    |> Query.limit(50)
+  println("ok")
+end
+"#);
+    assert_eq!(output, "ok\n");
+}
+
 // ── Phase 99: Changeset e2e tests ────────────────────────────────────
 
 /// Test 1: Changeset.cast creates changeset from params, filtering to allowed fields.

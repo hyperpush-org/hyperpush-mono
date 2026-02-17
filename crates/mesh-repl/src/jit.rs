@@ -275,6 +275,9 @@ fn register_runtime_symbols() {
     add_sym("mesh_query_where_in", mesh_rt::mesh_query_where_in as *const ());
     add_sym("mesh_query_where_null", mesh_rt::mesh_query_where_null as *const ());
     add_sym("mesh_query_where_not_null", mesh_rt::mesh_query_where_not_null as *const ());
+    add_sym("mesh_query_where_not_in", mesh_rt::mesh_query_where_not_in as *const ());
+    add_sym("mesh_query_where_between", mesh_rt::mesh_query_where_between as *const ());
+    add_sym("mesh_query_where_or", mesh_rt::mesh_query_where_or as *const ());
     add_sym("mesh_query_select", mesh_rt::mesh_query_select as *const ());
     add_sym("mesh_query_order_by", mesh_rt::mesh_query_order_by as *const ());
     add_sym("mesh_query_limit", mesh_rt::mesh_query_limit as *const ());

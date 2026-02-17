@@ -1080,6 +1080,21 @@ fn stdlib_modules() -> HashMap<String, HashMap<String, Scheme>> {
             vec![ptr_t.clone(), atom_t.clone()],
             ptr_t.clone(),
         )));
+        // Query.where_not_in(Ptr, Atom, List<String>) -> Ptr  (field NOT IN (values...))
+        query_mod.insert("where_not_in".to_string(), Scheme::mono(Ty::fun(
+            vec![ptr_t.clone(), atom_t.clone(), Ty::list(Ty::string())],
+            ptr_t.clone(),
+        )));
+        // Query.where_between(Ptr, Atom, String, String) -> Ptr  (field BETWEEN low AND high)
+        query_mod.insert("where_between".to_string(), Scheme::mono(Ty::fun(
+            vec![ptr_t.clone(), atom_t.clone(), Ty::string(), Ty::string()],
+            ptr_t.clone(),
+        )));
+        // Query.where_or(Ptr, List<Atom>, List<String>) -> Ptr  ((field1 = $N OR field2 = $M))
+        query_mod.insert("where_or".to_string(), Scheme::mono(Ty::fun(
+            vec![ptr_t.clone(), Ty::list(atom_t.clone()), Ty::list(Ty::string())],
+            ptr_t.clone(),
+        )));
         // Query.select(Ptr, List<String>) -> Ptr  (select fields list)
         query_mod.insert("select".to_string(), Scheme::mono(Ty::fun(
             vec![ptr_t.clone(), Ty::list(Ty::string())],
