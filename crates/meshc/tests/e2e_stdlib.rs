@@ -1661,6 +1661,30 @@ fn e2e_sqlite_aggregate_runtime() {
     assert_eq!(lines[11], "done");
 }
 
+// ── Phase 109: SQLite Upsert, DELETE RETURNING, Subquery WHERE Runtime Tests ──
+//
+// Verifies ON CONFLICT DO UPDATE SET RETURNING, DELETE ... RETURNING *,
+// and WHERE IN (subquery) execute correctly against real SQLite data.
+// Uses raw SQL matching build_upsert_sql_pure and delete_where_returning output.
+// Proves UPS-01 through UPS-03 at runtime.
+
+#[test]
+fn e2e_sqlite_upsert_subquery_runtime() {
+    let source = read_fixture("sqlite_upsert_subquery_runtime.mpl");
+    let output = compile_and_run(&source);
+    // UPS-01: Upsert via ON CONFLICT DO UPDATE SET RETURNING
+    assert!(output.contains("upsert_insert:Delta"), "upsert insert failed: {}", output);
+    assert!(output.contains("upsert_update:Delta-Updated"), "upsert update failed: {}", output);
+    assert!(output.contains("upsert_count:4"), "upsert count should be 4 (no duplicate): {}", output);
+    // UPS-02: DELETE with RETURNING
+    assert!(output.contains("delete_ret_name:Gamma"), "deleted row should be Gamma: {}", output);
+    assert!(output.contains("delete_after_count:0"), "p3 should be gone after delete: {}", output);
+    // UPS-03: Subquery WHERE verification
+    assert!(output.contains("subquery_first:Alpha"), "subquery first should be Alpha: {}", output);
+    // Completion
+    assert!(output.contains("done"), "did not complete: {}", output);
+}
+
 // ── PostgreSQL E2E Tests (Phase 54 Plan 02) ─────────────────────────────
 //
 // Verifies the full PostgreSQL driver pipeline: Mesh source -> compiler ->
