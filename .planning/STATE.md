@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v11.0 Query Builder -- Phase 109
+**Current focus:** v11.0 Query Builder -- Phase 109.1
 
 ## Current Position
 
-Phase: 109 of 114 (v11.0 Query Builder)
+Phase: 109.1 of 114 (v11.0 Query Builder)
 Plan: 2 of 2 in current phase
 Status: Phase Complete
-Last activity: 2026-02-17 -- Completed 109-02 (Runtime upsert/returning/subquery E2E verification)
+Last activity: 2026-02-17 -- Completed 109.1-02 (Service loop argument type fix)
 
 Progress: [███░░░░░░░] 30% (v11.0)
 
 ## Performance Metrics
 
 **All-time Totals:**
-- Plans completed: 316
-- Phases completed: 108
+- Plans completed: 318
+- Phases completed: 109
 - Milestones shipped: 20 (v1.0-v10.1)
 - Lines of Rust: ~98,850
 - Lines of website: ~5,500
@@ -43,6 +43,7 @@ Progress: [███░░░░░░░] 30% (v11.0)
 | 108   | 02   | 1min     | 1     | 2     |
 | 109   | 01   | 10min    | 2     | 9     |
 | 109   | 02   | 20min    | 1     | 2     |
+| 109.1 | 02   | 4min     | 2     | 3     |
 
 ## Accumulated Context
 
@@ -68,10 +69,13 @@ Recent decisions affecting current work:
 - [Phase 109]: E2E tests verify compilation pipeline without runtime execution since Repo functions expect PoolHandle not SqliteConn
 - [Phase 109]: Runtime E2E uses raw SQL via Sqlite.query matching build_upsert_sql_pure output (Repo functions require PoolHandle, not SqliteConn)
 - [Phase 109]: Pre-existing type checker arity bug: let x = Sqlite.execute(db, sql, params)? followed by f(x) triggers spurious E0003
+- [Phase 109.1]: Use BasicMetadataTypeEnum->BasicTypeEnum try_from conversion for struct type in build_load
+- [Phase 109.1]: Service arg decoercion pattern: after loading i64, convert to expected handler param type via inverse of coerce_to_i64
 
 ### Roadmap Evolution
 
 - v11.0 roadmap created: 9 phases (106-114), 32 requirements mapped
+- Phase 109.1 inserted after Phase 109: Fix the issues encountered in 109 (URGENT)
 
 ### Pending Todos
 
@@ -84,6 +88,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 109-02-PLAN.md (Runtime upsert/returning/subquery E2E verification)
+Stopped at: Completed 109.1-02-PLAN.md (Service loop argument type fix)
 Resume file: None
-Next action: Phase 109 complete. Proceed to Phase 110.
+Next action: Phase 109.1 complete. Proceed to Phase 110.

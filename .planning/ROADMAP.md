@@ -259,11 +259,11 @@ Plans:
 
 **Goal:** Fix the type checker arity bug (spurious E0003 on try-operator result binding) and the latent service loop argument loading type mismatch (Bool/Float/Struct params)
 **Depends on:** Phase 109
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 109.1-01-PLAN.md -- Fix type checker spurious E0003 arity bug on try-operator result binding
-- [ ] 109.1-02-PLAN.md -- Fix service loop argument loading for Bool/Float/Struct handler parameters
+- [x] 109.1-02-PLAN.md -- Fix service loop argument loading for Bool/Float/Struct handler parameters
 
 ### Phase 110: Mesher Rewrite -- Auth and Users
 **Goal**: All Mesher user, session, and API-key queries use the ORM instead of raw SQL -- authentication, session management, and API key validation flow through Query/Repo APIs
