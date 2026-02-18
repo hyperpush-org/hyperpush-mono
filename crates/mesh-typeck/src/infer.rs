@@ -1258,10 +1258,10 @@ fn stdlib_modules() -> HashMap<String, HashMap<String, Scheme>> {
             ptr_t.clone(),
         )));
         // ── Phase 103: Extended Repo Write Operations ────────────────────
-        // Repo.update_where(PoolHandle, String, Ptr, Ptr) -> Ptr  (pool, table, fields_map, query -> Result<Map, String>)
+        // Repo.update_where(PoolHandle, String, Map<String,String>, Ptr) -> Result<Map<String,String>, String>  (pool, table, fields_map, query)
         repo_mod.insert("update_where".to_string(), Scheme::mono(Ty::fun(
-            vec![pool_t.clone(), Ty::string(), ptr_t.clone(), ptr_t.clone()],
-            ptr_t.clone(),
+            vec![pool_t.clone(), Ty::string(), Ty::map(Ty::string(), Ty::string()), ptr_t.clone()],
+            Ty::result(Ty::map(Ty::string(), Ty::string()), Ty::string()),
         )));
         // Repo.delete_where(PoolHandle, String, Ptr) -> Result<Int, String>  (pool, table, query)
         repo_mod.insert("delete_where".to_string(), Scheme::mono(Ty::fun(

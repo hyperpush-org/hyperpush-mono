@@ -86,12 +86,18 @@ end
 # --- API key queries ---
 
 # Create a new API key for a project. Returns the generated key_value (mshr_ prefixed).
+# Two-step pattern: Repo.query_raw for gen_random_bytes key generation, then Repo.insert for data INSERT.
 pub fn create_api_key(pool :: PoolHandle, project_id :: String, label :: String) -> String!String do
-  let rows = Repo.query_raw(pool, "INSERT INTO api_keys (project_id, key_value, label) VALUES ($1::uuid, 'mshr_' || encode(gen_random_bytes(24), 'hex'), $2) RETURNING key_value", [project_id, label])?
-  if List.length(rows) > 0 do
-    Ok(Map.get(List.head(rows), "key_value"))
+  # Step 1: Generate API key value via PG (mshr_ prefix + 48 hex chars)
+  let key_rows = Repo.query_raw(pool, "SELECT 'mshr_' || encode(gen_random_bytes(24), 'hex') AS key_value", [])?
+  if List.length(key_rows) > 0 do
+    let key_value = Map.get(List.head(key_rows), "key_value")
+    # Step 2: Insert API key with ORM
+    let fields = %{"project_id" => project_id, "key_value" => key_value, "label" => label}
+    let _ = Repo.insert(pool, ApiKey.__table__(), fields)?
+    Ok(key_value)
   else
-    Err("create_api_key: no key returned")
+    Err("create_api_key: key generation failed")
   end
 end
 
@@ -131,8 +137,20 @@ pub fn get_project_id_by_key(pool :: PoolHandle, key_value :: String) -> String!
 end
 
 # Revoke an API key by setting revoked_at to now().
+# Two-step pattern: Repo.query_raw for now() timestamp, then Repo.update_where for the UPDATE.
 pub fn revoke_api_key(pool :: PoolHandle, key_id :: String) -> Int!String do
-  Repo.execute_raw(pool, "UPDATE api_keys SET revoked_at = now() WHERE id = $1::uuid", [key_id])
+  # Step 1: Get current timestamp from PG
+  let ts_rows = Repo.query_raw(pool, "SELECT now()::text AS ts", [])?
+  if List.length(ts_rows) > 0 do
+    let ts = Map.get(List.head(ts_rows), "ts")
+    # Step 2: Update with ORM
+    let q = Query.from(ApiKey.__table__())
+      |> Query.where_raw("id = ?::uuid", [key_id])
+    let _ = Repo.update_where(pool, ApiKey.__table__(), %{"revoked_at" => ts}, q)?
+    Ok(1)
+  else
+    Err("revoke_api_key: timestamp generation failed")
+  end
 end
 
 # --- User queries ---
