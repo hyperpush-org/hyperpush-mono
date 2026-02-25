@@ -5476,6 +5476,10 @@ impl<'a> Lowerer<'a> {
             }
             // Struct update expression: %{base | field: value, ...}
             Expr::StructUpdate(update) => self.lower_struct_update(update),
+            // Slot pipe expression -- TODO(116): MIR lowering implemented in Plan 02
+            Expr::SlotPipeExpr(_) => {
+                todo!("SlotPipeExpr MIR lowering not yet implemented")
+            }
         }
     }
 

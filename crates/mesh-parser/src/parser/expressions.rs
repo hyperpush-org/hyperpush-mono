@@ -23,6 +23,8 @@ fn infix_binding_power(op: SyntaxKind) -> Option<(u8, u8)> {
     match op {
         // Pipe: lowest expression precedence, left-associative
         SyntaxKind::PIPE => Some((3, 4)),
+        // Slot pipe: same precedence as pipe, left-associative
+        SyntaxKind::SLOT_PIPE => Some((3, 4)),
 
         // Logical OR: left-associative
         SyntaxKind::OR_KW | SyntaxKind::PIPE_PIPE => Some((5, 6)),
@@ -163,10 +165,10 @@ fn expr_bp(p: &mut Parser, min_bp: u8) -> Option<MarkClosed> {
 
             expr_bp(p, r_bp);
 
-            let kind = if current == SyntaxKind::PIPE {
-                SyntaxKind::PIPE_EXPR
-            } else {
-                SyntaxKind::BINARY_EXPR
+            let kind = match current {
+                SyntaxKind::PIPE => SyntaxKind::PIPE_EXPR,
+                SyntaxKind::SLOT_PIPE => SyntaxKind::SLOT_PIPE_EXPR,
+                _ => SyntaxKind::BINARY_EXPR,
             };
             lhs = p.close(m, kind);
             continue;
@@ -180,10 +182,15 @@ fn expr_bp(p: &mut Parser, min_bp: u8) -> Option<MarkClosed> {
         //   users
         //     |> filter(fn u -> u.active end)
         //     |> map(fn u -> u.name end)
-        if current == SyntaxKind::NEWLINE && p.peek_past_newlines() == SyntaxKind::PIPE {
-            // PIPE has binding power (3, 4). Check if we can continue.
+        if current == SyntaxKind::NEWLINE
+            && matches!(
+                p.peek_past_newlines(),
+                SyntaxKind::PIPE | SyntaxKind::SLOT_PIPE
+            )
+        {
+            // PIPE / SLOT_PIPE have binding power (3, 4). Check if we can continue.
             if 3 >= min_bp {
-                // Skip the newlines so the Pratt loop sees the PIPE operator.
+                // Skip the newlines so the Pratt loop sees the PIPE/SLOT_PIPE operator.
                 p.skip_newlines_for_continuation();
                 continue;
             }

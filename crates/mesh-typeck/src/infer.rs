@@ -4162,6 +4162,10 @@ fn infer_expr(
         Expr::StructUpdate(update) => {
             infer_struct_update(ctx, env, update, types, type_registry, trait_registry, fn_constraints)?
         }
+        Expr::SlotPipeExpr(_) => {
+            // TODO(116): Slot pipe type checking -- implemented in Plan 02
+            todo!("SlotPipeExpr type checking not yet implemented")
+        }
     };
 
     let resolved = ctx.resolve(ty.clone());

@@ -87,6 +87,8 @@ pub enum SyntaxKind {
     BANG,
     /// `|>` pipe operator
     PIPE,
+    /// `|N>` slot pipe operator (e.g. `|2>`, `|3>`)
+    SLOT_PIPE,
     DOT_DOT,
     DIAMOND,
     PLUS_PLUS,
@@ -164,6 +166,8 @@ pub enum SyntaxKind {
     CALL_EXPR,
     /// Pipe expression: `x |> f`
     PIPE_EXPR,
+    /// Slot pipe expression: `x |N> f(a)` -- pipes x as the N-th argument
+    SLOT_PIPE_EXPR,
     /// Field access: `expr.field`
     FIELD_ACCESS,
     /// Index expression: `expr[index]`
@@ -433,6 +437,7 @@ impl From<TokenKind> for SyntaxKind {
             TokenKind::PipePipe => SyntaxKind::PIPE_PIPE,
             TokenKind::Bang => SyntaxKind::BANG,
             TokenKind::Pipe => SyntaxKind::PIPE,
+            TokenKind::SlotPipe(_) => SyntaxKind::SLOT_PIPE,
             TokenKind::DotDot => SyntaxKind::DOT_DOT,
             TokenKind::Diamond => SyntaxKind::DIAMOND,
             TokenKind::PlusPlus => SyntaxKind::PLUS_PLUS,
@@ -549,6 +554,7 @@ mod tests {
             TokenKind::PipePipe,
             TokenKind::Bang,
             TokenKind::Pipe,
+            TokenKind::SlotPipe(0),
             TokenKind::DotDot,
             TokenKind::Diamond,
             TokenKind::PlusPlus,
@@ -590,7 +596,7 @@ mod tests {
             TokenKind::Error,
         ];
 
-        assert_eq!(all_kinds.len(), 97, "must test all 97 TokenKind variants");
+        assert_eq!(all_kinds.len(), 98, "must test all 98 TokenKind variants");
 
         for kind in all_kinds {
             let _syntax_kind: SyntaxKind = kind.into();
@@ -634,6 +640,7 @@ mod tests {
             SyntaxKind::UNARY_EXPR,
             SyntaxKind::CALL_EXPR,
             SyntaxKind::PIPE_EXPR,
+            SyntaxKind::SLOT_PIPE_EXPR,
             SyntaxKind::FIELD_ACCESS,
             SyntaxKind::INDEX_EXPR,
             SyntaxKind::BLOCK,

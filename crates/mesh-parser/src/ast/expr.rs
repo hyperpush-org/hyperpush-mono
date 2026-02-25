@@ -49,6 +49,8 @@ pub enum Expr {
     AtomLiteral(AtomLiteral),
     // Struct update expression
     StructUpdate(StructUpdate),
+    // Slot pipe expression
+    SlotPipeExpr(SlotPipeExpr),
 }
 
 impl Expr {
@@ -96,6 +98,9 @@ impl Expr {
             SyntaxKind::STRUCT_UPDATE_EXPR => {
                 Some(Expr::StructUpdate(StructUpdate { syntax: node }))
             }
+            SyntaxKind::SLOT_PIPE_EXPR => {
+                Some(Expr::SlotPipeExpr(SlotPipeExpr { syntax: node }))
+            }
             _ => None,
         }
     }
@@ -133,6 +138,7 @@ impl Expr {
             Expr::TryExpr(n) => &n.syntax,
             Expr::AtomLiteral(n) => &n.syntax,
             Expr::StructUpdate(n) => &n.syntax,
+            Expr::SlotPipeExpr(n) => &n.syntax,
         }
     }
 }
@@ -270,6 +276,38 @@ impl PipeExpr {
     }
 
     /// The right-hand side (function receiving the piped value).
+    pub fn rhs(&self) -> Option<Expr> {
+        self.syntax.children().filter_map(Expr::cast).nth(1)
+    }
+}
+
+// ── Slot Pipe Expression ─────────────────────────────────────────────────
+
+ast_node!(SlotPipeExpr, SLOT_PIPE_EXPR);
+
+impl SlotPipeExpr {
+    /// The left-hand side (value being piped).
+    pub fn lhs(&self) -> Option<Expr> {
+        self.syntax.children().find_map(Expr::cast)
+    }
+
+    /// The slot position N (1-indexed) from the `|N>` token.
+    pub fn slot(&self) -> Option<u32> {
+        // Find the SLOT_PIPE token and extract N from text like "|2>"
+        self.syntax
+            .children_with_tokens()
+            .filter_map(|child| child.into_token())
+            .find(|t| t.kind() == SyntaxKind::SLOT_PIPE)
+            .and_then(|t| {
+                let text = t.text();
+                // text is "|N>" -- strip '|' prefix and '>' suffix
+                text.strip_prefix('|')
+                    .and_then(|s| s.strip_suffix('>'))
+                    .and_then(|n| n.parse::<u32>().ok())
+            })
+    }
+
+    /// The right-hand side (function call receiving the piped value at slot N).
     pub fn rhs(&self) -> Option<Expr> {
         self.syntax.children().filter_map(Expr::cast).nth(1)
     }
