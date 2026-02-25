@@ -391,6 +391,6 @@ Phases execute in numeric order: 106 -> 107 -> 108 -> 109 -> 110 -> 111 -> 112 -
 | 112. Rewrite: Search/Dashboard/Alerts | 2/2 | Complete    | 2026-02-18 | - |
 | 113. Rewrite: Retention & Cleanup | 1/1 | Complete    | 2026-02-25 | - |
 | 114. Verification | 2/2 | Complete    | 2026-02-25 | - |
-| 115. Tracking Corrections & API Acceptance | v11.0 | 0/2 | Not started | - |
+| 115. Tracking Corrections & API Acceptance | 1/2 | In Progress|  | - |
 
 **Total: 106 phases shipped across 20 milestones. 313 plans completed. 9 phases remaining for v11.0.**
