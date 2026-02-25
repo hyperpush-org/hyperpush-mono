@@ -1,86 +1,89 @@
 # Requirements: Mesh
 
-**Defined:** 2026-02-17
-**Core Value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
+**Defined:** 2026-02-25
+**Core Value:** Expressive, readable concurrency — writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
 
-## v11.0 Requirements
+## v12.0 Requirements
 
-Requirements for Query Builder milestone. Expand ORM with comprehensive query capabilities and rewrite Mesher to eliminate all raw SQL.
+Requirements for v12.0 Language Ergonomics & Open Source Readiness. Each maps to roadmap phases.
 
-### JOINs
+### Slot Pipe Operator
 
-- [x] **JOIN-01**: Query builder supports inner join with on-clause expression
-- [x] **JOIN-02**: Query builder supports left join with on-clause expression
-- [x] **JOIN-03**: Query builder supports multiple joins in a single query
-- [x] **JOIN-04**: JOIN results include columns from all joined tables
+- [ ] **PIPE-01**: User can write `expr |2> func(a)` to pipe result as second argument (becomes `func(a, expr)`)
+- [ ] **PIPE-02**: User can write `expr |N>` for any argument position N ≥ 2
+- [ ] **PIPE-03**: Slot pipes are chainable: `a |2> f(b) |> g()` works correctly
+- [ ] **PIPE-04**: Type inference validates slot pipe position against function arity with a clear error
+- [ ] **PIPE-05**: Mesher codebase updated using slot pipe where it improves readability (dogfooding verified)
 
-### Aggregations
+### Regular Expressions
 
-- [x] **AGG-01**: Query builder supports count() aggregation
-- [x] **AGG-02**: Query builder supports sum()/avg()/min()/max() aggregations
-- [x] **AGG-03**: Query builder supports group_by clause
-- [x] **AGG-04**: Query builder supports having clause with conditions
+- [ ] **REGEX-01**: User can write regex literals `~r/pattern/` and `~r/pattern/flags` (i, m, s flags)
+- [ ] **REGEX-02**: User can compile regex at runtime: `Regex.compile(str) -> Result<Regex, String>`
+- [ ] **REGEX-03**: User can test a match: `Regex.match(rx, str) -> Bool`
+- [ ] **REGEX-04**: User can extract captures: `Regex.captures(rx, str) -> Option<List<String>>`
+- [ ] **REGEX-05**: User can replace matches: `Regex.replace(rx, str, replacement) -> String`
+- [ ] **REGEX-06**: User can split by pattern: `Regex.split(rx, str) -> List<String>`
 
-### Advanced WHERE
+### String Ergonomics
 
-- [x] **WHERE-01**: Query builder supports comparison operators (>, <, >=, <=, !=)
-- [x] **WHERE-02**: Query builder supports IN and NOT IN with value lists
-- [x] **WHERE-03**: Query builder supports IS NULL and IS NOT NULL
-- [x] **WHERE-04**: Query builder supports BETWEEN for range checks
-- [x] **WHERE-05**: Query builder supports LIKE and ILIKE for pattern matching
-- [x] **WHERE-06**: Query builder supports OR conditions and grouped conditions
+- [ ] **STRG-01**: User can write string interpolation `"Value: #{expr}"` supporting arbitrary expressions
+- [ ] **STRG-02**: User can write heredoc strings `"""..."""` for multiline content without escape sequences
+- [ ] **STRG-03**: Heredoc strings support interpolation: `"""{"id": "#{id}"}"""`
+- [ ] **STRG-04**: User can read env var with default: `Env.get("KEY", "default") -> String`
+- [ ] **STRG-05**: User can parse env var as integer with default: `Env.get_int("PORT", 8080) -> Int`
+- [ ] **STRG-06**: Mesher server code updated using new string features (dogfooding verified)
 
-### Upsert, RETURNING, Subqueries
+### Mesh Agent Skill
 
-- [x] **UPS-01**: Repo supports upsert (INSERT ON CONFLICT DO UPDATE) with conflict target
-- [x] **UPS-02**: Repo insert/update/delete support RETURNING clause
-- [x] **UPS-03**: Query builder supports subqueries in WHERE clause
+- [ ] **SKILL-01**: Mesh language agent skill created in GSD skill format with progressive disclosure
+- [ ] **SKILL-02**: Skill has a main entry command providing language overview and available sub-topics
+- [ ] **SKILL-03**: Skill has per-topic deep-dive commands (syntax, types, actors, ORM, HTTP/WS, stdlib, distributed actors)
+- [ ] **SKILL-04**: Skill registered and usable by AI for all Mesh-related questions without explicit invocation
 
-### Raw SQL Fragments
+### Repository Reorganization
 
-- [x] **FRAG-01**: Query.fragment() embeds raw SQL with parameter binding in queries
-- [x] **FRAG-02**: Fragments work in WHERE, SELECT, ORDER BY, and GROUP BY positions
-- [x] **FRAG-03**: Fragments support PG functions (crypt, gen_random_bytes, date_trunc, random)
-- [x] **FRAG-04**: Fragments support JSONB operators and full-text search expressions
+- [ ] **REPO-01**: Compiler Rust crates moved under `compiler/` directory
+- [ ] **REPO-02**: Mesher application moved under `mesher/` directory
+- [ ] **REPO-03**: Documentation website moved under `website/` directory
+- [ ] **REPO-04**: Install scripts and build tooling moved under `tools/` directory
+- [ ] **REPO-05**: All CI/CD pipelines (GitHub Actions) updated for new directory structure
+- [ ] **REPO-06**: All tests pass and Mesher E2E verified after reorganization
 
-### Mesher Rewrite
+### Performance Benchmarks
 
-- [x] **REWR-01**: User/session/API-key queries rewritten with ORM (8 queries)
-- [x] **REWR-02**: Issue management queries rewritten with ORM + upserts (10 queries)
-- [x] **REWR-03**: Search/filtering queries rewritten with ORM + fragments (4 queries)
-- [x] **REWR-04**: Dashboard/analytics queries rewritten with ORM aggregations (7 queries)
-- [x] **REWR-05**: Alert system queries rewritten with ORM + fragments (12 queries)
-- [x] **REWR-06**: Retention/storage queries rewritten with ORM (6 queries)
-- [x] **REWR-07**: Event writer/extraction rewritten with ORM + fragments (2 queries)
-- [x] **REWR-08**: Zero Repo.query_raw/execute_raw in Mesher data queries
-
-### Verification
-
-- [x] **VER-01**: Mesher compiles with zero errors
-- [x] **VER-02**: All HTTP API endpoints return correct responses
-- [x] **VER-03**: WebSocket endpoints function correctly
-
-## v10.0/v10.1 Requirements (Complete)
-
-All v10.0 ORM requirements shipped (50 requirements, phases 96-103). v10.1 stabilization fixed codegen ABI issues (phases 104-105.1).
+- [ ] **BENCH-01**: Mesh benchmark HTTP server written (JSON endpoint, configurable concurrency)
+- [ ] **BENCH-02**: Equivalent benchmark server written in Go (net/http or Gin)
+- [ ] **BENCH-03**: Equivalent benchmark server written in Rust (axum or actix-web)
+- [ ] **BENCH-04**: Equivalent benchmark server written in Elixir (Plug/Cowboy)
+- [ ] **BENCH-05**: Benchmarks measure throughput (req/s), p50/p99 latency, and memory usage
+- [ ] **BENCH-06**: Methodology documented (tool, hardware, concurrency settings) and results published in repo
 
 ## Future Requirements
 
-### Query Builder Extensions
+### Language Features (v13.0+)
 
-- **QEXT-01**: Right/full outer join support
-- **QEXT-02**: Window functions (ROW_NUMBER, RANK, etc.)
-- **QEXT-03**: Common table expressions (WITH / CTE)
-- **QEXT-04**: UNION/INTERSECT/EXCEPT set operations
+- Multi-line pipe continuation (parser support for `|>` at start of next line)
+- TryFrom/TryInto traits (fallible conversion)
+- Infinite iterators and iterator fusion optimization
+- Type aliases
+
+### Tooling (v13.0+)
+
+- Semantic tokens for LSP
+- Workspace symbols
+- Tree-sitter grammar
+- Homebrew packaging
+- Inlay hints
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| DDL/partition management | Schema operations stay as raw SQL -- not data queries |
-| System catalog queries (pg_inherits) | PostgreSQL internals, not application data |
-| New Mesher features | Rewrite only -- no new functionality |
-| Multi-database support | PostgreSQL-only for now |
+| Hot code reloading | Complex runtime integration, not blocking v12.0 goals |
+| Distributed ETS / process groups | Runtime feature, separate milestone when needed |
+| Atom cache optimization | Performance micro-optimization, not urgent |
+| Browser playground (WASM) | Large effort, website milestone |
+| Generational GC | Mark-sweep is sufficient, premature optimization |
 
 ## Traceability
 
@@ -88,44 +91,45 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WHERE-01 | Phase 106 | Complete |
-| WHERE-02 | Phase 106 | Complete |
-| WHERE-03 | Phase 106 | Complete |
-| WHERE-04 | Phase 106 | Complete |
-| WHERE-05 | Phase 106 | Complete |
-| WHERE-06 | Phase 106 | Complete |
-| FRAG-01 | Phase 106 | Complete |
-| FRAG-02 | Phase 106 | Complete |
-| FRAG-03 | Phase 106 | Complete |
-| FRAG-04 | Phase 106 | Complete |
-| JOIN-01 | Phase 107 | Complete |
-| JOIN-02 | Phase 107 | Complete |
-| JOIN-03 | Phase 107 | Complete |
-| JOIN-04 | Phase 107 | Complete |
-| AGG-01 | Phase 108 | Complete |
-| AGG-02 | Phase 108 | Complete |
-| AGG-03 | Phase 108 | Complete |
-| AGG-04 | Phase 108 | Complete |
-| UPS-01 | Phase 109 | Complete |
-| UPS-02 | Phase 109 | Complete |
-| UPS-03 | Phase 109 | Complete |
-| REWR-01 | Phase 110 | Complete |
-| REWR-02 | Phase 111 | Complete |
-| REWR-07 | Phase 111 | Complete |
-| REWR-03 | Phase 112 | Complete |
-| REWR-04 | Phase 112 | Complete |
-| REWR-05 | Phase 112 | Complete |
-| REWR-06 | Phase 113 | Complete |
-| REWR-08 | Phase 113 | Complete |
-| VER-01 | Phase 114 | Complete |
-| VER-02 | Phase 114 | Complete |
-| VER-03 | Phase 114 | Complete |
+| PIPE-01 | — | Pending |
+| PIPE-02 | — | Pending |
+| PIPE-03 | — | Pending |
+| PIPE-04 | — | Pending |
+| PIPE-05 | — | Pending |
+| REGEX-01 | — | Pending |
+| REGEX-02 | — | Pending |
+| REGEX-03 | — | Pending |
+| REGEX-04 | — | Pending |
+| REGEX-05 | — | Pending |
+| REGEX-06 | — | Pending |
+| STRG-01 | — | Pending |
+| STRG-02 | — | Pending |
+| STRG-03 | — | Pending |
+| STRG-04 | — | Pending |
+| STRG-05 | — | Pending |
+| STRG-06 | — | Pending |
+| SKILL-01 | — | Pending |
+| SKILL-02 | — | Pending |
+| SKILL-03 | — | Pending |
+| SKILL-04 | — | Pending |
+| REPO-01 | — | Pending |
+| REPO-02 | — | Pending |
+| REPO-03 | — | Pending |
+| REPO-04 | — | Pending |
+| REPO-05 | — | Pending |
+| REPO-06 | — | Pending |
+| BENCH-01 | — | Pending |
+| BENCH-02 | — | Pending |
+| BENCH-03 | — | Pending |
+| BENCH-04 | — | Pending |
+| BENCH-05 | — | Pending |
+| BENCH-06 | — | Pending |
 
 **Coverage:**
-- v11.0 requirements: 32 total
-- Mapped to phases: 32
-- Unmapped: 0
+- v12.0 requirements: 33 total
+- Mapped to phases: 0
+- Unmapped: 33 ⚠️
 
 ---
-*Requirements defined: 2026-02-17*
-*Last updated: 2026-02-25 after Phase 115 corrections (WHERE-01..06, FRAG-01..04, UPS-01..03 marked complete)*
+*Requirements defined: 2026-02-25*
+*Last updated: 2026-02-25 after initial definition*
