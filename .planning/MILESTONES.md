@@ -459,3 +459,30 @@
 
 ---
 
+
+## v11.0 Query Builder (Shipped: 2026-02-25)
+
+**Delivered:** Expanded the Mesh ORM with comprehensive query builder capabilities (JOINs, aggregations, upserts, advanced WHERE, raw SQL fragments, RETURNING, subqueries) and rewrote all 68+ Mesher raw SQL data queries to use the ORM, verifying every addition end-to-end with runtime tests against SQLite and a live E2E smoke test of all Mesher HTTP/WS endpoints.
+
+**Phases completed:** 11 phases (106-115 including 109.1), 22 plans
+
+**Key accomplishments:**
+- Advanced WHERE operators (NOT IN, BETWEEN, ILIKE, OR grouped conditions) and raw SQL fragments with $N renumbering across WHERE/SELECT/ORDER BY/GROUP BY positions
+- JOIN support (inner, left, aliased, multi-table) and aggregation functions (count/sum/avg/min/max) with group_by and having — all runtime-verified against SQLite
+- Upsert (INSERT ON CONFLICT DO UPDATE), RETURNING clause, and subquery WHERE IN; type checker arity and service loop type-dispatch bugs fixed (Phase 109.1)
+- 49+ Mesher raw SQL queries rewritten to ORM across all domains (auth/sessions, issues/events, search, dashboard/analytics, alerts, retention/storage); 18 intentional ORM boundaries documented
+- Mesher compiled zero errors and verified E2E — all 8 HTTP API domains return 2xx, WebSocket 101 confirmed, EventProcessor SIGSEGV resolved
+- All 32 v11.0 requirements tracked and accepted; ROADMAP canonicalized with positional API acceptance, dead code removed
+
+**Stats:**
+- 76 files changed, +11,390 / -340 lines
+- ~7,700 lines of Mesh (.mpl) | ~168,500 lines of Rust
+- 11 phases, 22 plans
+- 8 days (2026-02-17 → 2026-02-25)
+- 82 commits
+- 32/32 requirements satisfied
+
+**Git range:** `feat(106-01)` → `docs(phase-115)`
+
+---
+

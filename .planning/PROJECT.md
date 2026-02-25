@@ -2,27 +2,13 @@
 
 ## What This Is
 
-Mesh is a programming language that combines Elixir/Ruby-style expressive syntax with static Hindley-Milner type inference and BEAM-style concurrency (actors, supervision trees, fault tolerance), compiled via LLVM to native single-binary executables. The compiler is written in Rust. v1.0-v1.9 built a complete language: compiler pipeline, actor runtime, trait system, module system, loops, stdlib, and developer tooling. v2.0 added database drivers and JSON serde. v3.0 made Mesh production-ready: TLS encryption for PostgreSQL and HTTPS, connection pooling with health checks, panic-safe database transactions, and automatic struct-to-row mapping via `deriving(Row)`. v4.0 added WebSocket support with RFC 6455 protocol, actor-per-connection model, TLS (wss://), heartbeat, fragmentation, and rooms/channels. v5.0 added distributed actors: location-transparent PIDs, TLS-encrypted inter-node connections with cookie auth and mesh formation, transparent remote send, remote process/node monitoring with fault propagation, remote spawn via function name registry, global process registry, and cross-node WebSocket rooms and supervision trees -- all with zero new crate dependencies. v6.0 added a documentation website with VitePress, custom syntax highlighting, 9 documentation guides, landing page, and production-quality site features. v7.0 added associated types to the trait system and built a comprehensive trait-based protocol ecosystem: lazy iterators with pipe-style composition, From/Into conversion, numeric traits for user-extensible arithmetic, and Collect for iterator materialization. v8.0 made Mesh installable and editable: one-command install scripts with prebuilt binaries, complete TextMate grammar and Shiki themes, LSP code completion/signature help/formatting/document symbols, VS Code Marketplace publishing, and documentation corrections. ~99K LOC Rust + ~5K LOC website across 18 milestones. Zero known compiler correctness issues.
-
-## Current Milestone: v11.0 Query Builder
-
-**Goal:** Expand the Mesh ORM with comprehensive query builder capabilities (JOINs, aggregations, upserts, JSONB, full-text search, raw SQL fragments) and rewrite Mesher to eliminate all raw SQL data queries, validating every ORM addition end-to-end.
-
-**Target features:**
-- Query builder: JOINs (inner, left) with on-clause expressions
-- Query builder: Aggregations (count, sum, avg, group_by, having)
-- Query builder: Upsert support (insert_or_update with on_conflict)
-- Query builder: Advanced WHERE operators (comparisons, IN, IS NULL, BETWEEN, LIKE)
-- Query builder: Raw SQL fragments for PG-specific expressions (crypt, gen_random_bytes, JSONB operators, FTS)
-- Query builder: Subquery and RETURNING clause support
-- Mesher rewrite: zero Repo.query_raw/execute_raw for data queries
-- All Mesher HTTP/WS endpoints verified end-to-end
+Mesh is a programming language that combines Elixir/Ruby-style expressive syntax with static Hindley-Milner type inference and BEAM-style concurrency (actors, supervision trees, fault tolerance), compiled via LLVM to native single-binary executables. The compiler is written in Rust. v1.0-v1.9 built a complete language: compiler pipeline, actor runtime, trait system, module system, loops, stdlib, and developer tooling. v2.0 added database drivers and JSON serde. v3.0 made Mesh production-ready: TLS encryption for PostgreSQL and HTTPS, connection pooling with health checks, panic-safe database transactions, and automatic struct-to-row mapping via `deriving(Row)`. v4.0 added WebSocket support with RFC 6455 protocol, actor-per-connection model, TLS (wss://), heartbeat, fragmentation, and rooms/channels. v5.0 added distributed actors: location-transparent PIDs, TLS-encrypted inter-node connections with cookie auth and mesh formation, transparent remote send, remote process/node monitoring with fault propagation, remote spawn via function name registry, global process registry, and cross-node WebSocket rooms and supervision trees -- all with zero new crate dependencies. v6.0 added a documentation website with VitePress, custom syntax highlighting, 9 documentation guides, landing page, and production-quality site features. v7.0 added associated types to the trait system and built a comprehensive trait-based protocol ecosystem: lazy iterators with pipe-style composition, From/Into conversion, numeric traits for user-extensible arithmetic, and Collect for iterator materialization. v8.0 made Mesh installable and editable: one-command install scripts with prebuilt binaries, complete TextMate grammar and Shiki themes, LSP code completion/signature help/formatting/document symbols, VS Code Marketplace publishing, and documentation corrections. v9.0 shipped Mesher, a production error-monitoring backend (~4,020 lines of Mesh). v10.0 added a full ORM: schema DSL, pipe-chain query builder, repo pattern, changesets, relationships, preloading, and migrations. v11.0 expanded the ORM with comprehensive query builder capabilities (JOINs, aggregations, upserts, advanced WHERE, raw SQL fragments, RETURNING, subqueries) and rewrote all 68+ Mesher raw SQL data queries to use the ORM, verified end-to-end. ~168,500 LOC Rust + ~7,700 LOC Mesh across 21 milestones. Zero known compiler correctness issues.
 
 ## Current State
 
-Shipped v10.0 ORM (2026-02-17). 20 milestones complete, 105 phases, 311 plans. v10.0 added a full ORM (schema DSL, query builder, repo pattern, changesets, relationships, preloading, migrations). v10.1 fixed codegen ABI issues (struct-in-Result pointer-boxing). Mesher still uses 68+ raw SQL queries via Repo.query_raw — v11.0 addresses this by expanding the query builder and rewriting Mesher.
+Shipped v11.0 Query Builder (2026-02-25). 21 milestones complete, 115 phases (+ inserted phases), 319 plans. v11.0 completed the ORM query builder and rewrote all Mesher data queries. EventProcessor SIGSEGV resolved. Mesher verified end-to-end: all 8 HTTP API domains return 2xx, WebSocket 101 confirmed.
 
-**Latest milestone (v10.0/v10.1):** Full ORM library plus stabilization fixes. EventProcessor service call SIGSEGV persists (will be addressed during Mesher rewrite).
+**Latest milestone (v11.0):** Full ORM query builder (JOINs, aggregations, upserts, fragments, RETURNING, subqueries) + complete Mesher ORM rewrite. Zero raw SQL data queries remain in Mesher. 32/32 requirements satisfied.
 
 ## Core Value
 
@@ -181,19 +167,19 @@ Expressive, readable concurrency -- writing concurrent programs should feel as n
 - ✓ ORM: Changesets for validation and casting -- v10.0
 - ✓ ORM: Compiler additions for ORM expressiveness (atoms, keyword args, multi-line pipes, struct update syntax) -- v10.0
 - ✓ Codegen: Struct-in-Result pointer-boxing for correct ABI across service calls -- v10.1
+- ✓ Query builder: Advanced WHERE operators (>, <, !=, IN, NOT IN, IS NULL, BETWEEN, LIKE, ILIKE, OR grouped) -- v11.0
+- ✓ Query builder: Raw SQL fragments (Query.fragment) with $N renumbering for PG-specific expressions (crypt, JSONB, FTS) -- v11.0
+- ✓ Query builder: JOIN support (inner, left, aliased, multi-table) with on-clause expressions -- v11.0
+- ✓ Query builder: Aggregations (count, sum, avg, min, max) with group_by and having -- v11.0
+- ✓ Query builder: Upsert (INSERT ON CONFLICT DO UPDATE) via Repo.insert_or_update -- v11.0
+- ✓ Query builder: RETURNING clause via Repo.delete_where_returning -- v11.0
+- ✓ Query builder: Subquery support in WHERE IN via Query.where_sub -- v11.0
+- ✓ Mesher rewrite: zero Repo.query_raw/execute_raw for data queries (49+ rewrites, 18 documented boundaries) -- v11.0
+- ✓ Mesher verification: all 8 HTTP API domains return 2xx, WebSocket 101, EventProcessor SIGSEGV resolved -- v11.0
 
 ### Active
 
-- [ ] Query builder: JOIN support (inner, left) with on-clause expressions
-- [ ] Query builder: Aggregations (count, sum, avg, min, max) with group_by and having
-- [ ] Query builder: Upsert support (insert_or_update with on_conflict)
-- [ ] Query builder: Advanced WHERE operators (>, <, !=, IN, IS NULL, BETWEEN, LIKE)
-- [ ] Query builder: Raw SQL fragments (Query.fragment) for PG-specific expressions
-- [ ] Query builder: JSONB operators via fragments (contains, has_key, extract)
-- [ ] Query builder: Full-text search via fragments (tsvector, ts_rank)
-- [ ] Query builder: Subquery support and RETURNING clause
-- [ ] Mesher rewrite: zero Repo.query_raw/execute_raw for data queries
-- [ ] Mesher verification: all HTTP/WS endpoints work end-to-end
+(none — planning next milestone)
 
 ### Out of Scope
 
@@ -221,14 +207,16 @@ Expressive, readable concurrency -- writing concurrent programs should feel as n
 
 ## Context
 
-Shipped v8.0 with 98,836 lines of Rust + ~5,500 lines of website source (Vue/TypeScript/CSS/Markdown).
+Shipped v11.0 with ~168,500 lines of Rust + ~7,700 lines of Mesh (.mpl) + ~5,500 lines of website source (Vue/TypeScript/CSS/Markdown).
 Tech stack: Rust compiler, LLVM 21 (Inkwell 0.8), corosensei coroutines, rowan CST, ariadne diagnostics.
+ORM/DB: mesh-orm crate (schema DSL, repo, query builder, changesets, relationships, migrations), libsqlite3-sys (bundled), PostgreSQL pure wire protocol.
 Website: VitePress, Vue 3, Tailwind CSS v4, shadcn-vue, Shiki syntax highlighting.
-Crates: mesh-lexer, mesh-parser, mesh-typeck, mesh-mir, mesh-codegen, mesh-rt, mesh-fmt, mesh-repl, mesh-pkg, mesh-lsp, meshc.
+Crates: mesh-lexer, mesh-parser, mesh-typeck, mesh-mir, mesh-codegen, mesh-rt, mesh-fmt, mesh-repl, mesh-pkg, mesh-lsp, mesh-orm, meshc.
 Deps: libsqlite3-sys (bundled), sha2/hmac/md-5/base64ct (PG auth), rustls 0.23/webpki-roots/ring (TLS + certs + SHA-1 for WS handshake).
 Distribution: GitHub Actions CI (6 targets), install scripts (POSIX + PowerShell), VS Code Marketplace + Open VSX.
+Mesher (~7,700 lines of Mesh): production error-monitoring backend fully rewritten to ORM; 18 intentional raw SQL ORM boundaries documented.
 
-Zero known critical bugs. Zero known compiler correctness issues. All 18 milestones shipped.
+Zero known critical bugs. Zero known compiler correctness issues. All 21 milestones shipped.
 
 Known limitations: None.
 
@@ -397,6 +385,11 @@ Tech debt (minor, pre-existing):
 | Multi-strategy callee type resolution | Direct range, NAME_REF children, Ty::Fun containment for signature help | ✓ Good -- v8.0, robust lookup |
 | Full-document TextEdit for LSP formatting | Simpler than computing diff edits; return None on no-op | ✓ Good -- v8.0, clean implementation |
 | Dynamic version badge via useData().theme | DocsVersionBadge.vue pattern avoids hardcoded version strings | ✓ Good -- v8.0, maintenance-free |
+| RAW: prefix encoding with $N renumbering for SQL fragments | Reuses existing where_raw encoding pattern; renumber_placeholders handles mixed $N / ? placeholder merging | ✓ Good -- v11.0, composable fragment embedding |
+| Positional-arg API for upsert/RETURNING (insert_or_update, delete_where_returning, where_sub) | Simpler than keyword-option style; no keyword arg machinery; canonical for v11.0 | ✓ Good -- v11.0, clean, consistent with Repo pattern |
+| ORM boundary documentation (18 intentional raw SQL sites) | Not all SQL is ORM-expressible (arithmetic SET, JSONB build, nested subqueries, DDL); document boundaries rather than force-fit | ✓ Good -- v11.0, honest about ORM scope |
+| Decimal phase insertion (109.1) for mid-milestone bug fixes | Preserves numeric ordering without renumbering; INSERTED marker in roadmap | ✓ Good -- v11.0, unambiguous insertion semantics |
+| Type-aware service loop arg dispatch (Bool trunc, Float bitcast, Struct alloca) | i1/float/struct LLVM types need explicit casts; i64 passthrough insufficient | ✓ Good -- v11.0, correct codegen for all handler param types |
 
 ---
-*Last updated: 2026-02-17 after v11.0 Query Builder milestone started*
+*Last updated: 2026-02-25 after v11.0 Query Builder milestone*

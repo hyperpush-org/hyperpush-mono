@@ -1,24 +1,24 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
+milestone: v11.0
 milestone_name: Query Builder
-status: unknown
-last_updated: "2026-02-25T22:26:04.127Z"
+status: complete
+last_updated: "2026-02-25"
 progress:
-  total_phases: 122
-  completed_phases: 122
-  total_plans: 319
-  completed_plans: 319
+  total_phases: 11
+  completed_phases: 11
+  total_plans: 22
+  completed_plans: 22
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-17)
+See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v11.0 Query Builder -- Phase 115
+**Current focus:** Planning next milestone
 
 ## Current Position
 
@@ -32,13 +32,13 @@ Progress: [██████████] 100% (v11.0)
 ## Performance Metrics
 
 **All-time Totals:**
-- Plans completed: 325
-- Phases completed: 112
-- Milestones shipped: 20 (v1.0-v10.1)
-- Lines of Rust: ~98,850
+- Plans completed: 319
+- Phases completed: 115+
+- Milestones shipped: 21 (v1.0-v11.0)
+- Lines of Rust: ~168,500
 - Lines of website: ~5,500
-- Lines of Mesh: ~4,020
-- Timeline: 12 days (2026-02-05 -> 2026-02-17)
+- Lines of Mesh: ~7,700
+- Timeline: 20 days (2026-02-05 -> 2026-02-25)
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -136,6 +136,6 @@ None. The EventProcessor SIGSEGV blocker is confirmed resolved (MirType::Tuple f
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 115-02-PLAN.md (Phase 109 positional API acceptance + dead code removal from queries.mpl)
+Stopped at: v11.0 milestone archived. All phases 106-115 shipped and complete.
 Resume file: None
-Next action: v11.0 complete. All phases 106-115 shipped. Plan next milestone if applicable.
+Next action: Start next milestone with /gsd:new-milestone
