@@ -1,0 +1,45 @@
+FROM ubuntu:22.04 AS base
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    curl wget git build-essential pkg-config \
+    erlang-dev elixir \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Go 1.21 from official release (apt gives 1.18 which is too old for some projects)
+RUN wget -q https://go.dev/dl/go1.21.6.linux-amd64.tar.gz -O /tmp/go.tar.gz \
+    && tar -C /usr/local -xzf /tmp/go.tar.gz \
+    && rm /tmp/go.tar.gz
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+WORKDIR /app
+
+# Build Mesh runtime from source
+# Compiler source lives in compiler/ (workspace Cargo.toml at repo root)
+COPY Cargo.toml Cargo.lock ./
+COPY compiler/ compiler/
+RUN cargo build --release -p meshc \
+    && cp target/release/meshc /usr/local/bin/meshc
+
+# Copy benchmark servers
+COPY benchmarks/ benchmarks/
+
+# Pre-build Rust benchmark server (so container startup is fast)
+RUN cd benchmarks/rust && cargo build --release
+
+# Pre-fetch Elixir dependencies
+RUN cd benchmarks/elixir \
+    && mix local.hex --force \
+    && mix local.rebar --force \
+    && mix deps.get
+
+EXPOSE 3000 3001 3002 3003
+
+COPY benchmarks/fly/start-servers.sh /app/start-servers.sh
+RUN chmod +x /app/start-servers.sh
+
+CMD ["/app/start-servers.sh"]
