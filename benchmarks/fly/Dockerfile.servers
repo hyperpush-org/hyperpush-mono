@@ -45,7 +45,14 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     curl wget gnupg git build-essential pkg-config \
     libzstd1 libffi8 libxml2 libncurses6 \
-    erlang-dev elixir \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Elixir 1.14+ via erlang-solutions (Ubuntu 22.04 ships Elixir 1.12.2 which is too old)
+RUN wget -q https://packages.erlang-solutions.com/erlang-solutions_2.0_all.deb \
+    && dpkg -i erlang-solutions_2.0_all.deb \
+    && apt-get update \
+    && apt-get install -y esl-erlang elixir \
+    && rm erlang-solutions_2.0_all.deb \
     && rm -rf /var/lib/apt/lists/*
 
 # Install LLVM 21 runtime shared library (libLLVM-21.so) — needed by meshc at runtime
