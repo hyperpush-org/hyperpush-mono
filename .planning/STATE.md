@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Language Ergonomics & Open Source Readiness
 status: unknown
-last_updated: "2026-02-26T05:21:55.495Z"
+last_updated: "2026-02-26T05:27:41.113Z"
 progress:
   total_phases: 129
-  completed_phases: 127
+  completed_phases: 128
   total_plans: 334
-  completed_plans: 333
+  completed_plans: 334
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 
 ## Current Position
 
-Phase: 121 of 123 (Phase 121: Mesh Agent Skill)
-Plan: 03 complete (3 of 4 plans)
-Status: Phase 121 in progress — actors, supervisors, and collections sub-skills written; 1 remaining sub-skill plan
-Last activity: 2026-02-26 — 121-03 complete: actors, supervisors, collections sub-skills written
+Phase: 121 of 123 (Phase 121: Mesh Agent Skill — COMPLETE)
+Plan: 04 complete (4 of 4 plans)
+Status: Phase 121 complete — all 11 sub-skills written; next is Phase 122 (repo restructure)
+Last activity: 2026-02-26 — 121-04 complete: strings, http, database sub-skills written
 
 Progress: [█░░░░░░░░░] 5% (v12.0)
 
@@ -61,6 +61,7 @@ Progress: [█░░░░░░░░░] 5% (v12.0)
 | Phase 121 P01 | 3min | 3 tasks | 3 files |
 | Phase 121 P02 | 2min | 3 tasks | 3 files |
 | Phase 121 P03 | 2min | 3 tasks | 3 files |
+| Phase 121 P04 | 2min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -106,6 +107,9 @@ Recent decisions affecting current work:
 - [Phase 121]: Actors sub-skill includes self() self-messaging pattern for actor loops (from tce_actor_loop.mpl)
 - [Phase 121]: Supervisors sub-skill cross-references actors sub-skill — supervisors manage actors
 - [Phase 121]: Collections sub-skill: module-qualified (List.map) preferred over global bare forms; Iter pipeline lazy evaluation documented as key performance distinction
+- [Phase 121]: strings sub-skill covers #{} and ${} interpolation (both syntaxes), heredocs, 11 String functions, Env.get/get_int, and full Regex API with literals and runtime compile
+- [Phase 121]: http sub-skill documents router rebind convention (let r = HTTP.use(r, ...)) and covers routing/middleware/client/WebSocket/crash isolation
+- [Phase 121]: database sub-skill covers Sqlite/PostgreSQL raw APIs, deriving(Row) ORM, upserts/RETURNING/subqueries, JOINs, and gotchas (execute vs query for RETURNING)
 
 ### Roadmap Evolution
 
@@ -124,6 +128,6 @@ None. v11.0 fully shipped and verified. Zero known compiler correctness issues.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 121-03-PLAN.md (actors, supervisors, collections sub-skills)
+Stopped at: Completed 121-04-PLAN.md (strings, http, database sub-skills — Phase 121 complete)
 Resume file: None
-Next action: /gsd:execute-phase 121 Plan 04 (remaining sub-skills: strings, http, database)
+Next action: /gsd:execute-phase 122 (repo restructure)
