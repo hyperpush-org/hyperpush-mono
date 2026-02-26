@@ -26,7 +26,7 @@ Requirements for v12.0 Language Ergonomics & Open Source Readiness. Each maps to
 
 ### String Ergonomics
 
-- [ ] **STRG-01**: User can write string interpolation `"Value: #{expr}"` supporting arbitrary expressions
+- [x] **STRG-01**: User can write string interpolation `"Value: #{expr}"` supporting arbitrary expressions
 - [ ] **STRG-02**: User can write heredoc strings `"""..."""` for multiline content without escape sequences
 - [ ] **STRG-03**: Heredoc strings support interpolation: `"""{"id": "#{id}"}"""`
 - [ ] **STRG-04**: User can read env var with default: `Env.get("KEY", "default") -> String`
@@ -102,7 +102,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REGEX-04 | Phase 119 | Pending |
 | REGEX-05 | Phase 119 | Pending |
 | REGEX-06 | Phase 119 | Pending |
-| STRG-01 | Phase 117 | Pending |
+| STRG-01 | Phase 117 | Complete |
 | STRG-02 | Phase 117 | Pending |
 | STRG-03 | Phase 117 | Pending |
 | STRG-04 | Phase 118 | Pending |
