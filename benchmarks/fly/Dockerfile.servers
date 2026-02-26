@@ -11,9 +11,11 @@ RUN wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
     && echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-21 main" \
        > /etc/apt/sources.list.d/llvm.list \
     && apt-get update \
-    && apt-get install -y llvm-21-dev clang-21 \
+    && apt-get install -y llvm-21-dev libpolly-21-dev clang-21 \
     && rm -rf /var/lib/apt/lists/*
 ENV LLVM_SYS_211_PREFIX=/usr/lib/llvm-21
+# Use monolithic LLVM dylib so individual component libs (like Polly) need not be present
+ENV LLVM_LINK_LLVM_DYLIB=1
 
 # Install Go 1.21 from official release (apt gives 1.18 which is too old for some projects)
 RUN wget -q https://go.dev/dl/go1.21.6.linux-amd64.tar.gz -O /tmp/go.tar.gz \
