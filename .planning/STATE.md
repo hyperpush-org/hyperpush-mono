@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Language Ergonomics & Open Source Readiness
 status: unknown
-last_updated: "2026-02-26T05:16:22Z"
+last_updated: "2026-02-26T05:21:55.495Z"
 progress:
   total_phases: 129
   completed_phases: 127
   total_plans: 334
-  completed_plans: 332
+  completed_plans: 333
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 ## Current Position
 
 Phase: 121 of 123 (Phase 121: Mesh Agent Skill)
-Plan: 02 complete (2 of 4 plans)
-Status: Phase 121 in progress — pattern-matching, error-handling, and traits sub-skills written; 2 remaining sub-skill plans
-Last activity: 2026-02-26 — 121-02 complete: pattern-matching, error-handling, traits sub-skills written
+Plan: 03 complete (3 of 4 plans)
+Status: Phase 121 in progress — actors, supervisors, and collections sub-skills written; 1 remaining sub-skill plan
+Last activity: 2026-02-26 — 121-03 complete: actors, supervisors, collections sub-skills written
 
 Progress: [█░░░░░░░░░] 5% (v12.0)
 
@@ -60,6 +60,7 @@ Progress: [█░░░░░░░░░] 5% (v12.0)
 | Phase 120 P02 | 70min | 2 tasks | 3 files |
 | Phase 121 P01 | 3min | 3 tasks | 3 files |
 | Phase 121 P02 | 2min | 3 tasks | 3 files |
+| Phase 121 P03 | 2min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,9 @@ Recent decisions affecting current work:
 - [Phase 120]: HTTP test assertions fixed: unescape_string() in MIR lowerer correctly processes backslash escapes; test comments claiming otherwise were stale since Phase 117
 - [Phase 121]: Skill lives at skill/mesh/ inside snow repo with SKILL.md format (frontmatter + numbered rules + code examples from tests/e2e/)
 - [Phase 121-02]: Sub-skills use cross-references via 'See also: skills/<name>' pattern for related concept linking
+- [Phase 121]: Actors sub-skill includes self() self-messaging pattern for actor loops (from tce_actor_loop.mpl)
+- [Phase 121]: Supervisors sub-skill cross-references actors sub-skill — supervisors manage actors
+- [Phase 121]: Collections sub-skill: module-qualified (List.map) preferred over global bare forms; Iter pipeline lazy evaluation documented as key performance distinction
 
 ### Roadmap Evolution
 
@@ -120,6 +124,6 @@ None. v11.0 fully shipped and verified. Zero known compiler correctness issues.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 121-02-PLAN.md (pattern-matching, error-handling, traits sub-skills)
+Stopped at: Completed 121-03-PLAN.md (actors, supervisors, collections sub-skills)
 Resume file: None
-Next action: /gsd:execute-phase 121 Plan 03 (remaining sub-skills: actors, supervisors, collections, strings, http, database)
+Next action: /gsd:execute-phase 121 Plan 04 (remaining sub-skills: strings, http, database)

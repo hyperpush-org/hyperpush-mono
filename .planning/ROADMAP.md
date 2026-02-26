@@ -364,7 +364,7 @@ Note: Phase 119 (Regex) depends only on Phase 115 and may proceed in parallel wi
 | 118. Env Var Stdlib | 2/2 | Complete    | 2026-02-26 | - |
 | 119. Regular Expressions | 3/3 | Complete    | 2026-02-26 | - |
 | 120. Mesher Dogfooding | 2/2 | Complete    | 2026-02-26 | - |
-| 121. Mesh Agent Skill | 2/4 | In Progress|  | - |
+| 121. Mesh Agent Skill | 3/4 | In Progress|  | - |
 | 122. Repository Reorganization | v12.0 | 0/? | Not started | - |
 | 123. Performance Benchmarks | v12.0 | 0/? | Not started | - |
 
@@ -375,7 +375,7 @@ Note: Phase 119 (Regex) depends only on Phase 115 and may proceed in parallel wi
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 123
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 124 to break down)
