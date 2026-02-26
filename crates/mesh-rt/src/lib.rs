@@ -35,6 +35,7 @@ pub mod json;
 pub mod iter;
 pub mod option;
 pub mod panic;
+pub mod regex;
 pub mod string;
 
 // Re-export key functions for convenient Rust-side access and testing.
@@ -127,6 +128,10 @@ pub use collections::set::{
 };
 pub use collections::tuple::{mesh_tuple_first, mesh_tuple_nth, mesh_tuple_second, mesh_tuple_size};
 pub use env::{mesh_env_args, mesh_env_get, mesh_env_get_with_default, mesh_env_get_int};
+pub use regex::{
+    mesh_regex_from_literal, mesh_regex_compile, mesh_regex_match,
+    mesh_regex_captures, mesh_regex_replace, mesh_regex_split,
+};
 pub use iter::{
     mesh_iter_generic_next,
     mesh_iter_map, mesh_iter_map_next,
