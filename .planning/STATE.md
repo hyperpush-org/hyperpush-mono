@@ -144,10 +144,11 @@ None. v11.0 fully shipped and verified. Zero known compiler correctness issues.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 6 | write an article about the benchmarks in MD format | 2026-02-26 | a125e3f0 | [6-write-an-article-about-the-benchmarks-in](./quick/6-write-an-article-about-the-benchmarks-in/) |
+| 7 | get isolated peak throughput numbers by running each server alone | 2026-02-26 | 30cc9dc8 | [7-get-isolated-peak-throughput-numbers-by-](./quick/7-get-isolated-peak-throughput-numbers-by-/) |
 
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Paused at 123-03 Task 4 checkpoint (human-action: run Fly.io benchmarks and provide results for RESULTS.md)
+Stopped at: quick-7 checkpoint (human-verify: review isolated benchmark scripts and documentation)
 Resume file: None
-Next action: After user provides benchmark results, continue 123-03 Task 5 (populate RESULTS.md, METHODOLOGY.md, chart, README.md)
+Next action: User reviews scripts, then can run isolated benchmarks via run-benchmarks-isolated.sh
