@@ -837,11 +837,10 @@ fn e2e_http_server_runtime() {
         "Expected HTTP 200 in response, got: {}",
         response
     );
-    // The Mesh string literal "{\"status\":\"ok\"}" preserves backslash
-    // characters (Mesh does not interpret escape sequences in strings).
-    // The response body is the literal bytes: {\"status\":\"ok\"}
+    // The Mesh string literal "{\"status\":\"ok\"}" is unescaped by the
+    // compiler to {"status":"ok"} — Mesh processes standard escape sequences.
     assert!(
-        response.contains(r#"{\"status\":\"ok\"}"#),
+        response.contains(r#"{"status":"ok"}"#),
         "Expected JSON body in response, got: {}",
         response
     );
@@ -925,8 +924,10 @@ fn e2e_http_crash_isolation() {
         "Expected HTTP 200 after crash isolation, got: {}",
         response
     );
+    // The Mesh string literal "{\"status\":\"ok\"}" is unescaped by the
+    // compiler to {"status":"ok"} — Mesh processes standard escape sequences.
     assert!(
-        response.contains(r#"{\"status\":\"ok\"}"#),
+        response.contains(r#"{"status":"ok"}"#),
         "Expected JSON body after crash isolation, got: {}",
         response
     );
