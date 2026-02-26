@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 Phase: 123 of 123 (Phase 123: Performance Benchmarks — COMPLETE)
 Plan: 03 of 03 COMPLETE (all 5 tasks done)
 Status: Phase 123 fully complete — RESULTS.md, METHODOLOGY.md, throughput.svg, README.md Performance section committed. Machines destroyed.
-Last activity: 2026-02-26 — Benchmark results: Mesh ~14-20K req/s, Go ~26K, Rust ~28K, Elixir ~12K (hey, 100c, Fly.io performance-2x, ord)
+Last activity: 2026-02-26 - Completed quick task 6: write an article about the benchmarks in MD format
 
 Progress: [█░░░░░░░░░] 5% (v12.0)
 
@@ -138,6 +138,12 @@ None.
 ### Blockers/Concerns
 
 None. v11.0 fully shipped and verified. Zero known compiler correctness issues.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 6 | write an article about the benchmarks in MD format | 2026-02-26 | a125e3f0 | [6-write-an-article-about-the-benchmarks-in](./quick/6-write-an-article-about-the-benchmarks-in/) |
 
 ## Session Continuity
 
