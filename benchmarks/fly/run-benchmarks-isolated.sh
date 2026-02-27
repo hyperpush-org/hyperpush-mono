@@ -162,7 +162,7 @@ for lang in Mesh Go Rust Elixir; do
 
   # Collect peak RSS from machine logs
   if [ -n "$machine_id" ]; then
-    peak_rss=$(fly logs --machine "$machine_id" --app "$APP" 2>/dev/null \
+    peak_rss=$(fly logs --machine "$machine_id" --app "$APP" --no-tail 2>/dev/null \
       | grep '^RSS,' \
       | awk -F, '{print $4}' \
       | sort -n \
