@@ -33,7 +33,7 @@ PORTS[Elixir]=3003
 run_hey() {
   local url=$1
   local duration=$2
-  hey -c "$CONNECTIONS" -z "${duration}s" -t 30 "$url" 2>/dev/null
+  hey -c "$CONNECTIONS" -z "${duration}s" -t 30 -o csv "$url" 2>/dev/null
 }
 
 for lang in Mesh Go Rust Elixir; do
@@ -139,16 +139,12 @@ for lang in Mesh Go Rust Elixir; do
     last_p99="N/A"
 
     for i in $(seq 1 $RUNS); do
-      output=$(run_hey "$url" "$BENCH_DURATION")
-      # DEBUG: show latency lines verbatim (with hidden chars) on first good run
-      if [ "$i" -eq 2 ] && [ "$endpoint" = "text" ] && [ "$lang" = "Mesh" ]; then
-        echo "=== LATENCY DEBUG (cat -A) ==="
-        echo "$output" | grep -i "latency\|% in\|percentile" | cat -A
-        echo "=== END LATENCY DEBUG ==="
-      fi
-      rps=$(echo "$output" | grep "Requests/sec:" | awk '{print $2}' | tr -d '[:space:]')
-      p50=$(echo "$output" | awk '/50% in/ {print $3, $4}')
-      p99=$(echo "$output" | awk '/99% in/ {print $3, $4}')
+      csv=$(run_hey "$url" "$BENCH_DURATION")
+      rps=$(echo "$csv" | awk -F',' 'NR>1{n++} END{printf "%.0f", n/BENCH_DUR}' BENCH_DUR="$BENCH_DURATION")
+      p50_p99=$(echo "$csv" | awk -F',' 'NR>1 && $7==200{print $1}' | sort -n | awk \
+        '{a[NR]=$1} END{n=NR; if(n>0) printf "%.4f secs|%.4f secs", a[int(n*0.50)+1], a[int(n*0.99)+1]; else printf "N/A|N/A"}')
+      p50=$(echo "$p50_p99" | cut -d'|' -f1)
+      p99=$(echo "$p50_p99" | cut -d'|' -f2)
       if [ "$i" -le "$DISCARD_RUNS" ]; then
         echo "    Run $i: ${rps:-N/A} req/s  p50=${p50:-N/A}  p99=${p99:-N/A}  [warmup — excluded]"
       else
