@@ -1878,34 +1878,32 @@ impl<'ctx> CodeGen<'ctx> {
             for (i, field_expr) in fields.iter().enumerate() {
                 let val = self.codegen_expr(field_expr)?;
 
-                // Check if the value is a struct that exceeds the ptr slot size (8 bytes).
-                // If so, pointer-box it: heap-allocate and store the pointer instead.
+                // Struct values in variant fields must always be heap-allocated (pointer-boxed).
+                // The variant layout {i8 tag, ptr data} stores an opaque pointer in the data
+                // slot. Pattern matching reads the slot as a pointer and dereferences it, so
+                // storing a struct directly (even an 8-byte one) causes a dereference of a
+                // raw integer value (segfault). Always box: heap-allocate and store the ptr.
                 let val = if val.is_struct_value() {
                     let sv = val.into_struct_value();
                     let sv_ty = sv.get_type();
+                    let i64_ty = self.context.i64_type();
                     let target_data = self.target_machine.get_target_data();
                     let struct_size = target_data.get_store_size(&sv_ty);
-                    if struct_size > 8 {
-                        // Large struct: heap-allocate and store pointer in the ptr slot.
-                        let i64_ty = self.context.i64_type();
-                        let size = sv_ty.size_of().unwrap_or(i64_ty.const_int(struct_size, false));
-                        let align = i64_ty.const_int(8, false);
-                        let gc_alloc = get_intrinsic(&self.module, "mesh_gc_alloc_actor");
-                        let heap_ptr = self
-                            .builder
-                            .build_call(gc_alloc, &[size.into(), align.into()], "variant_box")
-                            .map_err(|e| e.to_string())?
-                            .try_as_basic_value()
-                            .basic()
-                            .ok_or("mesh_gc_alloc_actor returned void")?
-                            .into_pointer_value();
-                        self.builder
-                            .build_store(heap_ptr, sv)
-                            .map_err(|e| e.to_string())?;
-                        heap_ptr.into()
-                    } else {
-                        sv.into()
-                    }
+                    let size = sv_ty.size_of().unwrap_or(i64_ty.const_int(struct_size, false));
+                    let align = i64_ty.const_int(8, false);
+                    let gc_alloc = get_intrinsic(&self.module, "mesh_gc_alloc_actor");
+                    let heap_ptr = self
+                        .builder
+                        .build_call(gc_alloc, &[size.into(), align.into()], "variant_box")
+                        .map_err(|e| e.to_string())?
+                        .try_as_basic_value()
+                        .basic()
+                        .ok_or("mesh_gc_alloc_actor returned void")?
+                        .into_pointer_value();
+                    self.builder
+                        .build_store(heap_ptr, sv)
+                        .map_err(|e| e.to_string())?;
+                    heap_ptr.into()
                 } else {
                     val
                 };

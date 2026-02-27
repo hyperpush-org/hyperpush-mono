@@ -2822,6 +2822,45 @@ fn e2e_from_try_struct_error() {
     assert_eq!(output, "something failed\n");
 }
 
+// ── Phase 128: TryFrom/TryInto E2E Tests ─────────────────────────────
+
+/// Phase 128 TRYFROM-01: impl TryFrom<Int> for PositiveInt compiles and
+/// PositiveInt.try_from(42) returns Ok(PositiveInt { value: 42 }).
+#[test]
+fn e2e_tryfrom_user_defined() {
+    let source = read_fixture("tryfrom_user_defined.mpl");
+    let output = compile_and_run(&source);
+    assert_eq!(output, "42\n");
+}
+
+/// Phase 128 TRYFROM-01: try_from on failing validation returns Err with
+/// the error message from the impl body.
+#[test]
+fn e2e_tryfrom_err_path() {
+    let source = read_fixture("tryfrom_err_path.mpl");
+    let output = compile_and_run(&source);
+    assert_eq!(output, "must be positive\n");
+}
+
+/// Phase 128 TRYFROM-03: ? operator on try_from result desugars correctly
+/// inside a Result-returning function, propagating Err on failure.
+#[test]
+fn e2e_tryfrom_try_operator() {
+    let source = read_fixture("tryfrom_try_operator.mpl");
+    let output = compile_and_run(&source);
+    assert_eq!(output, "42\nmust be positive\n");
+}
+
+/// Phase 128 TRYFROM-02: 42.try_into() in a Result<PositiveInt, String> context
+/// exercises the synthetic TryInto dispatch wired in lower.rs. No explicit
+/// TryInto impl is written by the user -- only TryFrom<Int> for PositiveInt.
+#[test]
+fn e2e_tryinto_dispatch() {
+    let source = read_fixture("tryinto_dispatch.mpl");
+    let output = compile_and_run(&source);
+    assert_eq!(output, "42\nmust be positive\n");
+}
+
 // ── Phase 78: Lazy Combinators & Terminals E2E Tests ─────────────────
 
 /// Phase 78 COMB-01/02/06: Iter.map and Iter.filter combinators with pipe chain.

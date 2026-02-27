@@ -252,6 +252,13 @@ impl TraitRegistry {
         } else {
             None
         };
+        // Capture the TryFrom.try_from return type before moving impl_def.
+        // The synthetic TryInto.try_into has the same return type (Result<T, E>).
+        let synth_try_return_ty = if maybe_synthesize_try_into {
+            impl_def.methods.get("try_from").and_then(|sig| sig.return_type.clone())
+        } else {
+            None
+        };
 
         existing_impls.push(impl_def);
 
@@ -292,7 +299,10 @@ impl TraitRegistry {
                 ImplMethodSig {
                     has_self: true,
                     param_count: 0,
-                    return_type: None, // Result<T, E> -- resolved from the TryFrom impl
+                    // Mirror the TryFrom.try_from return type (Result<T, E>) so that
+                    // resolve_trait_method returns Some(ret) instead of None, allowing
+                    // type-checking of 42.try_into() calls to proceed.
+                    return_type: synth_try_return_ty,
                 },
             );
             let try_source_name = format!("{}", try_source_ty);

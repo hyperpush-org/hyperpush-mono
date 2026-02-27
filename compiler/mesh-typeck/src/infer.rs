@@ -3894,8 +3894,11 @@ fn infer_impl_def(
         }
 
         let return_type = method.return_type().and_then(|ann| {
-            // Try Self.Item resolution first, then fall back to standard type resolution.
+            // Try Self.Item resolution first, then full generic type resolution
+            // (handles Result<T,E>, Option<T>, and other parameterized return types).
+            // Fallback to simple name resolution only if annotation fails to parse.
             resolve_self_assoc_type(&ann, &assoc_types)
+                .or_else(|| resolve_type_annotation(ctx, &ann, type_registry))
                 .or_else(|| resolve_type_name(&ann))
         });
 
