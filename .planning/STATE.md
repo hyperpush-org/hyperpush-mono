@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v13.0 Language Completeness — Phase 128-01 complete (TryFrom/TryInto trait registration), Phase 128-02 (E2E tests) next
+**Current focus:** v13.0 Language Completeness — Phase 128 complete (TryFrom/TryInto full end-to-end), Phase 129 (Map.collect + Quality) next
 
 ## Current Position
 
-Phase: 128 of 131 (TryFrom/TryInto Traits) — In Progress
-Plan: 01 complete — Phase 128-02 next
+Phase: 128 of 131 (TryFrom/TryInto Traits) — Complete
+Plan: 02 complete — Phase 129 next
 Status: In Progress
-Last activity: 2026-02-27 — 128-01 complete: TryFrom/TryInto trait registration + synthetic TryInto derivation
+Last activity: 2026-02-27 — 128-02 complete: TryFrom/TryInto E2E tests, dispatch wiring, 3 bug fixes
 
-Progress: [█████░░░░░] 55% (6/11 plans)
+Progress: [███████░░░] 73% (8/11 plans)
 
 ## Performance Metrics
 
@@ -42,7 +42,7 @@ Progress: [█████░░░░░] 55% (6/11 plans)
 |-------|-------|--------|
 | 126. Multi-line Pipe | 2 | Complete (2/2) |
 | 127. Type Aliases | 3 | Complete (3/3) |
-| 128. TryFrom/TryInto | 2 | In Progress (1/2) |
+| 128. TryFrom/TryInto | 2 | Complete (2/2) |
 | 129. Map.collect + Quality | 2 | Not started |
 | 130. Mesher Dogfooding | 1 | Not started |
 | 131. Documentation | 2 | Not started |
@@ -57,6 +57,7 @@ Progress: [█████░░░░░] 55% (6/11 plans)
 | 127 | P02 | 12m | 2 | 5 |
 | 127 | P03 | 20m | 1 | 3 |
 | 128 | P01 | 3m | 2 | 2 |
+| 128 | P02 | 22m | 2 | 9 |
 
 ## Accumulated Context
 
@@ -81,6 +82,9 @@ Recent decisions affecting current work:
 - [Phase 127]: Use fn main() wrapper in cross-module fixtures — all compile_multifile_and_run tests require a main function
 - [Phase 128-01]: No built-in TryFrom impls added — TryFrom is user-defined only (unlike From which ships Int->Float/String)
 - [Phase 128-01]: TryInto return_type set to None in synthetic impl — actual Result<T,E> resolved per-impl from user body
+- [Phase 128-02]: Struct boxing threshold changed from >8 to always-box — ptr slot in {i8,ptr} variant layout is always dereferenced, even 8-byte structs must be heap-allocated
+- [Phase 128-02]: TryInto return type now mirrors TryFrom return type at synthesis time so type-checker accepts .try_into() calls
+- [Phase 128-02]: impl method return type now uses resolve_type_annotation (handles generic types) over resolve_type_name (simple ident only)
 
 ### Pending Todos
 
@@ -93,5 +97,5 @@ None. v12.0 fully shipped. v13.0 roadmap created with 100% requirement coverage 
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 128-01-PLAN.md — TryFrom/TryInto trait registration + synthetic TryInto derivation
+Stopped at: Completed 128-02-PLAN.md — TryFrom/TryInto E2E tests, MIR dispatch wiring, 3 auto-fixed bugs
 Resume file: None

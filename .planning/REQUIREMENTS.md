@@ -24,7 +24,7 @@ Requirements for v13.0. Each maps to roadmap phases.
 
 - [x] **TRYFROM-01**: User can implement `TryFrom<F>` for a type with `fn try_from(value: F) -> Result<Self, E>`
 - [x] **TRYFROM-02**: `TryInto<T>` is automatically derived for any type implementing `TryFrom<F>` (mirrors From/Into pattern from v7.0)
-- [ ] **TRYFROM-03**: `?` operator works ergonomically with `try_from`/`try_into` for fallible conversions in `Result`-returning functions
+- [x] **TRYFROM-03**: `?` operator works ergonomically with `try_from`/`try_into` for fallible conversions in `Result`-returning functions
 
 ### MAPCOL — Map.collect string keys
 
@@ -79,7 +79,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ALIAS-04 | Phase 127 | Complete |
 | TRYFROM-01 | Phase 128 | Complete |
 | TRYFROM-02 | Phase 128 | Complete |
-| TRYFROM-03 | Phase 128 | Pending |
+| TRYFROM-03 | Phase 128 | Complete |
 | MAPCOL-01 | Phase 129 | Pending |
 | QUAL-01 | Phase 129 | Pending |
 | QUAL-02 | Phase 129 | Pending |
