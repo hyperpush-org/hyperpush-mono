@@ -2,11 +2,11 @@
 
 # Mesh Language
 
-![Version](https://img.shields.io/badge/version-v6.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-v12.0-blue.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)
 ![Build](https://img.shields.io/badge/build-passing-success.svg?style=flat-square)
 
-**Expressive, readable concurrency.**  
+**Expressive, readable concurrency.**
 *Elixir-style syntax. Static type inference. Native single binaries.*
 
 [Documentation](https://meshlang.dev) • [Get Started](#quick-start) • [Contributing](#contributing)
@@ -42,6 +42,8 @@ Mesh compiles directly to a standalone native binary—no virtual machine to ins
   - **JSON** serialization/deserialization.
   - **HTTP** server with routing and middleware.
 - **Modern Tooling:** Built-in package manager, formatter (`mesh fmt`), and Language Server Protocol (LSP) support for your editor.
+- **String ergonomics:** `#{}` string interpolation, multiline heredocs, regex literals, and `Env.get`/`Env.get_int` for environment variables.
+- **Slot pipe operator:** Route piped values to any argument position with `|N>` syntax.
 
 ## Quick Start
 
@@ -64,9 +66,9 @@ module Main
 
 pub fn main() do
   IO.println("Hello, Mesh world!")
-  
+
   # Spawn an actor
-  let pid = spawn(fn -> 
+  let pid = spawn(fn ->
     receive
       {sender, name} -> send(sender, "Nice to meet you, " + name)
     end
@@ -74,9 +76,9 @@ pub fn main() do
 
   # Send a message and wait for reply
   send(pid, {self(), "Developer"})
-  
+
   receive
-    msg -> IO.println("Received: " + msg)
+    msg -> IO.println("Received: #{msg}")
   after 1000 ->
     IO.println("Timeout!")
   end
@@ -94,44 +96,33 @@ meshc run hello.mesh
 ```elixir
 module Server
 
-import Http
-import Json
-
 struct User do
   id: Int
   name: String
   email: String
 end
 
-pub fn main() do
-  let router = Http.router()
-    |> Http.get("/", fn(req) -> 
-        Http.text(200, "Welcome to Mesh!") 
-       end)
-    |> Http.post("/users", fn(req) ->
-        case req.json() do
-          Ok(user :: User) -> Http.json(201, user)
-          Err(_) -> Http.text(400, "Invalid JSON")
-        end
-       end)
+fn home_handler(request) do
+  HTTP.response(200, "Welcome to Mesh!")
+end
 
-  IO.println("Listening on port 8080...")
-  Http.serve(router, 8080)
+fn main() do
+  let r = HTTP.router()
+  let r = HTTP.route(r, "/", home_handler)
+  HTTP.serve(r, 8080)
 end
 ```
 
 ## Performance
 
-Measured on dedicated Fly.io `performance-2x` VMs (2 vCPU, 4 GB RAM), server and load generator in the same region, over Fly.io's private WireGuard network. 100 concurrent connections, 30 s timed runs × 3 averaged.
+Measured on dedicated Fly.io `performance-2x` VMs (2 vCPU, 4 GB RAM), each server running alone (isolated), load generator in the same region over Fly.io's private WireGuard network. 100 concurrent connections, 30 s timed runs × 4 (run 1 excluded, runs 2–5 averaged).
 
-| Language | /text req/s | /json req/s |
-|----------|------------|------------|
-| **Mesh** | **14,493** † | **20,021** |
-| Go       | 25,892     | 25,871     |
-| Rust     | 27,685     | 28,716     |
-| Elixir   | 11,809     | 11,689     |
-
-† Mesh /text avg includes a cold-start first run (4,041 req/s); steady-state throughput is ~19,700 req/s.
+| Language | /text req/s | /json req/s | /text p99 | /json p99 |
+|----------|------------|------------|-----------|-----------|
+| **Mesh** | **29,108** | **28,955** | 16.94 ms  | 16.19 ms  |
+| Go       | 30,306     | 29,934     | 8.51 ms   | 8.40 ms   |
+| Rust     | 46,244     | 46,234     | 4.55 ms   | 4.77 ms   |
+| Elixir   | 12,441     | 12,733     | 25.14 ms  | 23.41 ms  |
 
 [Full results and methodology →](benchmarks/RESULTS.md)
 
@@ -143,10 +134,10 @@ Full documentation, including guides and API references, is available at **[mesh
 
 Mesh is currently in active development.
 
-- **Current Stable:** v6.0
-- **In Development:** v7.0 (Iterator Protocol & Trait Ecosystem)
+- **Current Stable:** v12.0 (Language Ergonomics & Open Source Readiness)
+- **Recent additions:** Slot pipe operator (`|2>`), `#{}` string interpolation, heredocs, regex literals, environment variable stdlib, and performance benchmarks vs Go, Rust, and Elixir.
 
-See [PROJECT.md](.planning/PROJECT.md) and [ROADMAP.md](.planning/ROADMAP.md) for detailed planning and architectural decisions.
+See [ROADMAP.md](.planning/ROADMAP.md) for detailed planning and architectural decisions.
 
 ## Contributing
 
