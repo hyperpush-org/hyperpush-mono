@@ -59,47 +59,38 @@ cargo install --path compiler/meshc
 
 ### 2. Hello World
 
-Create a file named `hello.mesh`:
+Create a file named `hello.mpl`:
 
 ```elixir
-module Main
-
-pub fn main() do
-  IO.println("Hello, Mesh world!")
-
-  # Spawn an actor
-  let pid = spawn(fn ->
-    receive
-      {sender, name} -> send(sender, "Nice to meet you, " + name)
-    end
-  end)
-
-  # Send a message and wait for reply
-  send(pid, {self(), "Developer"})
-
-  receive
-    msg -> IO.println("Received: #{msg}")
-  after 1000 ->
-    IO.println("Timeout!")
+actor greeter() do
+  receive do
+    msg -> println("Nice to meet you, #{msg}!")
   end
+end
+
+fn main() do
+  println("Hello, Mesh world!")
+
+  # Spawn an actor and send it a message
+  let pid = spawn(greeter)
+  send(pid, "Developer")
 end
 ```
 
 Run it:
 
 ```bash
-meshc run hello.mesh
+meshc build hello.mpl
+./hello
 ```
 
 ### 3. A Web Server Example
 
 ```elixir
-module Server
-
 struct User do
-  id: Int
-  name: String
-  email: String
+  id :: Int
+  name :: String
+  email :: String
 end
 
 fn home_handler(request) do
@@ -108,7 +99,7 @@ end
 
 fn main() do
   let r = HTTP.router()
-  let r = HTTP.route(r, "/", home_handler)
+  let r = HTTP.on_get(r, "/", home_handler)
   HTTP.serve(r, 8080)
 end
 ```

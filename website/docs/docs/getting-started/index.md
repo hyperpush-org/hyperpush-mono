@@ -76,7 +76,7 @@ Now let's write something more interesting. Open `main.mpl` and replace its cont
 
 ```mesh
 fn greet(name :: String) -> String do
-  "Hello, ${name}!"
+  "Hello, #{name}!"
 end
 
 fn main() do
@@ -115,13 +115,13 @@ end
 
 fn main() do
   let sum = add(10, 20)
-  println("${sum}")
+  println("#{sum}")
 
   let result = double(7)
-  println("${result}")
+  println("#{result}")
 
   let greeting = "Mesh"
-  println("Hello, ${greeting}!")
+  println("Hello, #{greeting}!")
 end
 ```
 
@@ -129,7 +129,7 @@ This demonstrates:
 
 - Functions with multiple parameters
 - `Int` type for integers
-- String interpolation with expressions: `"${sum}"` converts the integer to a string automatically
+- String interpolation with expressions: `"#{sum}"` converts the integer to a string automatically
 
 ### Using the Pipe Operator
 
@@ -146,7 +146,7 @@ end
 
 fn main() do
   let result = 5 |> double |> add_one
-  println("${result}")
+  println("#{result}")
 end
 ```
 
