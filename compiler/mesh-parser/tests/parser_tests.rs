@@ -1316,6 +1316,11 @@ fn type_alias_generic() {
     assert_snapshot!(source_and_debug("type StringResult<T> = Result<T, String>"));
 }
 
+#[test]
+fn type_alias_pub() {
+    assert_snapshot!(source_and_debug("pub type Url = String"));
+}
+
 // ── Option Sugar ────────────────────────────────────────────────────
 
 #[test]

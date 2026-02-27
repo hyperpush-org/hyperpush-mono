@@ -1,0 +1,14 @@
+---
+source: compiler/mesh-parser/tests/parser_tests.rs
+expression: "source_and_debug(\"pub type Url = String\")"
+---
+SOURCE_FILE@0..17
+  TYPE_ALIAS_DEF@0..17
+    VISIBILITY@0..3
+      PUB_KW@0..3 "pub"
+    TYPE_KW@3..7 "type"
+    NAME@7..10
+      IDENT@7..10 "Url"
+    EQ@10..11 "="
+    IDENT@11..17 "String"
+  EOF@17..17 ""

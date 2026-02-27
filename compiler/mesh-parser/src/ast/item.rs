@@ -665,9 +665,42 @@ impl AssocTypeBinding {
 ast_node!(TypeAliasDef, TYPE_ALIAS_DEF);
 
 impl TypeAliasDef {
+    /// The visibility modifier (`pub`), if present.
+    pub fn visibility(&self) -> Option<Visibility> {
+        child_node(&self.syntax)
+    }
+
     /// The alias name.
     pub fn name(&self) -> Option<Name> {
         child_node(&self.syntax)
+    }
+
+    /// The target type name: the first IDENT token appearing after the `=` sign.
+    ///
+    /// For `type Url = String`, returns `Some("String")`.
+    /// For `type Pair<A, B> = (A, B)`, returns `None` (no bare IDENT after `=`).
+    pub fn target_type_name(&self) -> Option<String> {
+        let mut past_eq = false;
+        for child in self.syntax.children_with_tokens() {
+            match child {
+                rowan::NodeOrToken::Token(t) => {
+                    if t.kind() == SyntaxKind::EQ {
+                        past_eq = true;
+                        continue;
+                    }
+                    if past_eq && t.kind() == SyntaxKind::IDENT {
+                        return Some(t.text().to_string());
+                    }
+                }
+                rowan::NodeOrToken::Node(_) => {
+                    if past_eq {
+                        // Complex type node after `=` — not a bare name
+                        return None;
+                    }
+                }
+            }
+        }
+        None
     }
 }
 

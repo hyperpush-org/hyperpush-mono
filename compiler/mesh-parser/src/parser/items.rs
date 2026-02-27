@@ -1042,9 +1042,12 @@ fn parse_variant_field_or_type(p: &mut Parser) {
 
 // ── Type Alias ──────────────────────────────────────────────────────────
 
-/// Parse a type alias: `type Name [<T>] = Type`
+/// Parse a type alias: `[pub] type Name [<T>] = Type`
 pub(crate) fn parse_type_alias(p: &mut Parser) {
     let m = p.open();
+
+    // Optional visibility (handles `pub type Alias = T`).
+    parse_optional_visibility(p);
 
     p.advance(); // TYPE_KW
 
