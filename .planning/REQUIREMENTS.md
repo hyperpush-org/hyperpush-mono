@@ -11,7 +11,7 @@ Requirements for v13.0. Each maps to roadmap phases.
 ### PIPE — Multi-line pipe continuation
 
 - [x] **PIPE-01**: User can format pipe chains across multiple lines by placing `|>` or `|N>` at the end of a line or start of a continuation line
-- [ ] **PIPE-02**: Multi-line pipe chains produce identical output to their single-line equivalents (same semantics, no regressions)
+- [x] **PIPE-02**: Multi-line pipe chains produce identical output to their single-line equivalents (same semantics, no regressions)
 
 ### ALIAS — Type aliases
 
@@ -72,7 +72,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | PIPE-01 | Phase 126 | Complete |
-| PIPE-02 | Phase 126 | Pending |
+| PIPE-02 | Phase 126 | Complete |
 | ALIAS-01 | Phase 127 | Pending |
 | ALIAS-02 | Phase 127 | Pending |
 | ALIAS-03 | Phase 127 | Pending |

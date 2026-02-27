@@ -323,7 +323,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 126. Multi-line Pipe Continuation | 1/2 | In Progress|  | - |
+| 126. Multi-line Pipe Continuation | 2/2 | Complete   | 2026-02-27 | - |
 | 127. Type Aliases | v13.0 | 0/2 | Not started | - |
 | 128. TryFrom/TryInto Traits | v13.0 | 0/2 | Not started | - |
 | 129. Map.collect + Code Quality | v13.0 | 0/2 | Not started | - |

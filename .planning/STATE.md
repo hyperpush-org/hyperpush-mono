@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Language Completeness
 status: unknown
-last_updated: "2026-02-27T19:16:35.497Z"
+last_updated: "2026-02-27T19:23:56.158Z"
 progress:
   total_phases: 123
-  completed_phases: 122
+  completed_phases: 123
   total_plans: 321
-  completed_plans: 320
+  completed_plans: 321
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v13.0 Language Completeness — Phase 126 Plan 01 complete, Plan 02 ready
+**Current focus:** v13.0 Language Completeness — Phase 126 complete, Phase 127 next
 
 ## Current Position
 
-Phase: 126 of 131 (Multi-line Pipe Continuation)
-Plan: 01 complete — Plan 02 next
+Phase: 126 of 131 (Multi-line Pipe Continuation) — COMPLETE
+Plan: 02 complete — Phase 127 next
 Status: In Progress
-Last activity: 2026-02-27 — 126-01 complete: trailing-pipe parser continuation (237 tests passing)
+Last activity: 2026-02-27 — 126-02 complete: E2E tests for multi-line pipe (24 pipe tests passing)
 
-Progress: [█░░░░░░░░░] 9% (1/11 plans)
+Progress: [██░░░░░░░░] 18% (2/11 plans)
 
 ## Performance Metrics
 
@@ -40,12 +40,19 @@ Progress: [█░░░░░░░░░] 9% (1/11 plans)
 
 | Phase | Plans | Status |
 |-------|-------|--------|
-| 126. Multi-line Pipe | 2 | In Progress (1/2) |
+| 126. Multi-line Pipe | 2 | Complete (2/2) |
 | 127. Type Aliases | 2 | Not started |
 | 128. TryFrom/TryInto | 2 | Not started |
 | 129. Map.collect + Quality | 2 | Not started |
 | 130. Mesher Dogfooding | 1 | Not started |
 | 131. Documentation | 2 | Not started |
+
+**v13.0 Execution Metrics:**
+
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| 126 | P01 | 4m 7s | 2 | 8 |
+| 126 | P02 | 3m | 2 | 3 |
 
 ## Accumulated Context
 
@@ -60,6 +67,7 @@ Recent decisions affecting current work:
 - [v13.0 Roadmap]: Phase 130 (Dogfooding) deferred until all compiler phases complete — prevents rework
 - [v13.0 Roadmap]: Phase 131 (Docs) after dogfooding — examples sourced from verified Mesher patterns
 - [Phase 126]: Made is_newline_insignificant pub(crate) rather than adding a new method — minimal change
+- [Phase 126]: Named regression test e2e_pipe_126_regression (not e2e_pipe_regression_single_line) because e2e_pipe already exists
 
 ### Pending Todos
 
@@ -72,5 +80,5 @@ None. v12.0 fully shipped. v13.0 roadmap created with 100% requirement coverage 
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 126-01-PLAN.md — trailing-pipe parser continuation
+Stopped at: Completed 126-02-PLAN.md — E2E tests for multi-line pipe continuation
 Resume file: None
