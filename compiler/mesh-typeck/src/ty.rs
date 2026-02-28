@@ -105,6 +105,14 @@ impl Ty {
         Ty::Con(TyCon::new("String"))
     }
 
+    /// Create a `Json` newtype.
+    ///
+    /// Json auto-coerces to String at call sites (the unify function handles this).
+    /// Codegen detects the "Json" name to decide how to serialize the value.
+    pub fn json() -> Ty {
+        Ty::Con(TyCon::new("Json"))
+    }
+
     /// Create a `Bool` type.
     pub fn bool() -> Ty {
         Ty::Con(TyCon::new("Bool"))

@@ -257,6 +257,9 @@ fn lhs(p: &mut Parser) -> Option<MarkClosed> {
             Some(p.close(m, SyntaxKind::REGEX_EXPR))
         }
 
+        // Json object literal: json { key: expr, ... }
+        SyntaxKind::JSON_KW => Some(parse_json_literal(p)),
+
         // Identifier
         SyntaxKind::IDENT => {
             let m = p.open();
@@ -489,6 +492,63 @@ fn parse_map_literal(p: &mut Parser) -> MarkClosed {
 
     p.expect(SyntaxKind::R_BRACE);
     p.close(m, SyntaxKind::MAP_LITERAL)
+}
+
+// ── Json Literal ──────────────────────────────────────────────────
+
+/// Parse a json object literal: `json { key: expr, ... }`
+///
+/// Keys must be bare identifiers (not quoted strings). Values are any valid
+/// Mesh expression. Commas separate fields; newlines inside braces are
+/// insignificant. An empty `json {}` is valid.
+fn parse_json_literal(p: &mut Parser) -> MarkClosed {
+    let m = p.open();
+    p.advance(); // JSON_KW -- consume `json`
+    p.expect(SyntaxKind::L_BRACE); // `{`
+
+    // Empty json literal: json {}
+    if p.at(SyntaxKind::R_BRACE) {
+        p.advance();
+        return p.close(m, SyntaxKind::JSON_EXPR);
+    }
+
+    loop {
+        if p.at(SyntaxKind::R_BRACE) || p.at(SyntaxKind::EOF) {
+            break;
+        }
+
+        let field = p.open();
+
+        // Key: bare IDENT only (non-identifier key is a parse error)
+        if p.at(SyntaxKind::IDENT) {
+            p.advance(); // key name
+        } else {
+            p.error("expected identifier key in json literal");
+            p.close(field, SyntaxKind::JSON_FIELD);
+            break;
+        }
+
+        p.expect(SyntaxKind::COLON);
+
+        if !p.has_error() {
+            expr_bp(p, 0);
+        }
+
+        p.close(field, SyntaxKind::JSON_FIELD);
+
+        if p.has_error() {
+            break;
+        }
+
+        if !p.eat(SyntaxKind::COMMA) {
+            if p.at(SyntaxKind::R_BRACE) || p.at(SyntaxKind::EOF) {
+                break;
+            }
+        }
+    }
+
+    p.expect(SyntaxKind::R_BRACE);
+    p.close(m, SyntaxKind::JSON_EXPR)
 }
 
 // ── Struct Literal ────────────────────────────────────────────────

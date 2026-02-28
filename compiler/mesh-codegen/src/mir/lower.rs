@@ -5696,6 +5696,10 @@ impl<'a> Lowerer<'a> {
             Expr::StructUpdate(update) => self.lower_struct_update(update),
             // Slot pipe expression -- |N> desugaring (Phase 116, Plan 02)
             Expr::SlotPipeExpr(pipe) => self.lower_slot_pipe_expr(pipe),
+            // Json object literal -- codegen implemented in Phase 132, Plan 02
+            Expr::JsonExpr(_) => {
+                todo!("json literal codegen not yet implemented (Phase 132-02)")
+            }
         }
     }
 

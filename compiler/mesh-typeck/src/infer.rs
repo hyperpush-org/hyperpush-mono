@@ -13,9 +13,9 @@
 use rowan::TextRange;
 use mesh_parser::ast::expr::{
     BinaryExpr, BreakExpr, CallExpr, CaseExpr, ClosureExpr, ContinueExpr, Expr, FieldAccess,
-    ForInExpr, IfExpr, LinkExpr, ListLiteral, Literal, MapLiteral, NameRef, PipeExpr, ReceiveExpr,
-    ReturnExpr, SendExpr, SelfExpr, SlotPipeExpr, SpawnExpr, StructLiteral, StructUpdate,
-    TryExpr, TupleExpr, UnaryExpr, WhileExpr,
+    ForInExpr, IfExpr, JsonExpr, LinkExpr, ListLiteral, Literal, MapLiteral, NameRef, PipeExpr,
+    ReceiveExpr, ReturnExpr, SendExpr, SelfExpr, SlotPipeExpr, SpawnExpr, StructLiteral,
+    StructUpdate, TryExpr, TupleExpr, UnaryExpr, WhileExpr,
 };
 use mesh_parser::ast::item::{
     ActorDef, Block, FnDef, InterfaceDef, ImplDef as AstImplDef, Item, LetBinding, ServiceDef,
@@ -4352,6 +4352,9 @@ fn infer_expr(
         Expr::SlotPipeExpr(pipe) => {
             infer_slot_pipe(ctx, env, pipe, types, type_registry, trait_registry, fn_constraints)?
         }
+        Expr::JsonExpr(json_expr) => {
+            infer_json_expr(ctx, env, json_expr, types, type_registry, trait_registry, fn_constraints)?
+        }
     };
 
     let resolved = ctx.resolve(ty.clone());
@@ -8666,4 +8669,33 @@ fn name_to_type(name: &str) -> Ty {
 /// Check if a type is an unresolved type variable.
 fn is_type_var(ty: &Ty) -> bool {
     matches!(ty, Ty::Var(_))
+}
+
+/// Infer the type of a json literal expression.
+///
+/// Type-checks each field value for compile-time error detection (e.g. undefined
+/// variables produce type errors). Returns `Ty::json()` which is the `Json` newtype.
+///
+/// `Json` auto-coerces to `String` at use sites via the unify rules in unify.rs,
+/// so `HTTP.response(200, json { status: "ok" })` works without explicit conversion.
+fn infer_json_expr(
+    ctx: &mut InferCtx,
+    env: &mut TypeEnv,
+    json_expr: &JsonExpr,
+    types: &mut FxHashMap<TextRange, Ty>,
+    type_registry: &TypeRegistry,
+    trait_registry: &TraitRegistry,
+    fn_constraints: &FxHashMap<String, FnConstraints>,
+) -> Result<Ty, TypeError> {
+    // Type-check each value expression so that undefined variables produce
+    // compile-time errors (satisfies must_haves truth: "Using an undefined variable
+    // inside `json { }` produces a compile-time type error").
+    for field in json_expr.fields() {
+        if let Some(val_expr) = field.value() {
+            infer_expr(ctx, env, &val_expr, types, type_registry, trait_registry, fn_constraints)?;
+        }
+    }
+    // Return the Json newtype -- NOT Ty::string(). The Json type auto-coerces to
+    // String at call sites via the `json_string_compatible` rule in unify.rs.
+    Ok(Ty::json())
 }

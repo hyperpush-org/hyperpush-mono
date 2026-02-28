@@ -53,6 +53,8 @@ pub enum Expr {
     SlotPipeExpr(SlotPipeExpr),
     // Regex literal expression: ~r/pattern/flags
     RegexExpr(RegexExpr),
+    // Json object literal expression: json { key: value, ... }
+    JsonExpr(JsonExpr),
 }
 
 impl Expr {
@@ -104,6 +106,7 @@ impl Expr {
                 Some(Expr::SlotPipeExpr(SlotPipeExpr { syntax: node }))
             }
             SyntaxKind::REGEX_EXPR => Some(Expr::RegexExpr(RegexExpr { syntax: node })),
+            SyntaxKind::JSON_EXPR => Some(Expr::JsonExpr(JsonExpr { syntax: node })),
             _ => None,
         }
     }
@@ -143,6 +146,7 @@ impl Expr {
             Expr::StructUpdate(n) => &n.syntax,
             Expr::SlotPipeExpr(n) => &n.syntax,
             Expr::RegexExpr(n) => &n.syntax,
+            Expr::JsonExpr(n) => &n.syntax,
         }
     }
 }
@@ -913,5 +917,42 @@ fn extract_regex_flags(text: &str) -> String {
     match slash_pos {
         Some(pos) => rest[pos + 1..].to_string(),
         None => String::new(),
+    }
+}
+
+// ── Json Literal Expression ──────────────────────────────────────────────
+
+ast_node!(JsonExpr, JSON_EXPR);
+
+impl JsonExpr {
+    /// Iterate over the fields of this json literal.
+    pub fn fields(&self) -> impl Iterator<Item = JsonField> + '_ {
+        self.syntax.children().filter_map(JsonField::cast)
+    }
+}
+
+/// A single field in a json literal: `key: value`
+#[derive(Debug, Clone)]
+pub struct JsonField {
+    pub(crate) syntax: crate::cst::SyntaxNode,
+}
+
+impl JsonField {
+    /// Key name (bare identifier, e.g. `status` in `json { status: "ok" }`)
+    pub fn key_text(&self) -> Option<String> {
+        child_token(&self.syntax, SyntaxKind::IDENT).map(|t| t.text().to_string())
+    }
+
+    /// Value expression after the colon.
+    pub fn value(&self) -> Option<Expr> {
+        self.syntax.children().find_map(Expr::cast)
+    }
+
+    pub fn cast(node: crate::cst::SyntaxNode) -> Option<Self> {
+        if node.kind() == SyntaxKind::JSON_FIELD {
+            Some(JsonField { syntax: node })
+        } else {
+            None
+        }
     }
 }
