@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Language Completeness
 status: unknown
-last_updated: "2026-02-28T00:36:10.583Z"
+last_updated: "2026-02-28T00:53:00.000Z"
 progress:
   total_phases: 126
   completed_phases: 125
   total_plans: 328
-  completed_plans: 327
+  completed_plans: 328
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v13.0 Language Completeness — Phase 129 Plan 01 complete (Map.collect zip fix), Phase 129-02 next
+**Current focus:** v13.0 Language Completeness — Phase 129 complete (Map.collect zip fix + QUAL-01/QUAL-02), Phase 130 next
 
 ## Current Position
 
-Phase: 129 of 131 (Map.collect + Quality) — In Progress
-Plan: 01 complete — 129-02 next
+Phase: 129 of 131 (Map.collect + Quality) — Complete
+Plan: 02 complete — Phase 129 done
 Status: In Progress
-Last activity: 2026-02-28 — 129-01 complete: Map.collect string key dispatch for Iter.zip pattern (MAPCOL-01)
+Last activity: 2026-02-28 — 129-02 complete: QUAL-01 verified, QUAL-02 handler type inference test added, generalization bug documented
 
-Progress: [███████░░░] 82% (9/11 plans)
+Progress: [████████░░] 91% (10/11 plans)
 
 ## Performance Metrics
 
@@ -43,7 +43,7 @@ Progress: [███████░░░] 82% (9/11 plans)
 | 126. Multi-line Pipe | 2 | Complete (2/2) |
 | 127. Type Aliases | 3 | Complete (3/3) |
 | 128. TryFrom/TryInto | 2 | Complete (2/2) |
-| 129. Map.collect + Quality | 2 | In Progress (1/2) |
+| 129. Map.collect + Quality | 2 | Complete (2/2) |
 | 130. Mesher Dogfooding | 1 | Not started |
 | 131. Documentation | 2 | Not started |
 
@@ -59,6 +59,7 @@ Progress: [███████░░░] 82% (9/11 plans)
 | 128 | P01 | 3m | 2 | 2 |
 | 128 | P02 | 22m | 2 | 9 |
 | 129 | P01 | 11m | 2 | 3 |
+| 129 | P02 | 20m | 2 | 2 |
 
 ## Accumulated Context
 
@@ -87,6 +88,7 @@ Recent decisions affecting current work:
 - [Phase 128-02]: TryInto return type now mirrors TryFrom return type at synthesis time so type-checker accepts .try_into() calls
 - [Phase 128-02]: impl method return type now uses resolve_type_annotation (handles generic types) over resolve_type_name (simple ident only)
 - [Phase 129]: Fixed Map.collect string key dispatch for Iter.zip: extended pipe_chain_has_string_keys with Iter.zip detection (rhs_is_iter_zip + pipe_source_has_string_list) instead of result-type check, because HM let-generalization prevents K=String unification at collect-pipe time
+- [Phase 129-02]: Passthrough middleware (next(request) body) requires :: Request annotation — without it, type variable gets generalized as forall T; codegen emits {} (empty struct) LLVM type → SIGBUS at runtime. Handler inference works when body uses Request.* accessors (constrains type before generalization).
 
 ### Pending Todos
 
@@ -99,5 +101,5 @@ None. v12.0 fully shipped. v13.0 roadmap created with 100% requirement coverage 
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 129-01-PLAN.md — Map.collect string key dispatch for Iter.zip pattern, MAPCOL-01
+Stopped at: Completed 129-02-PLAN.md — QUAL-01 verification, QUAL-02 handler type inference test, generalization bug documented
 Resume file: None
