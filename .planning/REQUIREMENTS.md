@@ -8,12 +8,12 @@
 
 ### Crypto (CRYPTO)
 
-- [ ] **CRYPTO-01**: User can compute SHA-256 hash of a string (`Crypto.sha256(s)`) returning a lowercase hex string
-- [ ] **CRYPTO-02**: User can compute SHA-512 hash of a string (`Crypto.sha512(s)`) returning a lowercase hex string
-- [ ] **CRYPTO-03**: User can compute HMAC-SHA256 of a message with a key (`Crypto.hmac_sha256(key, msg)`) returning a hex string
-- [ ] **CRYPTO-04**: User can compute HMAC-SHA512 of a message with a key (`Crypto.hmac_sha512(key, msg)`) returning a hex string
-- [ ] **CRYPTO-05**: User can perform constant-time string comparison (`Crypto.secure_compare(a, b)`) returning Bool, safe for HMAC token verification
-- [ ] **CRYPTO-06**: User can generate a UUID v4 string (`Crypto.uuid4()`) as a cryptographically random 128-bit UUID
+- [x] **CRYPTO-01**: User can compute SHA-256 hash of a string (`Crypto.sha256(s)`) returning a lowercase hex string
+- [x] **CRYPTO-02**: User can compute SHA-512 hash of a string (`Crypto.sha512(s)`) returning a lowercase hex string
+- [x] **CRYPTO-03**: User can compute HMAC-SHA256 of a message with a key (`Crypto.hmac_sha256(key, msg)`) returning a hex string
+- [x] **CRYPTO-04**: User can compute HMAC-SHA512 of a message with a key (`Crypto.hmac_sha512(key, msg)`) returning a hex string
+- [x] **CRYPTO-05**: User can perform constant-time string comparison (`Crypto.secure_compare(a, b)`) returning Bool, safe for HMAC token verification
+- [x] **CRYPTO-06**: User can generate a UUID v4 string (`Crypto.uuid4()`) as a cryptographically random 128-bit UUID
 
 ### Encoding (ENCODE)
 
@@ -114,12 +114,12 @@ Which phases cover which requirements.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CRYPTO-01 | Phase 135 | Pending |
-| CRYPTO-02 | Phase 135 | Pending |
-| CRYPTO-03 | Phase 135 | Pending |
-| CRYPTO-04 | Phase 135 | Pending |
-| CRYPTO-05 | Phase 135 | Pending |
-| CRYPTO-06 | Phase 135 | Pending |
+| CRYPTO-01 | Phase 135 | Complete |
+| CRYPTO-02 | Phase 135 | Complete |
+| CRYPTO-03 | Phase 135 | Complete |
+| CRYPTO-04 | Phase 135 | Complete |
+| CRYPTO-05 | Phase 135 | Complete |
+| CRYPTO-06 | Phase 135 | Complete |
 | ENCODE-01 | Phase 135 | Pending |
 | ENCODE-02 | Phase 135 | Pending |
 | ENCODE-03 | Phase 135 | Pending |

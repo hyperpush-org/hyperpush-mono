@@ -361,7 +361,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 135. Encoding & Crypto Stdlib | 0/2 | Not started | - |
+| 135. Encoding & Crypto Stdlib | 1/2 | In Progress|  |
 | 136. DateTime Stdlib | 0/2 | Not started | - |
 | 137. HTTP Client Improvements | 0/2 | Not started | - |
 | 138. Testing Framework | 0/3 | Not started | - |
