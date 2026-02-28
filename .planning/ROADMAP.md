@@ -353,3 +353,14 @@ Plans:
 Plans:
 - [ ] 133-01-PLAN.md — Grammar + LSP: json keyword, nil constant, atom literals, regex literals, slot pipe, new snippets
 - [ ] 133-02-PLAN.md — Version bump to 0.3.0, CHANGELOG update, VSIX package build
+
+### Phase 134: Add phase 132's change to the documentation site and update the appropriate skill(s) in tools/skill/mesh/skills/
+
+**Goal:** json { } native object literal feature propagated into all skill files and web documentation — skills teach the idiomatic pattern, web docs show JSON Object Literals as the primary approach for HTTP JSON responses
+**Requirements**: DOC-134-01
+**Depends on:** Phase 133
+**Plans:** 2 plans
+
+Plans:
+- [ ] 134-01-PLAN.md — strings SKILL.md + top-level mesh SKILL.md: json { } documentation and routing updates
+- [ ] 134-02-PLAN.md — http SKILL.md + web/index.md: replace escaped JSON examples and add JSON Object Literals subsection
