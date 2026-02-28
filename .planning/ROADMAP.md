@@ -289,7 +289,7 @@ Plans:
 
 Plans:
 - [x] 136-01-PLAN.md — DateTime runtime (chrono 0.4 dep, datetime.rs with 11 functions) + all 4 compiler registration points (builtins.rs, infer.rs, lower.rs, intrinsics.rs)
-- [ ] 136-02-PLAN.md — DateTime e2e test fixtures (6 .mpl files) + Rust test functions in e2e.rs
+- [x] 136-02-PLAN.md — DateTime e2e test fixtures (6 .mpl files) + Rust test functions in e2e.rs
 
 ### Phase 137: HTTP Client Improvements
 **Goal**: Mesh programs can make HTTP requests with a fluent builder API, stream large responses without buffering the full body, and reuse connections via a keep-alive agent handle
@@ -300,11 +300,11 @@ Plans:
   2. User can set a request body via `Http.body(req, s)` and execute a POST request returning the server's response
   3. User can call `Http.stream(req, fn chunk -> ... end)` and have the callback invoked once per chunk without the entire response body being held in memory
   4. User can create a keep-alive client with `Http.client()` and reuse its connection pool via `Http.send_with(client, req)` across multiple requests to the same host
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 137-01: Http builder API (Http.build/header/body/timeout/send) — refactor http/client.rs, MeshRequest opaque handle, ureq 3 upgrade
-- [ ] 137-02: Http streaming + keep-alive (Http.stream OS-thread-per-stream pattern, Http.client Agent handle)
+- [ ] 137-01-PLAN.md — Http builder API (build/header/body/timeout/query/json/send), ureq 3 upgrade, MeshRequest opaque handle, HttpResponse struct, 5-point compiler registration
+- [ ] 137-02-PLAN.md — Http streaming (Http.stream OS-thread-per-stream, :stop inline cancellation) + keep-alive client (Http.client Agent handle, Http.send_with, Http.client_close)
 
 ### Phase 138: Testing Framework
 **Goal**: Mesh developers can write `*.test.mpl` files with assertion helpers, grouping, setup/teardown, and mock actors, then run all tests via `meshc test` and see a pass/fail summary
