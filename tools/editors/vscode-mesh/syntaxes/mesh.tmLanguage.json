@@ -4,6 +4,8 @@
   "scopeName": "source.mesh",
   "patterns": [
     { "include": "#comments" },
+    { "include": "#regex-literals" },
+    { "include": "#atoms" },
     { "include": "#strings" },
     { "include": "#numbers" },
     { "include": "#module-calls" },
@@ -129,6 +131,22 @@
         }
       ]
     },
+    "atoms": {
+      "patterns": [
+        {
+          "name": "constant.language.atom.mesh",
+          "match": ":[a-zA-Z_][a-zA-Z0-9_]*"
+        }
+      ]
+    },
+    "regex-literals": {
+      "patterns": [
+        {
+          "name": "string.regexp.mesh",
+          "match": "~r/(?:[^/\\\\]|\\\\.)*(?:/[ims]*)?"
+        }
+      ]
+    },
     "keywords": {
       "patterns": [
         {
@@ -137,7 +155,7 @@
         },
         {
           "name": "keyword.declaration.mesh",
-          "match": "\\b(fn|let|def|type|struct|module|interface|impl|pub|actor|service|supervisor|call|cast|trait|alias)\\b"
+          "match": "\\b(fn|let|def|type|struct|module|interface|impl|pub|actor|service|supervisor|call|cast|trait|alias|json)\\b"
         },
         {
           "name": "keyword.operator.mesh",
@@ -145,7 +163,7 @@
         },
         {
           "name": "constant.language.mesh",
-          "match": "\\b(true|false)\\b"
+          "match": "\\b(true|false|nil)\\b"
         },
         {
           "name": "support.type.mesh",
@@ -197,7 +215,7 @@
         },
         {
           "name": "keyword.operator.pipe.mesh",
-          "match": "\\|>"
+          "match": "\\|[0-9]*>"
         },
         {
           "name": "keyword.operator.arrow.mesh",
