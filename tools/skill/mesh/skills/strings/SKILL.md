@@ -1,6 +1,6 @@
 ---
 name: mesh-strings
-description: Mesh string features: interpolation (#{} and ${}), heredocs, String stdlib, Env.get/get_int, and the Regex module.
+description: Mesh string features: interpolation (#{} and ${}), heredocs, json { } object literals, String stdlib, Env.get/get_int, and the Regex module.
 ---
 
 ## String Interpolation
@@ -41,6 +41,56 @@ let body = """
   """
 println(body)
 # Outputs: {"id": 42, "name": "Alice"}
+```
+
+> **For JSON objects:** Prefer `json { }` literals over heredoc JSON templates — they are type-safe and require no manual escaping. See **JSON Literals** below.
+
+## JSON Literals
+
+Rules:
+1. `json { key: value, ... }` — constructs a JSON object. Keys are bare identifiers; values are any Mesh expression.
+2. Multi-line syntax works identically — newlines inside `{ }` are insignificant.
+3. The result is a `Json` type that auto-coerces to `String` — pass directly to `HTTP.response`, `Ws.broadcast`, or any function expecting a String.
+4. Nesting: assign `json { }` to a variable then use it as a field value — embedded raw, no double-encoding.
+5. Reserved keywords (`type`, `fn`, `let`, etc.) cannot be used as bare keys — use heredoc strings for those cases.
+
+Type serialization table:
+
+| Mesh type | JSON output |
+|-----------|-------------|
+| `String`  | `"quoted string"` |
+| `Int`     | `42` (unquoted number) |
+| `Float`   | `3.14` (unquoted) |
+| `Bool`    | `true` / `false` |
+| `nil`     | `null` |
+| `Option<T>` | `null` (None) or the serialized value (Some) |
+| `List<T>` | JSON array |
+| Struct with `deriving(Json)` | nested JSON object |
+
+Code example (from tests/e2e/json_literal_basic.mpl and phase 132 Mesher migration):
+```mesh
+# Basic object — auto-coerces to String
+HTTP.response(200, json { status: "ok", count: 42 })
+HTTP.response(401, json { error: "unauthorized" })
+
+# Multi-line
+let event = json {
+  issue_id: issue_id,
+  severity: "high",
+  active: true
+}
+
+# Nesting — inner embedded raw, no double-encoding
+let inner = json { code: 200 }
+let outer = json { result: inner, ok: true }
+# outer is: {"result":{"code":200},"ok":true}
+
+# Option field
+let data = json { value: some_option }  # None -> null, Some(v) -> v
+
+# List<String> as array
+let tags = ["a", "b", "c"]
+let obj = json { tags: tags }  # {"tags":["a","b","c"]}
 ```
 
 ## String Stdlib
