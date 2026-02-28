@@ -546,6 +546,87 @@ fn main() do
 end
 ```
 
+## TryFrom/TryInto Conversion
+
+`TryFrom` and `TryInto` are for fallible conversions -- conversions that can fail and return a `Result`. Where `From` always succeeds, `TryFrom` returns `Result<TargetType, ErrorType>` so callers can handle the failure case explicitly.
+
+### Implementing TryFrom
+
+Implement `TryFrom<SourceType>` for your type with a `try_from` function that returns `Result<Self, E>`. Call it via `TargetType.try_from(value)`:
+
+```mesh
+struct PositiveInt do
+  value :: Int
+end
+
+impl TryFrom<Int> for PositiveInt do
+  fn try_from(n :: Int) -> Result<PositiveInt, String> do
+    if n > 0 do
+      Ok(PositiveInt { value: n })
+    else
+      Err("must be positive")
+    end
+  end
+end
+
+fn main() do
+  let r = PositiveInt.try_from(42)
+  case r do
+    Ok(p) -> println("${p.value}")    # prints: 42
+    Err(e) -> println("error: ${e}")
+  end
+  let r2 = PositiveInt.try_from(-1)
+  case r2 do
+    Ok(p) -> println("${p.value}")
+    Err(e) -> println("${e}")         # prints: must be positive
+  end
+end
+```
+
+### Automatic TryInto
+
+When you implement `TryFrom<F>` for a type, `TryInto` is automatically available on the source type -- you never need to write a `TryInto` impl yourself. Call `.try_into()` on the source value with a type annotation so the compiler knows what target type to use:
+
+```mesh
+# No TryInto impl needed -- derived automatically from TryFrom<Int> for PositiveInt
+fn main() do
+  let r :: Result<PositiveInt, String> = 42.try_into()
+  case r do
+    Ok(p) -> println("${p.value}")    # prints: 42
+    Err(e) -> println("error: ${e}")
+  end
+  let r2 :: Result<PositiveInt, String> = (-5).try_into()
+  case r2 do
+    Ok(p) -> println("${p.value}")
+    Err(e) -> println("${e}")         # prints: must be positive
+  end
+end
+```
+
+### Using ? with TryFrom
+
+The `?` operator works naturally with `try_from` and `try_into` results, just like it does with any `Result`. If the conversion fails, `?` propagates the `Err` immediately -- no manual case matching needed at the call site:
+
+```mesh
+fn double_positive(n :: Int) -> Int!String do
+  let p = PositiveInt.try_from(n)?   # propagates Err if n <= 0
+  Ok(p.value * 2)
+end
+
+fn main() do
+  case double_positive(21) do
+    Ok(v) -> println("${v}")         # prints: 42
+    Err(e) -> println("error: ${e}")
+  end
+  case double_positive(-1) do
+    Ok(v) -> println("${v}")
+    Err(e) -> println("${e}")        # prints: must be positive
+  end
+end
+```
+
+TryFrom/TryInto is for fallible conversions. For infallible conversions, use [From/Into](#from-into-conversion).
+
 ## Next Steps
 
 - [Iterators](/docs/iterators/) -- lazy iterator pipelines, combinators, and collection materialization
