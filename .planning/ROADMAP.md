@@ -25,6 +25,7 @@
 - [x] **v11.0 Query Builder** - Phases 106-115 (shipped 2026-02-25)
 - [x] **v12.0 Language Ergonomics & Open Source Readiness** - Phases 116-125 (shipped 2026-02-27)
 - [x] **v13.0 Language Completeness** - Phases 126-134 (shipped 2026-02-28)
+- [ ] **v14.0 Ecosystem & Standard Library** - Phases 135-140 (in progress)
 
 ## Phases
 
@@ -243,6 +244,126 @@ See milestones/v13.0-ROADMAP.md for full phase details.
 
 </details>
 
+### v14.0 Ecosystem & Standard Library (In Progress)
+
+**Milestone Goal:** Expand the Mesh ecosystem with production-ready stdlib modules (crypto, encoding, datetime), HTTP client improvements (builder API, streaming, keep-alive), a built-in testing framework (`meshc test`), and a hosted package registry with `meshpkg` CLI.
+
+#### Phase Summary
+
+- [ ] **Phase 135: Encoding & Crypto Stdlib** - SHA-256/512, HMAC, UUID, Base64, Hex as extern "C" wrappers over already-present crates
+- [ ] **Phase 136: DateTime Stdlib** - Full DateTime API (parse, format, arithmetic, compare) backed by chrono 0.4
+- [ ] **Phase 137: HTTP Client Improvements** - Fluent builder API, streaming via OS-thread-per-stream, keep-alive agent handle
+- [ ] **Phase 138: Testing Framework** - `meshc test` runner, assertion helpers, describe/setup/teardown, mock actors, assert_receive
+- [ ] **Phase 139: Package Manifest & meshpkg CLI** - mesh.toml format, mesh.lock lockfile, meshpkg publish/install/search/login binary
+- [ ] **Phase 140: Package Registry Backend & Website** - Axum+PostgreSQL registry server, SHA-256 content addressing, VitePress packages site
+
+## Phase Details
+
+### Phase 135: Encoding & Crypto Stdlib
+**Goal**: Mesh programs can compute cryptographic hashes, HMAC signatures, UUIDs, and encode/decode binary data in Base64 and hex, all via the three-file stdlib pattern with zero new Rust dependencies
+**Depends on**: Phase 134 (v13.0 complete)
+**Requirements**: CRYPTO-01, CRYPTO-02, CRYPTO-03, CRYPTO-04, CRYPTO-05, CRYPTO-06, ENCODE-01, ENCODE-02, ENCODE-03, ENCODE-04, ENCODE-05, ENCODE-06
+**Success Criteria** (what must be TRUE):
+  1. User can call `Crypto.sha256(s)` and `Crypto.sha512(s)` in a Mesh program and receive correct lowercase hex strings matching known test vectors
+  2. User can call `Crypto.hmac_sha256(key, msg)` and `Crypto.hmac_sha512(key, msg)` and receive correct hex digests; `Crypto.secure_compare(a, b)` returns Bool without timing side-channels
+  3. User can call `Crypto.uuid4()` and receive a well-formed UUID v4 string (8-4-4-4-12 format, version nibble = 4, variant bits correct)
+  4. User can round-trip a string through `Base64.encode(s)` / `Base64.decode(s)` and `Base64.encode_url(s)` / `Base64.decode_url(s)`, with decode returning `Result<String, String>`
+  5. User can round-trip a string through `Hex.encode(s)` / `Hex.decode(s)`, with decode returning `Result<String, String>` and rejecting malformed hex input
+**Plans**: TBD
+
+Plans:
+- [ ] 135-01: Crypto stdlib runtime + typeck + codegen (sha256, sha512, hmac_sha256, hmac_sha512, secure_compare, uuid4)
+- [ ] 135-02: Encoding stdlib runtime + typeck + codegen (Base64 standard + URL-safe, Hex encode/decode)
+
+### Phase 136: DateTime Stdlib
+**Goal**: Mesh programs can work with timestamps and date arithmetic using a consistent `DateTime` type backed by chrono 0.4, with ISO 8601 parse/format and Unix timestamp interop
+**Depends on**: Phase 135
+**Requirements**: DTIME-01, DTIME-02, DTIME-03, DTIME-04, DTIME-05, DTIME-06, DTIME-07, DTIME-08
+**Success Criteria** (what must be TRUE):
+  1. User can call `DateTime.utc_now()` and receive a DateTime value representing the current UTC time, convertible to a Unix timestamp via `DateTime.to_unix(dt)`
+  2. User can parse `"2024-01-15T10:30:00Z"` with `DateTime.from_iso8601(s)` returning `Ok(dt)`, and format it back with `DateTime.to_iso8601(dt)` returning the same canonical string
+  3. User can convert a Unix timestamp integer to DateTime via `DateTime.from_unix(n)` and back with `DateTime.to_unix(dt)` with round-trip fidelity
+  4. User can add durations with `DateTime.add(dt, 7, :day)` and subtract via negative n; `DateTime.diff(dt1, dt2, :hour)` returns a signed integer difference
+  5. User can compare two DateTimes with `DateTime.before?(dt1, dt2)` and `DateTime.after?(dt1, dt2)` returning correct Bool values
+**Plans**: TBD
+
+Plans:
+- [ ] 136-01: DateTime runtime impl (chrono 0.4 dep, i64 Unix milliseconds representation, utc_now/from_unix/to_unix/from_iso8601/to_iso8601/add/diff/before?/after?)
+- [ ] 136-02: DateTime typeck registration + LLVM intrinsic declarations + E2E tests
+
+### Phase 137: HTTP Client Improvements
+**Goal**: Mesh programs can make HTTP requests with a fluent builder API, stream large responses without buffering the full body, and reuse connections via a keep-alive agent handle
+**Depends on**: Phase 135
+**Requirements**: HTTP-01, HTTP-02, HTTP-03, HTTP-04, HTTP-05, HTTP-06, HTTP-07
+**Success Criteria** (what must be TRUE):
+  1. User can build an HTTP request with `Http.build(:get, url) |> Http.header(req, "Authorization", "Bearer token") |> Http.timeout(req, 5000) |> Http.send(req)` and receive a `Result<Response, String>` with status, headers, and body
+  2. User can set a request body via `Http.body(req, s)` and execute a POST request returning the server's response
+  3. User can call `Http.stream(req, fn chunk -> ... end)` and have the callback invoked once per chunk without the entire response body being held in memory
+  4. User can create a keep-alive client with `Http.client()` and reuse its connection pool via `Http.send_with(client, req)` across multiple requests to the same host
+**Plans**: TBD
+
+Plans:
+- [ ] 137-01: Http builder API (Http.build/header/body/timeout/send) — refactor http/client.rs, MeshRequest opaque handle, ureq 3 upgrade
+- [ ] 137-02: Http streaming + keep-alive (Http.stream OS-thread-per-stream pattern, Http.client Agent handle)
+
+### Phase 138: Testing Framework
+**Goal**: Mesh developers can write `*.test.mpl` files with assertion helpers, grouping, setup/teardown, and mock actors, then run all tests via `meshc test` and see a pass/fail summary
+**Depends on**: Phase 135
+**Requirements**: TEST-01, TEST-02, TEST-03, TEST-04, TEST-05, TEST-06, TEST-07, TEST-08, TEST-09, TEST-10
+**Success Criteria** (what must be TRUE):
+  1. User can run `meshc test` in a project directory and see per-test pass/fail output with total count; any assertion failure prints the expression source and values; exit code is non-zero on failure
+  2. User can use `assert expr`, `assert_eq a, b`, `assert_ne a, b`, and `assert_raises fn` in test files, with descriptive failure messages distinguishing expected vs actual
+  3. User can group tests with `describe "..." do ... end` and the group name appears in failure output; `setup do ... end` and `teardown do ... end` blocks run around each test in the group
+  4. User can spawn a mock actor via `Test.mock_actor(fn msg -> ... end)` and send it messages in a test; the test actor is isolated so leftover named actors from one test do not affect another
+  5. User can assert the current test actor received a specific message via `assert_receive pattern, timeout_ms`, with timeout failure reporting the pattern and elapsed time
+**Plans**: TBD
+
+Plans:
+- [ ] 138-01: Test runner (meshc test subcommand, *.test.mpl discovery, per-file compile+execute, pass/fail aggregation)
+- [ ] 138-02: Assertion helpers (assert, assert_eq, assert_ne, assert_raises in mesh-rt/src/test_support.rs + typeck + intrinsics)
+- [ ] 138-03: describe/setup/teardown grouping + Test.mock_actor + assert_receive + meshc test --coverage stub
+
+### Phase 139: Package Manifest & meshpkg CLI
+**Goal**: Mesh packages can be declared in a `mesh.toml` manifest with dependencies, locked reproducibly in `mesh.lock`, and published/installed/searched via the `meshpkg` CLI binary
+**Depends on**: Phase 138
+**Requirements**: PKG-01, PKG-02, PKG-03, PKG-04, PKG-05, PKG-06
+**Success Criteria** (what must be TRUE):
+  1. User can create a `mesh.toml` with `[package]` name/version/description/license and `[dependencies]` section; `meshpkg install` generates a `mesh.lock` pinning exact versions
+  2. User can run `meshpkg login` to store an auth token in `~/.mesh/credentials`, then `meshpkg publish` to upload a package tarball to the registry with SHA-256 content addressing
+  3. User can run `meshpkg install <name>` to download and extract a package from the hosted registry into the project's dependencies
+  4. User can run `meshpkg search <query>` and see matching package names and descriptions from the registry
+**Plans**: TBD
+
+Plans:
+- [ ] 139-01: mesh.toml manifest extension (Dependency::Registry variant, mesh.lock lockfile generation) in mesh-pkg crate
+- [ ] 139-02: meshpkg CLI binary (compiler/meshpkg/ new crate, publish/install/search/login subcommands, tar+gz tarball, SHA-256)
+
+### Phase 140: Package Registry Backend & Website
+**Goal**: A hosted package registry accepts authenticated package publications, stores tarballs with SHA-256 content addressing, exposes a search/download API, and presents a browsable website with per-package pages
+**Depends on**: Phase 139
+**Requirements**: REG-01, REG-02, REG-03, REG-04
+**Success Criteria** (what must be TRUE):
+  1. Registry API accepts `meshpkg publish` uploads with a valid auth token, stores the tarball, and returns HTTP 409 if the same name+version is published again with different content
+  2. User visiting the hosted packages site can browse all published packages sorted by recency and see package names, descriptions, and version counts
+  3. User can search the hosted site by package name or keyword and see relevant matching results
+  4. User can navigate to a per-package page showing the rendered README, full version history, and the exact `meshpkg install` command for the latest version
+**Plans**: TBD
+
+Plans:
+- [ ] 140-01: mesh-registry workspace member (Axum 0.8 + sqlx 0.8 + PostgreSQL schema, publish/download/search API, SHA-256 content addressing, auth tokens)
+- [ ] 140-02: Registry packages website (VitePress browse/search/per-package pages, Vue components fetching registry API, publish stdlib packages as seed content)
+
 ## Progress
 
 **Total: 23 milestones shipped, 134 phases, 362 plans across completed milestones.**
+
+**v14.0 Progress:**
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 135. Encoding & Crypto Stdlib | 0/2 | Not started | - |
+| 136. DateTime Stdlib | 0/2 | Not started | - |
+| 137. HTTP Client Improvements | 0/2 | Not started | - |
+| 138. Testing Framework | 0/3 | Not started | - |
+| 139. Package Manifest & meshpkg CLI | 0/2 | Not started | - |
+| 140. Package Registry Backend & Website | 0/2 | Not started | - |
