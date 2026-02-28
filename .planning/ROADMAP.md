@@ -253,7 +253,7 @@ See milestones/v13.0-ROADMAP.md for full phase details.
 - [x] **Phase 135: Encoding & Crypto Stdlib** - SHA-256/512, HMAC, UUID, Base64, Hex as extern "C" wrappers over already-present crates (complete)
 - [x] **Phase 136: DateTime Stdlib** - Full DateTime API (parse, format, arithmetic, compare) backed by chrono 0.4 (completed 2026-02-28)
 - [x] **Phase 137: HTTP Client Improvements** - Fluent builder API, streaming via OS-thread-per-stream, keep-alive agent handle (completed 2026-02-28)
-- [ ] **Phase 138: Testing Framework** - `meshc test` runner, assertion helpers, describe/setup/teardown, mock actors, assert_receive (gap closure in progress)
+- [x] **Phase 138: Testing Framework** - `meshc test` runner, assertion helpers, describe/setup/teardown, mock actors, assert_receive (completed 2026-02-28)
 - [ ] **Phase 139: Package Manifest & meshpkg CLI** - mesh.toml format, mesh.lock lockfile, meshpkg publish/install/search/login binary
 - [ ] **Phase 140: Package Registry Backend & Website** - Axum+PostgreSQL registry server, SHA-256 content addressing, VitePress packages site
 
@@ -319,11 +319,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 138-01-PLAN.md — `meshc test` subcommand + test_runner.rs (*.test.mpl discovery, per-file compile+execute, pass/fail aggregation, --coverage stub)
-- [ ] 138-02-PLAN.md — Assertion runtime (mesh-rt/src/test.rs: assert/assert_eq/assert_ne/assert_raises) + 5-point compiler registration
-- [ ] 138-03-PLAN.md — Test DSL lowering (test/describe/setup/teardown harness) + Test.mock_actor + assert_receive + e2e fixtures
-- [ ] 138-04-PLAN.md — Gap closure: fix emit_non_test_items depth bug (setup/teardown in describe) + test_setup_teardown.test.mpl fixture
-- [ ] 138-05-PLAN.md — Gap closure: assert_receive preprocessing + lib.rs re-export fix + updated mock actor fixture
+- [x] 138-01-PLAN.md — `meshc test` subcommand + test_runner.rs (*.test.mpl discovery, per-file compile+execute, pass/fail aggregation, --coverage stub)
+- [x] 138-02-PLAN.md — Assertion runtime (mesh-rt/src/test.rs: assert/assert_eq/assert_ne/assert_raises) + 5-point compiler registration
+- [x] 138-03-PLAN.md — Test DSL lowering (test/describe/setup/teardown harness) + Test.mock_actor + assert_receive + e2e fixtures
+- [x] 138-04-PLAN.md — Gap closure: fix emit_non_test_items depth bug (setup/teardown in describe) + test_setup_teardown.test.mpl fixture
+- [x] 138-05-PLAN.md — Gap closure: assert_receive preprocessing + lib.rs re-export fix + updated mock actor fixture
 
 ### Phase 139: Package Manifest & meshpkg CLI
 **Goal**: Mesh packages can be declared in a `mesh.toml` manifest with dependencies, locked reproducibly in `mesh.lock`, and published/installed/searched via the `meshpkg` CLI binary
@@ -363,9 +363,9 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 135. Encoding & Crypto Stdlib | 1/2 | Complete    | 2026-02-28 |
+| 135. Encoding & Crypto Stdlib | 2/2 | Complete    | 2026-02-28 |
 | 136. DateTime Stdlib | 2/2 | Complete    | 2026-02-28 |
 | 137. HTTP Client Improvements | 2/2 | Complete    | 2026-02-28 |
-| 138. Testing Framework | 4/5 | In Progress|  |
+| 138. Testing Framework | 5/5 | Complete    | 2026-02-28 |
 | 139. Package Manifest & meshpkg CLI | 0/2 | Not started | - |
 | 140. Package Registry Backend & Website | 0/2 | Not started | - |

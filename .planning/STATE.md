@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Ecosystem & Standard Library
 status: unknown
-last_updated: "2026-02-28T23:14:00Z"
+last_updated: "2026-02-28T23:38:00Z"
 progress:
   total_phases: 126
   completed_phases: 125
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v14.0 Phase 138 — Testing Framework (in progress)
+**Current focus:** v14.0 Phase 139 — Package Manifest & meshpkg CLI (next)
 
 ## Current Position
 
-Phase: 138 of 140 (Testing Framework) — COMPLETE (gap closure plans included)
-Plan: 4 of 4 in current phase — COMPLETE
-Status: Phase 138 complete (including gap closure), ready for Phase 139
-Last activity: 2026-02-28 — Phase 138 Plan 04 complete: token-based rewrite of emit_non_test_items + fix extract_tests_from_describe for setup/teardown, new test_setup_teardown.test.mpl fixture (5 tests pass), TEST-07 unblocked
+Phase: 138 of 140 (Testing Framework) — COMPLETE (all 5 plans including gap closure)
+Plan: 5 of 5 in current phase — COMPLETE
+Status: Phase 138 fully complete, ready for Phase 139
+Last activity: 2026-02-28 — Phase 138 Plan 05 complete: assert_receive preprocessor + ACTOR_MSG_TYPE_KEY injection for __test_body_ fns + test_fail_msg builtin fix + lib.rs re-exports; TEST-09 satisfied; all 6 fixtures pass (24 tests)
 
-Progress: [█████████░] 69%  (9/13 plans)
+Progress: [██████████] 77%  (10/13 plans)
 
 ## Performance Metrics
 
@@ -43,7 +43,7 @@ Progress: [█████████░] 69%  (9/13 plans)
 | 135. Encoding & Crypto Stdlib | 2 | Complete |
 | 136. DateTime Stdlib | 2 | Complete |
 | 137. HTTP Client Improvements | 2 | Complete |
-| 138. Testing Framework | 4 | Complete (incl. gap closure) |
+| 138. Testing Framework | 5 | Complete (incl. gap closure) |
 | 139. Package Manifest & meshpkg CLI | 2 | Not started |
 | 140. Package Registry Backend & Website | 2 | Not started |
 
@@ -90,6 +90,11 @@ Recent decisions affecting current work:
 - [Phase 138]: FAIL_MESSAGES thread_local accumulates failure entries; mesh_test_summary reprints them in Failures: section before count line
 - [Phase 138 Plan 04]: emit_non_test_items uses tokenize_test_source() for token-based depth tracking — skipping=true + skip_depth=0 waits for opening Do, then tracks nested blocks until skip_depth returns to 0
 - [Phase 138 Plan 04]: extract_tests_from_describe helper added — walks describe body with explicit setup/teardown skip logic; avoids premature End detection that would have silently dropped tests
+- [Phase 138 Plan 05]: assert_receive preprocessor generates single-line receive blocks — parse_receive_expr does NOT call eat_newlines() before END_KW after after clause; multi-line form fails
+- [Phase 138 Plan 05]: ACTOR_MSG_TYPE_KEY injected for __test_body_ functions in infer_fn_def — test body fns are plain fns but main thread has actor PID via mesh_rt_init_actor; receive/self() valid at runtime
+- [Phase 138 Plan 05]: test_fail_msg must be registered in builtins.rs as String->Unit — generated assert_receive after-clause calls it; missing registration caused "undefined variable: test_fail_msg"
+- [Phase 138 Plan 05]: self() (function call) not bare self for actor PID in test bodies — bare self is NAME_REF (impl receiver); self() is SelfExpr (actor PID using ACTOR_MSG_TYPE_KEY)
+- [Phase 138 Plan 05]: Default assert_receive timeout is 100ms when no second argument provided
 
 ### Pending Todos
 
@@ -104,5 +109,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 138-04-PLAN.md — token-based emit_non_test_items + extract_tests_from_describe fix; TEST-07 unblocked, all fixtures passing; ready for Phase 139
+Stopped at: Completed 138-05-PLAN.md — assert_receive preprocessor + ACTOR_MSG_TYPE_KEY injection + test_fail_msg builtin + lib.rs re-exports; TEST-09 satisfied; all 6 fixtures pass (24 tests); Phase 138 fully complete; ready for Phase 139
 Resume file: None
