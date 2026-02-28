@@ -280,16 +280,16 @@ Plans:
 **Depends on**: Phase 135
 **Requirements**: DTIME-01, DTIME-02, DTIME-03, DTIME-04, DTIME-05, DTIME-06, DTIME-07, DTIME-08
 **Success Criteria** (what must be TRUE):
-  1. User can call `DateTime.utc_now()` and receive a DateTime value representing the current UTC time, convertible to a Unix timestamp via `DateTime.to_unix(dt)`
-  2. User can parse `"2024-01-15T10:30:00Z"` with `DateTime.from_iso8601(s)` returning `Ok(dt)`, and format it back with `DateTime.to_iso8601(dt)` returning the same canonical string
-  3. User can convert a Unix timestamp integer to DateTime via `DateTime.from_unix(n)` and back with `DateTime.to_unix(dt)` with round-trip fidelity
-  4. User can add durations with `DateTime.add(dt, 7, :day)` and subtract via negative n; `DateTime.diff(dt1, dt2, :hour)` returns a signed integer difference
+  1. User can call `DateTime.utc_now()` and receive a DateTime value representing the current UTC time, convertible to a Unix timestamp via `DateTime.to_unix_ms(dt)`
+  2. User can parse `"2024-01-15T10:30:00Z"` with `DateTime.from_iso8601(s)` returning `Ok(dt)`, and format it back with `DateTime.to_iso8601(dt)` returning `"2024-01-15T10:30:00.000Z"`
+  3. User can convert a Unix timestamp integer to DateTime via `DateTime.from_unix_ms(n)` / `DateTime.from_unix_secs(n)` and back with round-trip fidelity
+  4. User can add durations with `DateTime.add(dt, 7, :day)` and subtract via negative n; `DateTime.diff(dt1, dt2, :hour)` returns a Float difference
   5. User can compare two DateTimes with `DateTime.before?(dt1, dt2)` and `DateTime.after?(dt1, dt2)` returning correct Bool values
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 136-01: DateTime runtime impl (chrono 0.4 dep, i64 Unix milliseconds representation, utc_now/from_unix/to_unix/from_iso8601/to_iso8601/add/diff/before?/after?)
-- [ ] 136-02: DateTime typeck registration + LLVM intrinsic declarations + E2E tests
+- [ ] 136-01-PLAN.md — DateTime runtime (chrono 0.4 dep, datetime.rs with 11 functions) + all 4 compiler registration points (builtins.rs, infer.rs, lower.rs, intrinsics.rs)
+- [ ] 136-02-PLAN.md — DateTime e2e test fixtures (6 .mpl files) + Rust test functions in e2e.rs
 
 ### Phase 137: HTTP Client Improvements
 **Goal**: Mesh programs can make HTTP requests with a fluent builder API, stream large responses without buffering the full body, and reuse connections via a keep-alive agent handle
