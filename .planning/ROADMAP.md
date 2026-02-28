@@ -269,11 +269,11 @@ See milestones/v13.0-ROADMAP.md for full phase details.
   3. User can call `Crypto.uuid4()` and receive a well-formed UUID v4 string (8-4-4-4-12 format, version nibble = 4, variant bits correct)
   4. User can round-trip a string through `Base64.encode(s)` / `Base64.decode(s)` and `Base64.encode_url(s)` / `Base64.decode_url(s)`, with decode returning `Result<String, String>`
   5. User can round-trip a string through `Hex.encode(s)` / `Hex.decode(s)`, with decode returning `Result<String, String>` and rejecting malformed hex input
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 135-01: Crypto stdlib runtime + typeck + codegen (sha256, sha512, hmac_sha256, hmac_sha512, secure_compare, uuid4)
-- [ ] 135-02: Encoding stdlib runtime + typeck + codegen (Base64 standard + URL-safe, Hex encode/decode)
+- [ ] 135-01-PLAN.md — Crypto stdlib runtime + typeck + codegen (sha256, sha512, hmac_sha256, hmac_sha512, secure_compare, uuid4)
+- [ ] 135-02-PLAN.md — Encoding stdlib runtime + typeck + codegen (Base64 standard + URL-safe, Hex encode/decode)
 
 ### Phase 136: DateTime Stdlib
 **Goal**: Mesh programs can work with timestamps and date arithmetic using a consistent `DateTime` type backed by chrono 0.4, with ISO 8601 parse/format and Unix timestamp interop
