@@ -24,8 +24,8 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 Phase: Not started (defining requirements)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-02-28 — Milestone v14.0 started
+Status: Research complete — ready to define requirements
+Last activity: 2026-02-28 — Research complete (4 agents + synthesizer); SUMMARY.md committed at 54d5a3ad
 
 ## Performance Metrics
 
@@ -123,7 +123,11 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None.
+- [ ] Complete `/gsd:new-milestone` — run in fresh context. Research done. Next: define requirements (step 9) and create roadmap (step 10).
+  - Research is at `.planning/research/SUMMARY.md`
+  - 6 suggested phases from SUMMARY.md: Encoding+Crypto / DateTime / HTTP Client / Testing Framework / Package Manifest+CLI / Registry Backend+Website
+  - Scope confirmed: Full suite — stdlib (crypto/date/encoding), HTTP client (streaming/keep-alive/builder), Testing (runner/assert/mock), Package registry (CLI + hosted site)
+  - Coverage reporting: defer to v14.1 (per research recommendation)
 
 ### Blockers/Concerns
 
