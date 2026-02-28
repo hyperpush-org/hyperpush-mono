@@ -366,6 +366,6 @@ Plans:
 | 135. Encoding & Crypto Stdlib | 1/2 | Complete    | 2026-02-28 |
 | 136. DateTime Stdlib | 2/2 | Complete    | 2026-02-28 |
 | 137. HTTP Client Improvements | 2/2 | Complete    | 2026-02-28 |
-| 138. Testing Framework | 3/5 | Gap closure in progress | - |
+| 138. Testing Framework | 4/5 | In Progress|  |
 | 139. Package Manifest & meshpkg CLI | 0/2 | Not started | - |
 | 140. Package Registry Backend & Website | 0/2 | Not started | - |

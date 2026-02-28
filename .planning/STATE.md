@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Ecosystem & Standard Library
 status: unknown
-last_updated: "2026-02-28T22:12:54Z"
+last_updated: "2026-02-28T23:14:00Z"
 progress:
   total_phases: 126
   completed_phases: 125
-  total_plans: 328
-  completed_plans: 327
+  total_plans: 331
+  completed_plans: 330
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 138 of 140 (Testing Framework) — COMPLETE
-Plan: 3 of 3 in current phase — COMPLETE
-Status: Phase 138 complete, ready for Phase 139
-Last activity: 2026-02-28 — Phase 138 Plan 03 complete: source preprocessing DSL (.test.mpl → fn __test_body_N + fn main), test mode detection in MIR lowerer, flag-based assert_raises, mesh_test_run_body/mock_actor/pass_count/fail_count, 5 e2e fixtures all passing
+Phase: 138 of 140 (Testing Framework) — COMPLETE (gap closure plans included)
+Plan: 4 of 4 in current phase — COMPLETE
+Status: Phase 138 complete (including gap closure), ready for Phase 139
+Last activity: 2026-02-28 — Phase 138 Plan 04 complete: token-based rewrite of emit_non_test_items + fix extract_tests_from_describe for setup/teardown, new test_setup_teardown.test.mpl fixture (5 tests pass), TEST-07 unblocked
 
-Progress: [████████░░] 62%  (8/13 plans)
+Progress: [█████████░] 69%  (9/13 plans)
 
 ## Performance Metrics
 
@@ -43,7 +43,7 @@ Progress: [████████░░] 62%  (8/13 plans)
 | 135. Encoding & Crypto Stdlib | 2 | Complete |
 | 136. DateTime Stdlib | 2 | Complete |
 | 137. HTTP Client Improvements | 2 | Complete |
-| 138. Testing Framework | 3 | Complete |
+| 138. Testing Framework | 4 | Complete (incl. gap closure) |
 | 139. Package Manifest & meshpkg CLI | 2 | Not started |
 | 140. Package Registry Backend & Website | 2 | Not started |
 
@@ -88,6 +88,8 @@ Recent decisions affecting current work:
 - [Phase 138]: Test module registered with empty HashMap in stdlib_modules() — mock_actor signature deferred to Plan 03
 - [Phase 138]: assert_* helpers call fail_with() then panic!() to unwind — Plan 03 harness wraps each test body in catch_unwind
 - [Phase 138]: FAIL_MESSAGES thread_local accumulates failure entries; mesh_test_summary reprints them in Failures: section before count line
+- [Phase 138 Plan 04]: emit_non_test_items uses tokenize_test_source() for token-based depth tracking — skipping=true + skip_depth=0 waits for opening Do, then tracks nested blocks until skip_depth returns to 0
+- [Phase 138 Plan 04]: extract_tests_from_describe helper added — walks describe body with explicit setup/teardown skip logic; avoids premature End detection that would have silently dropped tests
 
 ### Pending Todos
 
@@ -102,5 +104,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 138-02-PLAN.md — mesh_test_* runtime functions + 5-point compiler wiring; ready for Phase 138 Plan 03
+Stopped at: Completed 138-04-PLAN.md — token-based emit_non_test_items + extract_tests_from_describe fix; TEST-07 unblocked, all fixtures passing; ready for Phase 139
 Resume file: None
