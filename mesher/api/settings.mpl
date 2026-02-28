@@ -14,7 +14,7 @@ fn settings_row_to_json(rows) do
     let row = List.head(rows)
     HTTP.response(200, "{\"retention_days\":" <> Map.get(row, "retention_days") <> ",\"sample_rate\":" <> Map.get(row, "sample_rate") <> "}")
   else
-    HTTP.response(404, "{\"error\":\"project not found\"}")
+    HTTP.response(404, json { error: "project not found" })
   end
 end
 
@@ -24,7 +24,7 @@ fn storage_row_to_json(rows) do
     let row = List.head(rows)
     HTTP.response(200, "{\"event_count\":" <> Map.get(row, "event_count") <> ",\"estimated_bytes\":" <> Map.get(row, "estimated_bytes") <> "}")
   else
-    HTTP.response(404, "{\"error\":\"project not found\"}")
+    HTTP.response(404, json { error: "project not found" })
   end
 end
 
@@ -40,7 +40,7 @@ pub fn handle_get_project_settings(request) do
   let result = get_project_settings(pool, project_id)
   case result do
     Ok(rows) -> settings_row_to_json(rows)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -54,8 +54,8 @@ pub fn handle_update_project_settings(request) do
   let body = Request.body(request)
   let result = update_project_settings(pool, project_id, body)
   case result do
-    Ok(n) -> HTTP.response(200, "{\"status\":\"ok\",\"affected\":" <> String.from(n) <> "}")
-    Err(e) -> HTTP.response(400, "{\"error\":\"" <> e <> "\"}")
+    Ok(n) -> HTTP.response(200, json { status: "ok", affected: n })
+    Err(e) -> HTTP.response(400, json { error: e })
   end
 end
 
@@ -69,6 +69,6 @@ pub fn handle_get_project_storage(request) do
   let result = get_project_storage(pool, project_id)
   case result do
     Ok(rows) -> storage_row_to_json(rows)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end

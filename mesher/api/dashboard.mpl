@@ -72,7 +72,7 @@ pub fn handle_event_volume(request) do
   let result = event_volume_hourly(pool, project_id, bucket)
   case result do
     Ok(rows) -> respond_volume(rows)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -92,7 +92,7 @@ pub fn handle_error_breakdown(request) do
   let result = error_breakdown_by_level(pool, project_id)
   case result do
     Ok(rows) -> respond_levels(rows)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -113,7 +113,7 @@ pub fn handle_top_issues(request) do
   let result = top_issues_by_frequency(pool, project_id, limit)
   case result do
     Ok(rows) -> respond_top_issues(rows)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -128,7 +128,7 @@ fn do_tag_breakdown(pool, project_id :: String, key :: String) do
   let result = event_breakdown_by_tag(pool, project_id, key)
   case result do
     Ok(rows) -> respond_tag_breakdown(rows)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -141,7 +141,7 @@ pub fn handle_tag_breakdown(request) do
   let project_id = resolve_project_id(pool, raw_id)
   let key = query_or_default(request, "key", "")
   if String.length(key) == 0 do
-    HTTP.response(400, "{\"error\":\"missing key parameter\"}")
+    HTTP.response(400, json { error: "missing key parameter" })
   else
     do_tag_breakdown(pool, project_id, key)
   end
@@ -163,7 +163,7 @@ pub fn handle_issue_timeline(request) do
   let result = issue_event_timeline(pool, issue_id, limit)
   case result do
     Ok(rows) -> respond_timeline(rows)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -176,7 +176,7 @@ fn respond_health(rows) do
     let new_today = Map.get(row, "new_today")
     HTTP.response(200, "{\"unresolved_count\":" <> unresolved <> ",\"events_24h\":" <> events_24h <> ",\"new_today\":" <> new_today <> "}")
   else
-    HTTP.response(404, "{\"error\":\"project not found\"}")
+    HTTP.response(404, json { error: "project not found" })
   end
 end
 
@@ -190,6 +190,6 @@ pub fn handle_project_health(request) do
   let result = project_health_summary(pool, project_id)
   case result do
     Ok(rows) -> respond_health(rows)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end

@@ -47,29 +47,29 @@ end
 
 # Helper: handle successful add_member result.
 fn add_member_success(membership_id :: String) do
-  HTTP.response(201, "{\"id\":\"" <> membership_id <> "\"}")
+  HTTP.response(201, json { id: membership_id })
 end
 
 # Helper: handle successful update_member_role result.
 fn update_role_success(n :: Int) do
-  HTTP.response(200, "{\"status\":\"ok\",\"affected\":" <> String.from(n) <> "}")
+  HTTP.response(200, json { status: "ok", affected: n })
 end
 
 # Helper: handle successful remove_member result.
 fn remove_success(n :: Int) do
-  HTTP.response(200, "{\"status\":\"ok\",\"affected\":" <> String.from(n) <> "}")
+  HTTP.response(200, json { status: "ok", affected: n })
 end
 
 # --- API token helper functions for case arm extraction (ORG-05) ---
 
 # Helper: handle successful create_api_key result.
 fn create_key_success(key_value :: String) do
-  HTTP.response(201, "{\"key_value\":\"" <> key_value <> "\"}")
+  HTTP.response(201, json { key_value: key_value })
 end
 
 # Helper: handle successful revoke_api_key result.
 fn revoke_key_success(n :: Int) do
-  HTTP.response(200, "{\"status\":\"ok\",\"affected\":" <> String.from(n) <> "}")
+  HTTP.response(200, json { status: "ok", affected: n })
 end
 
 # --- Add member helper chain ---
@@ -79,7 +79,7 @@ fn do_add_member(pool :: PoolHandle, org_id :: String, user_id :: String, role :
   let result = add_member(pool, user_id, org_id, role)
   case result do
     Ok(id) -> add_member_success(id)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -88,14 +88,14 @@ fn add_member_with_role(pool :: PoolHandle, org_id :: String, user_id :: String,
   let role_result = extract_json_field(pool, body, "role")
   case role_result do
     Ok(role) -> do_add_member(pool, org_id, user_id, if String.length(role) == 0 do "member" else role end)
-    Err(e) -> HTTP.response(400, "{\"error\":\"invalid json\"}")
+    Err(e) -> HTTP.response(400, json { error: "invalid json" })
   end
 end
 
 # Helper: check user_id is non-empty.
 fn check_user_id(pool :: PoolHandle, org_id :: String, user_id :: String, body :: String) do
   if String.length(user_id) == 0 do
-    HTTP.response(400, "{\"error\":\"user_id is required\"}")
+    HTTP.response(400, json { error: "user_id is required" })
   else
     add_member_with_role(pool, org_id, user_id, body)
   end
@@ -106,7 +106,7 @@ fn validate_add_member(pool :: PoolHandle, org_id :: String, body :: String) do
   let uid_result = extract_json_field(pool, body, "user_id")
   case uid_result do
     Ok(user_id) -> check_user_id(pool, org_id, user_id, body)
-    Err(e) -> HTTP.response(400, "{\"error\":\"invalid json\"}")
+    Err(e) -> HTTP.response(400, json { error: "invalid json" })
   end
 end
 
@@ -117,7 +117,7 @@ fn perform_role_update(pool :: PoolHandle, membership_id :: String, role :: Stri
   let result = update_member_role(pool, membership_id, role)
   case result do
     Ok(n) -> update_role_success(n)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -126,7 +126,7 @@ fn do_update_role(pool :: PoolHandle, membership_id :: String, body :: String) d
   let role_result = extract_json_field(pool, body, "role")
   case role_result do
     Ok(role) -> perform_role_update(pool, membership_id, role)
-    Err(e) -> HTTP.response(400, "{\"error\":\"invalid json\"}")
+    Err(e) -> HTTP.response(400, json { error: "invalid json" })
   end
 end
 
@@ -137,7 +137,7 @@ fn perform_create_key(pool :: PoolHandle, project_id :: String, label :: String)
   let result = create_api_key(pool, project_id, label)
   case result do
     Ok(key_value) -> create_key_success(key_value)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -146,7 +146,7 @@ fn do_create_key(pool :: PoolHandle, project_id :: String, body :: String) do
   let label_result = extract_json_field(pool, body, "label")
   case label_result do
     Ok(label) -> perform_create_key(pool, project_id, if String.length(label) == 0 do "default" else label end)
-    Err(e) -> HTTP.response(400, "{\"error\":\"invalid json\"}")
+    Err(e) -> HTTP.response(400, json { error: "invalid json" })
   end
 end
 
@@ -161,7 +161,7 @@ pub fn handle_list_members(request) do
   let result = get_members_with_users(pool, org_id)
   case result do
     Ok(rows) -> HTTP.response(200, rows |> List.map(fn(row) do member_to_json(row) end) |> to_json_array())
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -195,7 +195,7 @@ pub fn handle_remove_member(request) do
   let result = remove_member(pool, membership_id)
   case result do
     Ok(n) -> remove_success(n)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -209,7 +209,7 @@ pub fn handle_list_api_keys(request) do
   let result = list_api_keys(pool, project_id)
   case result do
     Ok(rows) -> HTTP.response(200, rows |> List.map(fn(row) do api_key_to_json(row) end) |> to_json_array())
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -234,6 +234,6 @@ pub fn handle_revoke_api_key(request) do
   let result = revoke_api_key(pool, key_id)
   case result do
     Ok(n) -> revoke_key_success(n)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end

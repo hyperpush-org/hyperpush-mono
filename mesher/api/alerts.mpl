@@ -31,8 +31,8 @@ end
 fn do_toggle(pool :: PoolHandle, rule_id :: String, enabled_str :: String) do
   let result = toggle_alert_rule(pool, rule_id, enabled_str)
   case result do
-    Ok(n) -> HTTP.response(200, "{\"status\":\"ok\",\"affected\":" <> String.from(n) <> "}")
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Ok(n) -> HTTP.response(200, json { status: "ok", affected: n })
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -48,8 +48,8 @@ pub fn handle_create_alert_rule(request) do
   let body = Request.body(request)
   let result = create_alert_rule(pool, project_id, body)
   case result do
-    Ok(id) -> HTTP.response(201, "{\"id\":\"" <> id <> "\"}")
-    Err(e) -> HTTP.response(400, "{\"error\":\"" <> e <> "\"}")
+    Ok(id) -> HTTP.response(201, json { id: id })
+    Err(e) -> HTTP.response(400, json { error: e })
   end
 end
 
@@ -63,7 +63,7 @@ pub fn handle_list_alert_rules(request) do
   let result = list_alert_rules(pool, project_id)
   case result do
     Ok(rows) -> HTTP.response(200, rows |> List.map(fn(row) do rule_row_to_json(row) end) |> to_json_array())
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -88,8 +88,8 @@ pub fn handle_delete_alert_rule(request) do
   let rule_id = require_param(request, "rule_id")
   let result = delete_alert_rule(pool, rule_id)
   case result do
-    Ok(n) -> HTTP.response(200, "{\"status\":\"ok\",\"affected\":" <> String.from(n) <> "}")
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Ok(n) -> HTTP.response(200, json { status: "ok", affected: n })
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -104,7 +104,7 @@ pub fn handle_list_alerts(request) do
   let result = list_alerts(pool, project_id, status)
   case result do
     Ok(rows) -> HTTP.response(200, rows |> List.map(fn(row) do alert_row_to_json(row) end) |> to_json_array())
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -116,8 +116,8 @@ pub fn handle_acknowledge_alert(request) do
   let alert_id = require_param(request, "id")
   let result = acknowledge_alert(pool, alert_id)
   case result do
-    Ok(n) -> HTTP.response(200, "{\"status\":\"ok\",\"affected\":" <> String.from(n) <> "}")
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Ok(n) -> HTTP.response(200, json { status: "ok", affected: n })
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -129,7 +129,7 @@ pub fn handle_resolve_alert(request) do
   let alert_id = require_param(request, "id")
   let result = resolve_fired_alert(pool, alert_id)
   case result do
-    Ok(n) -> HTTP.response(200, "{\"status\":\"ok\",\"affected\":" <> String.from(n) <> "}")
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Ok(n) -> HTTP.response(200, json { status: "ok", affected: n })
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end

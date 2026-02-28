@@ -141,7 +141,7 @@ end
 
 # Helper: handle issue query error.
 fn handle_issue_result_err(e :: String) do
-  HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+  HTTP.response(500, json { error: e })
 end
 
 # Handle GET /api/v1/projects/:project_id/issues
@@ -172,7 +172,7 @@ end
 
 # Helper: handle empty search query.
 fn missing_query_response() do
-  HTTP.response(400, "{\"error\":\"missing search query\"}")
+  HTTP.response(400, json { error: "missing search query" })
 end
 
 # Helper: perform event search and return response.
@@ -180,7 +180,7 @@ fn do_event_search(pool, project_id :: String, q :: String, limit_str :: String)
   let result = search_events_fulltext(pool, project_id, q, limit_str)
   case result do
     Ok(rows) -> HTTP.response(200, serialize_event_search(rows))
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -212,7 +212,7 @@ end
 
 # Helper: handle missing tag parameters.
 fn missing_tag_response() do
-  HTTP.response(400, "{\"error\":\"missing key or value parameter\"}")
+  HTTP.response(400, json { error: "missing key or value parameter" })
 end
 
 # Helper: perform tag filter and return response.
@@ -220,7 +220,7 @@ fn do_tag_filter(pool, project_id :: String, tag_json :: String, limit_str :: St
   let result = filter_events_by_tag(pool, project_id, tag_json, limit_str)
   case result do
     Ok(rows) -> HTTP.response(200, serialize_tag_events(rows))
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
 
@@ -277,6 +277,6 @@ pub fn handle_list_issue_events(request) do
   let result = list_events_for_issue(pool, issue_id, cursor, cursor_id, limit_str)
   case result do
     Ok(rows) -> handle_issue_events_ok(rows, limit_str)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end

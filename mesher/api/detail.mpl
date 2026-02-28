@@ -88,7 +88,7 @@ fn build_event_response_from_rows(pool, event_id :: String, rows) do
     let received_at = Map.get(row, "received_at")
     add_navigation(pool, event_id, issue_id, received_at, detail_json)
   else
-    HTTP.response(404, "{\"error\":\"event not found\"}")
+    HTTP.response(404, json { error: "event not found" })
   end
 end
 
@@ -104,6 +104,6 @@ pub fn handle_event_detail(request) do
   let result = get_event_detail(pool, event_id)
   case result do
     Ok(rows) -> build_event_response_from_rows(pool, event_id, rows)
-    Err(e) -> HTTP.response(500, "{\"error\":\"" <> e <> "\"}")
+    Err(e) -> HTTP.response(500, json { error: e })
   end
 end
