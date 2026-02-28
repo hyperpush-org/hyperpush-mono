@@ -284,11 +284,11 @@ Plans:
   1. User can call `.collect()` on an iterator of `{String, V}` pairs and receive a `Map<String, V>` with all entries present
   2. `cargo build --all` on the compiler workspace produces zero warnings
   3. A middleware handler function compiles without requiring an explicit `:: Request` type annotation on its parameter
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 129-01: Map.collect string key support
-- [ ] 129-02: Compiler warnings cleanup and middleware type inference fix
+- [ ] 129-01-PLAN.md — Fix Map.collect string key dispatch for Iter.zip pattern (TDD) (MAPCOL-01)
+- [ ] 129-02-PLAN.md — Verify clean build (QUAL-01) and remove :: Request annotations for inference (QUAL-02)
 
 ### Phase 130: Mesher Dogfooding
 **Goal**: Mesher source updated to demonstrate and validate the new v13.0 language features in production code
