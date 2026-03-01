@@ -254,7 +254,7 @@ See milestones/v13.0-ROADMAP.md for full phase details.
 - [x] **Phase 136: DateTime Stdlib** - Full DateTime API (parse, format, arithmetic, compare) backed by chrono 0.4 (completed 2026-02-28)
 - [x] **Phase 137: HTTP Client Improvements** - Fluent builder API, streaming via OS-thread-per-stream, keep-alive agent handle (completed 2026-02-28)
 - [x] **Phase 138: Testing Framework** - `meshc test` runner, assertion helpers, describe/setup/teardown, mock actors, assert_receive (completed 2026-02-28)
-- [ ] **Phase 139: Package Manifest & meshpkg CLI** - mesh.toml format, mesh.lock lockfile, meshpkg publish/install/search/login binary
+- [x] **Phase 139: Package Manifest & meshpkg CLI** - mesh.toml format, mesh.lock lockfile, meshpkg publish/install/search/login binary (completed 2026-03-01)
 - [ ] **Phase 140: Package Registry Backend & Website** - Axum+PostgreSQL registry server, SHA-256 content addressing, VitePress packages site
 
 ## Phase Details
@@ -367,5 +367,5 @@ Plans:
 | 136. DateTime Stdlib | 2/2 | Complete    | 2026-02-28 |
 | 137. HTTP Client Improvements | 2/2 | Complete    | 2026-02-28 |
 | 138. Testing Framework | 5/5 | Complete    | 2026-02-28 |
-| 139. Package Manifest & meshpkg CLI | 1/2 | In Progress|  |
+| 139. Package Manifest & meshpkg CLI | 2/2 | Complete   | 2026-03-01 |
 | 140. Package Registry Backend & Website | 0/2 | Not started | - |

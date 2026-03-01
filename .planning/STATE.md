@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v14.0 Phase 139 — Package Manifest & meshpkg CLI (plan 01 complete)
+**Current focus:** v14.0 Phase 139 — Package Manifest & meshpkg CLI (phase complete, plan 02 done)
 
 ## Current Position
 
-Phase: 139 of 140 (Package Manifest & meshpkg CLI) — IN PROGRESS (1 of 2 plans complete)
-Plan: 1 of 2 in current phase — COMPLETE
-Status: Phase 139 Plan 01 complete, Plan 02 (meshpkg CLI binary) next
-Last activity: 2026-03-01 — Phase 139 Plan 01 complete: Registry deps in manifest.rs (RegistryShorthand + Registry table form), sha256 + version fields in lockfile.rs, Registry error arm in resolver.rs, expanded lib.rs re-exports, ureq + sha2 deps added; PKG-01 + PKG-02 satisfied; all 30 mesh-pkg tests pass
+Phase: 139 of 140 (Package Manifest & meshpkg CLI) — COMPLETE (2 of 2 plans complete)
+Plan: 2 of 2 in current phase — COMPLETE
+Status: Phase 139 complete — Phase 140 (Package Registry Backend & Website) is next
+Last activity: 2026-03-01 — Phase 139 Plan 02 complete: meshpkg CLI binary with login/publish/install/search subcommands; clap CLI, tarball creation, SHA-256 verification, ureq 3 HTTP, credentials at ~/.mesh/credentials; PKG-03 + PKG-04 + PKG-05 + PKG-06 satisfied; 30 mesh-pkg tests still pass
 
-Progress: [██████████] 85%  (11/13 plans)
+Progress: [██████████] 92%  (12/13 plans)
 
 ## Performance Metrics
 
@@ -44,7 +44,7 @@ Progress: [██████████] 85%  (11/13 plans)
 | 136. DateTime Stdlib | 2 | Complete |
 | 137. HTTP Client Improvements | 2 | Complete |
 | 138. Testing Framework | 5 | Complete (incl. gap closure) |
-| 139. Package Manifest & meshpkg CLI | 2 | Not started |
+| 139. Package Manifest & meshpkg CLI | 2 | Complete |
 | 140. Package Registry Backend & Website | 2 | Not started |
 
 ## Accumulated Context
@@ -98,6 +98,9 @@ Recent decisions affecting current work:
 - [Phase 139 Plan 01]: RegistryShorthand must be FIRST in Dependency enum for serde untagged — bare string "1.0.0" must match before Git/Path are tried
 - [Phase 139 Plan 01]: LockedPackage.version is String (not Option<String>) with #[serde(default)] so old lockfiles deserialize to empty string
 - [Phase 139 Plan 01]: Registry deps in resolve_deps() return error directing to meshpkg install — network resolution belongs in CLI binary (Plan 02)
+- [Phase 139 Plan 02]: ureq 3 Body does not implement std::io::Read — use body_mut().as_reader().read_to_end() for binary downloads (tarball bytes)
+- [Phase 139 Plan 02]: response.status() in ureq 3 returns StatusCode not u16 — match via status().as_u16() (consistent with mesh-rt/http/client.rs)
+- [Phase 139 Plan 02]: meshpkg credentials stored as TOML at ~/.mesh/credentials with [registry] section; dirs crate for home_dir()
 
 ### Pending Todos
 
@@ -112,5 +115,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 139-01-PLAN.md — Registry deps in manifest.rs, sha256+version in lockfile.rs, Registry error arm in resolver.rs, expanded lib.rs re-exports, ureq+sha2 deps; PKG-01+PKG-02 satisfied; all 30 mesh-pkg tests pass; ready for 139-02 (meshpkg CLI binary)
+Stopped at: Completed 139-02-PLAN.md — meshpkg CLI binary with login/publish/install/search; clap CLI, GzEncoder tarball, SHA-256 verify, ureq 3 HTTP; PKG-03 to PKG-06 satisfied; Phase 139 complete; ready for Phase 140 (Registry Backend & Website)
 Resume file: None
