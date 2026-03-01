@@ -186,8 +186,8 @@ end
 pub fn create_session(pool :: PoolHandle, user_id :: String) -> String!String do
   # Generate cryptographically random token using Crypto stdlib -- no DB round-trip needed
   # Two UUID4s with hyphens stripped = 32 + 32 = 64 hex chars (same format as before)
-  let uuid1 = Crypto.uuid4() |2> String.replace("-", "")
-  let uuid2 = Crypto.uuid4() |2> String.replace("-", "")
+  let uuid1 = Crypto.uuid4() |> String.replace("-", "")
+  let uuid2 = Crypto.uuid4() |> String.replace("-", "")
   let token = uuid1 <> uuid2
   let fields = %{"token" => token, "user_id" => user_id}
   let _ = Repo.insert(pool, Session.__table__(), fields)?
