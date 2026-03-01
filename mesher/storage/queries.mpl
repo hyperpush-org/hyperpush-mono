@@ -93,19 +93,14 @@ end
 # --- API key queries ---
 
 # Create a new API key for a project. Returns the generated key_value (mshr_ prefixed).
-# Two-step pattern: Repo.query_raw for gen_random_bytes key generation, then Repo.insert for data INSERT.
+# Uses Crypto stdlib UUID generation -- no DB round-trip needed.
+# Format: "mshr_" + UUID4 (36 chars) = 41-char key.
 pub fn create_api_key(pool :: PoolHandle, project_id :: String, label :: String) -> String!String do
-  # Step 1: Generate API key value via PG (mshr_ prefix + 48 hex chars)
-  let key_rows = Repo.query_raw(pool, "SELECT 'mshr_' || encode(gen_random_bytes(24), 'hex') AS key_value", [])?
-  if List.length(key_rows) > 0 do
-    let key_value = Map.get(List.head(key_rows), "key_value")
-    # Step 2: Insert API key with ORM
-    let fields = %{"project_id" => project_id, "key_value" => key_value, "label" => label}
-    let _ = Repo.insert(pool, ApiKey.__table__(), fields)?
-    Ok(key_value)
-  else
-    Err("create_api_key: key generation failed")
-  end
+  # Generate API key using Crypto stdlib -- no DB round-trip needed
+  let key_value = "mshr_" <> Crypto.uuid4()
+  let fields = %{"project_id" => project_id, "key_value" => key_value, "label" => label}
+  let _ = Repo.insert(pool, ApiKey.__table__(), fields)?
+  Ok(key_value)
 end
 
 # Get the project associated with a valid (non-revoked) API key.
@@ -187,19 +182,16 @@ end
 
 # Create a new session with a cryptographically random token.
 # Returns the 64-char hex token.
-# Two-step pattern: Repo.query_raw for gen_random_bytes token, then Repo.insert for data INSERT.
+# Uses Crypto stdlib UUID generation -- no DB round-trip needed.
 pub fn create_session(pool :: PoolHandle, user_id :: String) -> String!String do
-  # Step 1: Generate cryptographically random token via PG
-  let token_rows = Repo.query_raw(pool, "SELECT encode(gen_random_bytes(32), 'hex') AS token", [])?
-  if List.length(token_rows) > 0 do
-    let token = Map.get(List.head(token_rows), "token")
-    # Step 2: Insert session with ORM
-    let fields = %{"token" => token, "user_id" => user_id}
-    let _ = Repo.insert(pool, Session.__table__(), fields)?
-    Ok(token)
-  else
-    Err("create_session: token generation failed")
-  end
+  # Generate cryptographically random token using Crypto stdlib -- no DB round-trip needed
+  # Two UUID4s with hyphens stripped = 32 + 32 = 64 hex chars (same format as before)
+  let uuid1 = Crypto.uuid4() |2> String.replace("-", "")
+  let uuid2 = Crypto.uuid4() |2> String.replace("-", "")
+  let token = uuid1 <> uuid2
+  let fields = %{"token" => token, "user_id" => user_id}
+  let _ = Repo.insert(pool, Session.__table__(), fields)?
+  Ok(token)
 end
 
 # Validate a session token. Returns the Session if valid and not expired.
