@@ -19,12 +19,25 @@ pub struct Package {
     pub description: Option<String>,
     #[serde(default)]
     pub authors: Vec<String>,
+    #[serde(default)]
+    pub license: Option<String>,
 }
 
-/// A dependency specification -- either git-based or path-based.
+/// A dependency specification -- registry, git-based, or path-based.
+///
+/// Serde uses `untagged` deserialization, so variants are tried in declaration
+/// order. RegistryShorthand MUST be first so a bare string "1.0.0" matches it
+/// before Git or Path are attempted.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum Dependency {
+    /// Bare string shorthand: `foo = "1.0.0"`
+    RegistryShorthand(String),
+    /// Table form: `foo = { version = "1.0.0" }`
+    Registry {
+        version: String,
+    },
+    /// Git source: `foo = { git = "https://...", ... }`
     Git {
         git: String,
         #[serde(default)]
@@ -34,9 +47,26 @@ pub enum Dependency {
         #[serde(default)]
         tag: Option<String>,
     },
+    /// Local path: `foo = { path = "../foo" }`
     Path {
         path: String,
     },
+}
+
+impl Dependency {
+    /// Returns the version string if this is a registry dependency.
+    pub fn registry_version(&self) -> Option<&str> {
+        match self {
+            Dependency::RegistryShorthand(v) => Some(v),
+            Dependency::Registry { version } => Some(version),
+            _ => None,
+        }
+    }
+
+    /// Returns true if this is a registry (not git or path) dependency.
+    pub fn is_registry(&self) -> bool {
+        self.registry_version().is_some()
+    }
 }
 
 impl Manifest {
@@ -193,5 +223,111 @@ lib = { git = "https://example.com/lib.git" }
             }
             _ => panic!("Expected git dependency"),
         }
+    }
+
+    // --- New tests for registry dependencies and license field ---
+
+    #[test]
+    fn parse_registry_shorthand() {
+        let toml = r#"
+[package]
+name = "uses-registry"
+version = "0.1.0"
+
+[dependencies]
+foo = "1.0.0"
+"#;
+        let manifest = Manifest::from_str(toml).unwrap();
+        match &manifest.dependencies["foo"] {
+            Dependency::RegistryShorthand(v) => {
+                assert_eq!(v, "1.0.0");
+            }
+            other => panic!("Expected RegistryShorthand, got: {:?}", other),
+        }
+        assert!(manifest.dependencies["foo"].is_registry());
+        assert_eq!(manifest.dependencies["foo"].registry_version(), Some("1.0.0"));
+    }
+
+    #[test]
+    fn parse_registry_table_form() {
+        let toml = r#"
+[package]
+name = "uses-registry-table"
+version = "0.1.0"
+
+[dependencies]
+foo = { version = "1.0.0" }
+"#;
+        let manifest = Manifest::from_str(toml).unwrap();
+        match &manifest.dependencies["foo"] {
+            Dependency::Registry { version } => {
+                assert_eq!(version, "1.0.0");
+            }
+            other => panic!("Expected Registry, got: {:?}", other),
+        }
+        assert!(manifest.dependencies["foo"].is_registry());
+        assert_eq!(manifest.dependencies["foo"].registry_version(), Some("1.0.0"));
+    }
+
+    #[test]
+    fn parse_mixed_dependency_types() {
+        let toml = r#"
+[package]
+name = "mixed-deps"
+version = "0.1.0"
+
+[dependencies]
+registry-short = "2.3.4"
+registry-table = { version = "1.0.0" }
+git-dep = { git = "https://github.com/example/lib.git", tag = "v1.0" }
+path-dep = { path = "../path-dep" }
+"#;
+        let manifest = Manifest::from_str(toml).unwrap();
+        assert_eq!(manifest.dependencies.len(), 4);
+
+        match &manifest.dependencies["registry-short"] {
+            Dependency::RegistryShorthand(v) => assert_eq!(v, "2.3.4"),
+            other => panic!("Expected RegistryShorthand, got: {:?}", other),
+        }
+
+        match &manifest.dependencies["registry-table"] {
+            Dependency::Registry { version } => assert_eq!(version, "1.0.0"),
+            other => panic!("Expected Registry, got: {:?}", other),
+        }
+
+        match &manifest.dependencies["git-dep"] {
+            Dependency::Git { git, tag, .. } => {
+                assert_eq!(git, "https://github.com/example/lib.git");
+                assert_eq!(tag.as_deref(), Some("v1.0"));
+            }
+            other => panic!("Expected Git, got: {:?}", other),
+        }
+
+        match &manifest.dependencies["path-dep"] {
+            Dependency::Path { path } => assert_eq!(path, "../path-dep"),
+            other => panic!("Expected Path, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn parse_license_field() {
+        // With license field
+        let toml_with_license = r#"
+[package]
+name = "licensed"
+version = "1.0.0"
+license = "MIT"
+"#;
+        let manifest = Manifest::from_str(toml_with_license).unwrap();
+        assert_eq!(manifest.package.license.as_deref(), Some("MIT"));
+
+        // Without license field -- should still parse and default to None
+        let toml_no_license = r#"
+[package]
+name = "unlicensed"
+version = "1.0.0"
+"#;
+        let manifest = Manifest::from_str(toml_no_license).unwrap();
+        assert!(manifest.package.license.is_none());
     }
 }

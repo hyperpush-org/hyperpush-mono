@@ -18,10 +18,16 @@ pub struct Lockfile {
 pub struct LockedPackage {
     /// Package name.
     pub name: String,
-    /// Source location (git URL or local path).
+    /// Explicit version string. Empty string for git/path deps.
+    #[serde(default)]
+    pub version: String,
+    /// Source location (registry download URL, git URL, or local path).
     pub source: String,
-    /// Resolved revision (git commit SHA, or "local" for path deps).
+    /// Resolved revision (git commit SHA, "local" for path deps, or version string for registry).
     pub revision: String,
+    /// Hex SHA-256 of the downloaded tarball. None for git/path deps.
+    #[serde(default)]
+    pub sha256: Option<String>,
 }
 
 impl Lockfile {
@@ -71,13 +77,17 @@ mod tests {
         let lockfile = Lockfile::new(vec![
             LockedPackage {
                 name: "beta-lib".to_string(),
+                version: String::new(),
                 source: "https://github.com/example/beta.git".to_string(),
                 revision: "def456".to_string(),
+                sha256: None,
             },
             LockedPackage {
                 name: "alpha-lib".to_string(),
+                version: String::new(),
                 source: "https://github.com/example/alpha.git".to_string(),
                 revision: "abc123".to_string(),
+                sha256: None,
             },
         ]);
 
@@ -97,26 +107,34 @@ mod tests {
         let packages1 = vec![
             LockedPackage {
                 name: "zlib".to_string(),
+                version: String::new(),
                 source: "/path/to/zlib".to_string(),
                 revision: "local".to_string(),
+                sha256: None,
             },
             LockedPackage {
                 name: "alib".to_string(),
+                version: String::new(),
                 source: "https://example.com/alib.git".to_string(),
                 revision: "aaa111".to_string(),
+                sha256: None,
             },
         ];
 
         let packages2 = vec![
             LockedPackage {
                 name: "alib".to_string(),
+                version: String::new(),
                 source: "https://example.com/alib.git".to_string(),
                 revision: "aaa111".to_string(),
+                sha256: None,
             },
             LockedPackage {
                 name: "zlib".to_string(),
+                version: String::new(),
                 source: "/path/to/zlib".to_string(),
                 revision: "local".to_string(),
+                sha256: None,
             },
         ];
 
@@ -147,13 +165,57 @@ mod tests {
         let lockfile = Lockfile::new(vec![
             LockedPackage {
                 name: "local-dep".to_string(),
+                version: String::new(),
                 source: "../local-dep".to_string(),
                 revision: "local".to_string(),
+                sha256: None,
             },
         ]);
 
         let s = lockfile.to_string().unwrap();
         assert!(s.contains("local-dep"));
         assert!(s.contains("local"));
+    }
+
+    #[test]
+    fn lockfile_registry_package_with_sha256() {
+        // Registry packages have version and sha256 populated
+        let lockfile = Lockfile::new(vec![
+            LockedPackage {
+                name: "foo".to_string(),
+                version: "1.0.0".to_string(),
+                source: "https://registry.example.com/packages/foo-1.0.0.tar.gz".to_string(),
+                revision: "1.0.0".to_string(),
+                sha256: Some("abc123def456".to_string()),
+            },
+        ]);
+
+        let s = lockfile.to_string().unwrap();
+        assert!(s.contains("sha256"));
+        assert!(s.contains("abc123def456"));
+        assert!(s.contains("1.0.0"));
+
+        // Round-trip
+        let lf2: Lockfile = toml::from_str(&s).unwrap();
+        assert_eq!(lf2.packages[0].sha256.as_deref(), Some("abc123def456"));
+        assert_eq!(lf2.packages[0].version, "1.0.0");
+    }
+
+    #[test]
+    fn lockfile_backward_compat_no_sha256() {
+        // Old lockfiles without sha256 and version fields should still parse
+        let old_format = r#"
+version = 1
+
+[[packages]]
+name = "some-dep"
+source = "https://github.com/example/some-dep.git"
+revision = "abc123"
+"#;
+        let lf: Lockfile = toml::from_str(old_format).unwrap();
+        assert_eq!(lf.packages.len(), 1);
+        assert_eq!(lf.packages[0].name, "some-dep");
+        assert!(lf.packages[0].sha256.is_none());
+        assert_eq!(lf.packages[0].version, "");
     }
 }

@@ -10,6 +10,8 @@ git2 = { workspace = true }
 semver = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+ureq = { version = "3", features = ["gzip"] }
+sha2 = "0.10"
 
 [dev-dependencies]
 tempfile = "3"

@@ -93,6 +93,12 @@ fn resolve_deps(
 
         // Determine source and resolve
         let (source, revision, dep_path) = match dep {
+            Dependency::RegistryShorthand(version) | Dependency::Registry { version } => {
+                return Err(format!(
+                    "Registry dependency `{}@{}` must be installed via `meshpkg install` before building",
+                    name, version
+                ));
+            }
             Dependency::Git {
                 git: url,
                 rev,
@@ -276,11 +282,13 @@ pub fn resolve_dependencies(
         .iter()
         .map(|dep| LockedPackage {
             name: dep.name.clone(),
+            version: String::new(), // git/path deps have no version number
             source: match &dep.source {
                 DepSource::Git { url, .. } => url.clone(),
                 DepSource::Path { path } => path.display().to_string(),
             },
             revision: dep.revision.clone(),
+            sha256: None, // git/path deps have no tarball hash
         })
         .collect();
 
