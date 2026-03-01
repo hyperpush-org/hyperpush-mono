@@ -605,9 +605,8 @@ pub extern "C" fn mesh_list_all(
 
 /// Test if a list contains an element using raw u64 equality.
 ///
-/// Returns 1 if found, 0 if not. No closure parameter -- simple value comparison.
-/// Works correctly for Int, Bool, and pointer identity. For String content
-/// equality, users should use `List.any(list, fn(x) -> x == elem end)`.
+/// Returns 1 if found, 0 if not. Works correctly for Int and Bool.
+/// For String lists, the codegen emits `mesh_list_contains_str` instead.
 #[no_mangle]
 pub extern "C" fn mesh_list_contains(list: *mut u8, elem: u64) -> i8 {
     unsafe {
@@ -615,6 +614,29 @@ pub extern "C" fn mesh_list_contains(list: *mut u8, elem: u64) -> i8 {
         let src = list_data(list);
         for i in 0..len as usize {
             if *src.add(i) == elem {
+                return 1;
+            }
+        }
+        0
+    }
+}
+
+/// Test if a list of strings contains a given string using content equality.
+///
+/// Uses `mesh_string_eq` for byte-by-byte comparison, so two distinct string
+/// allocations with identical content compare equal.  The codegen redirects
+/// `List.contains` calls whose element type is String to this function.
+#[no_mangle]
+pub extern "C" fn mesh_list_contains_str(
+    list: *mut u8,
+    elem: *const crate::string::MeshString,
+) -> i8 {
+    unsafe {
+        let len = list_len(list);
+        let src = list_data(list);
+        for i in 0..len as usize {
+            let item = *src.add(i) as *const crate::string::MeshString;
+            if crate::string::mesh_string_eq(item, elem) != 0 {
                 return 1;
             }
         }

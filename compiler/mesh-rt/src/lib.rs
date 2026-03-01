@@ -107,7 +107,7 @@ pub use db::sqlite::{
     mesh_sqlite_open, mesh_sqlite_close, mesh_sqlite_execute, mesh_sqlite_query,
 };
 pub use collections::list::{
-    mesh_list_all, mesh_list_any, mesh_list_append, mesh_list_concat, mesh_list_contains,
+    mesh_list_all, mesh_list_any, mesh_list_append, mesh_list_concat, mesh_list_contains, mesh_list_contains_str,
     mesh_list_drop, mesh_list_enumerate, mesh_list_filter, mesh_list_find, mesh_list_flat_map,
     mesh_list_flatten, mesh_list_from_array, mesh_list_get, mesh_list_head, mesh_list_last,
     mesh_list_length, mesh_list_map, mesh_list_new, mesh_list_nth, mesh_list_reduce,

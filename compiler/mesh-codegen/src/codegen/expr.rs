@@ -765,6 +765,20 @@ impl<'ctx> CodeGen<'ctx> {
             if name == "mesh_global_unregister" {
                 return self.codegen_node_string_call(args, "mesh_global_unregister");
             }
+            // List.contains on String elements: redirect to mesh_list_contains_str which
+            // uses mesh_string_eq (byte comparison) instead of raw pointer equality.
+            if name == "mesh_list_contains" && args.len() == 2
+                && matches!(args[1].ty(), MirType::String)
+            {
+                let list_val = self.codegen_expr(&args[0])?;
+                let elem_val = self.codegen_expr(&args[1])?;
+                let f = get_intrinsic(&self.module, "mesh_list_contains_str");
+                let result = self.builder
+                    .build_call(f, &[list_val.into(), elem_val.into()], "list_contains_str")
+                    .map_err(|e| e.to_string())?;
+                return result.try_as_basic_value().basic()
+                    .ok_or_else(|| "mesh_list_contains_str returned void".to_string());
+            }
         }
 
         // Math/Int/Float stdlib intrinsics (Phase 43)

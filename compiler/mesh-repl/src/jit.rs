@@ -123,6 +123,7 @@ fn register_runtime_symbols() {
     add_sym("mesh_list_any", mesh_rt::mesh_list_any as *const ());
     add_sym("mesh_list_all", mesh_rt::mesh_list_all as *const ());
     add_sym("mesh_list_contains", mesh_rt::mesh_list_contains as *const ());
+    add_sym("mesh_list_contains_str", mesh_rt::mesh_list_contains_str as *const ());
     add_sym("mesh_list_zip", mesh_rt::mesh_list_zip as *const ());
     add_sym("mesh_list_flat_map", mesh_rt::mesh_list_flat_map as *const ());
     add_sym("mesh_list_flatten", mesh_rt::mesh_list_flatten as *const ());

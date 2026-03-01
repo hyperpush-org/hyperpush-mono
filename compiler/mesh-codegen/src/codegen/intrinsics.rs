@@ -523,8 +523,10 @@ pub fn declare_intrinsics<'ctx>(module: &Module<'ctx>) {
     module.add_function("mesh_list_any", i8_type.fn_type(&[ptr_type.into(), ptr_type.into(), ptr_type.into()], false), Some(inkwell::module::Linkage::External));
     // mesh_list_all(list: ptr, fn_ptr: ptr, env_ptr: ptr) -> i8 (Bool)
     module.add_function("mesh_list_all", i8_type.fn_type(&[ptr_type.into(), ptr_type.into(), ptr_type.into()], false), Some(inkwell::module::Linkage::External));
-    // mesh_list_contains(list: ptr, elem: i64) -> i8 (Bool)
+    // mesh_list_contains(list: ptr, elem: i64) -> i8 (Bool) — Int/Bool elements
     module.add_function("mesh_list_contains", i8_type.fn_type(&[ptr_type.into(), i64_type.into()], false), Some(inkwell::module::Linkage::External));
+    // mesh_list_contains_str(list: ptr, elem: ptr) -> i8 (Bool) — String elements, uses mesh_string_eq
+    module.add_function("mesh_list_contains_str", i8_type.fn_type(&[ptr_type.into(), ptr_type.into()], false), Some(inkwell::module::Linkage::External));
 
     // Phase 47: List zip, flat_map, flatten, enumerate, take, drop, last, nth
     module.add_function("mesh_list_zip", ptr_type.fn_type(&[ptr_type.into(), ptr_type.into()], false), Some(inkwell::module::Linkage::External));
