@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Ecosystem & Standard Library
 status: unknown
-last_updated: "2026-03-01T22:06:45.318Z"
+last_updated: "2026-03-01T23:06:54.942Z"
 progress:
-  total_phases: 132
+  total_phases: 133
   completed_phases: 132
-  total_plans: 347
-  completed_plans: 347
+  total_plans: 351
+  completed_plans: 348
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v14.0 COMPLETE — all phases shipped; registry + packages-website + docs + GitHub Release v14.0.0 live in production
+**Current focus:** Phase 145 — Redesigning packages-website to production-grade with Tailwind v4 OKLCH design system
 
 ## Current Position
 
-Phase: 144 of 144 (Update GitHub Actions to deploy all services on release branch push with post-deploy health checks) — 1 of 1 plans COMPLETE
-Plan: 1 of 1 — DONE
-Status: Phase 144 Plan 01 complete — deploy-services.yml created (Fly.io parallel deploy + health checks on v* tag push); deploy.yml updated (docs auto-redeploy on tag push); full release automation in place
-Last activity: 2026-03-01 — Phase 144 Plan 01 complete: GitHub Actions fully automated; pushing v* tag now triggers all four deploys (registry, packages, docs, binaries) automatically
+Phase: 145 of 145 (Completely redesign the mesh packages page) — 1 of 3 plans COMPLETE
+Plan: 1 of 3 — DONE
+Status: Phase 145 Plan 01 complete — Tailwind v4 + OKLCH design system installed into packages-website; search API bug fixed (?search= param); registry versions endpoint added at GET /api/v1/packages/{name}/versions
+Last activity: 2026-03-01 — Phase 145 Plan 01 complete: Tailwind v4 foundation and API bug fixes in place; build passes; cargo check passes
 
-Progress: [██████████] 100%  (13/13 plans)
+Progress: [██████████] 100%  (1/3 plans for phase 145)
 
 ## Performance Metrics
 
@@ -149,6 +149,9 @@ Recent decisions affecting current work:
 - [Phase 144 Plan 01]: flyctl deploy --remote-only required — remote builder handles Docker; Actions runner has no production Docker daemon configured
 - [Phase 144 Plan 01]: Per-job working-directory (registry/ vs packages-website/) so flyctl picks up correct fly.toml
 - [Phase 144 Plan 01]: curl --retry 5 --retry-delay 10 --retry-connrefused for Fly.io health checks (VM warmup window); --retry 3 --retry-delay 5 for GitHub Pages docs (faster propagation)
+- [Phase 145-01]: tailwindcss() placed before sveltekit() in vite plugins — reversed order causes CSS classes to have no effect
+- [Phase 145-01]: versions route registered before /{name}/{version} in mod.rs — prevents Axum matching literal 'versions' as a version parameter
+- [Phase 145-01]: Tailwind v4 requires no tailwind.config.js — all configuration via CSS @theme inline block
 
 ### Roadmap Evolution
 
@@ -156,6 +159,7 @@ Recent decisions affecting current work:
 - Phase 142 added: Update docs page with changes/additions from v14
 - Phase 143 added: Deploy everything including new stuff from v14
 - Phase 144 added: Update GitHub Actions to deploy all services on release branch push with post-deploy health checks
+- Phase 145 added: Completely redesign the mesh packages page. It is extremely bare and simple. It should be production grade and look good and fit the theme of the landing page
 
 ### Pending Todos
 
@@ -170,5 +174,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 144-01-PLAN.md — GitHub Actions fully automated; deploy-services.yml created for Fly.io parallel deploy + health checks; deploy.yml updated for tag-triggered docs redeploy; full release automation in place
+Stopped at: Completed 145-01-PLAN.md — Tailwind v4 foundation + OKLCH tokens installed into packages-website; search API bug fixed (?search= param); registry versions endpoint added at GET /api/v1/packages/{name}/versions; npm run build and cargo check both pass
 Resume file: None
