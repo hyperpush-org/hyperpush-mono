@@ -6,7 +6,7 @@ from Types.Event import EventPayload
 # Check if the severity level is valid.
 pub fn validate_level(level :: String) -> String!String do
   let valid_levels = ["fatal", "error", "warning", "info", "debug"]
-  let is_valid = List.contains(valid_levels, level)
+  let is_valid = List.any(valid_levels, fn(l) do l == level end)
   if is_valid do
     Ok("valid")
   else

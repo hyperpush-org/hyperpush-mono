@@ -6,23 +6,43 @@ from Ingestion.Validation import validate_level, validate_payload_size, validate
 
 describe("validate_level") do
   test("accepts fatal") do
-    assert_eq(validate_level("fatal"), Ok("valid"))
+    let result = validate_level("fatal")
+    case result do
+      Ok(v) -> assert_eq(v, "valid")
+      Err(_) -> assert(false)
+    end
   end
 
   test("accepts error") do
-    assert_eq(validate_level("error"), Ok("valid"))
+    let result = validate_level("error")
+    case result do
+      Ok(v) -> assert_eq(v, "valid")
+      Err(_) -> assert(false)
+    end
   end
 
   test("accepts warning") do
-    assert_eq(validate_level("warning"), Ok("valid"))
+    let result = validate_level("warning")
+    case result do
+      Ok(v) -> assert_eq(v, "valid")
+      Err(_) -> assert(false)
+    end
   end
 
   test("accepts info") do
-    assert_eq(validate_level("info"), Ok("valid"))
+    let result = validate_level("info")
+    case result do
+      Ok(v) -> assert_eq(v, "valid")
+      Err(_) -> assert(false)
+    end
   end
 
   test("accepts debug") do
-    assert_eq(validate_level("debug"), Ok("valid"))
+    let result = validate_level("debug")
+    case result do
+      Ok(v) -> assert_eq(v, "valid")
+      Err(_) -> assert(false)
+    end
   end
 
   test("rejects critical") do
@@ -44,11 +64,19 @@ end
 
 describe("validate_payload_size") do
   test("accepts body within limit") do
-    assert_eq(validate_payload_size("hello", 100), Ok("ok"))
+    let result = validate_payload_size("hello", 100)
+    case result do
+      Ok(v) -> assert_eq(v, "ok")
+      Err(_) -> assert(false)
+    end
   end
 
   test("accepts body exactly at limit") do
-    assert_eq(validate_payload_size("hello", 5), Ok("ok"))
+    let result = validate_payload_size("hello", 5)
+    case result do
+      Ok(v) -> assert_eq(v, "ok")
+      Err(_) -> assert(false)
+    end
   end
 
   test("rejects body over limit") do
@@ -62,11 +90,19 @@ end
 
 describe("validate_bulk_count") do
   test("accepts count within limit") do
-    assert_eq(validate_bulk_count(50, 100), Ok("ok"))
+    let result = validate_bulk_count(50, 100)
+    case result do
+      Ok(v) -> assert_eq(v, "ok")
+      Err(_) -> assert(false)
+    end
   end
 
   test("accepts count exactly at limit") do
-    assert_eq(validate_bulk_count(100, 100), Ok("ok"))
+    let result = validate_bulk_count(100, 100)
+    case result do
+      Ok(v) -> assert_eq(v, "ok")
+      Err(_) -> assert(false)
+    end
   end
 
   test("rejects count over limit") do

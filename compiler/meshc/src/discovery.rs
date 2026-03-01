@@ -111,6 +111,11 @@ fn discover_recursive(
         if entry_path.is_dir() {
             discover_recursive(root, &entry_path, files)?;
         } else if entry_path.extension().and_then(|e| e.to_str()) == Some("mpl") {
+            // Skip *.test.mpl files — they use the test DSL and are only valid
+            // when preprocessed by the test runner (`meshc test`), not regular builds.
+            if name_str.ends_with(".test.mpl") {
+                continue;
+            }
             // Store path relative to root
             let relative = entry_path
                 .strip_prefix(root)

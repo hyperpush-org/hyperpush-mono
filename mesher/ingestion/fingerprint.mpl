@@ -14,10 +14,10 @@ from Types.Event import EventPayload, StackFrame, ExceptionInfo, Fingerprint
 # Lowercases and strips hex address prefixes (0x). Full regex not available
 # in Mesh; this covers the most common source of fingerprint instability.
 fn normalize_message(msg :: String) -> Fingerprint do
-  # Slot pipe: |2> inserts the piped value as the second argument
+  # String.replace(subject, from, to) -- pipe msg as subject (arg 1)
   msg
     |> String.to_lower()
-    |2> String.replace("0x", "")
+    |> String.replace("0x", "")
     |> String.trim()
 end
 

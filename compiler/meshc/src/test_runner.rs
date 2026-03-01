@@ -105,8 +105,14 @@ pub fn run_tests(
             .map_err(|e| format!("Failed to create temp dir: {}", e))?;
         let bin_path = tmp_dir.path().join("test_bin");
 
+        // Copy project source modules into the temp dir so cross-module imports resolve.
+        // The test file is compiled as main.mpl; all other .mpl sources (excluding *.test.mpl
+        // and the project's own main.mpl) are copied relative to their position in the project.
+        // This enables `from Ingestion.Fingerprint import ...` to resolve at compile time.
+        copy_project_sources_to_tmp(project_dir, tmp_dir.path());
+
         let main_path = tmp_dir.path().join("main.mpl");
-        std::fs::write(&main_path, preprocessed)
+        std::fs::write(&main_path, &preprocessed)
             .map_err(|e| format!("Failed to write preprocessed source: {}", e))?;
 
         let diag_opts = DiagnosticOptions { color: true, json: false };
@@ -420,6 +426,11 @@ fn extract_test_blocks(tokens: &[TToken]) -> Vec<TestBlock> {
 /// `group_prefix`: label prefix from enclosing describe (e.g., "Group: ").
 /// `setup_body`: setup body from enclosing describe.
 /// `teardown_body`: teardown body from enclosing describe.
+///
+/// When `group_prefix` is None (top-level scan), `End` tokens from helper function
+/// definitions (e.g., `fn foo() do ... end`) are skipped — they do NOT terminate the scan.
+/// When `group_prefix` is Some (inside a describe block), an unmatched `End` terminates
+/// the scan (it's the describe block's closing `end`).
 fn extract_blocks_at(
     tokens: &[TToken],
     i: &mut usize,
@@ -428,7 +439,27 @@ fn extract_blocks_at(
     teardown_body: Option<&str>,
     blocks: &mut Vec<TestBlock>,
 ) {
+    // `block_depth` tracks how deep we are inside `do...end` blocks from non-test items
+    // (e.g., helper function bodies). Only incremented by `do`; decremented by `end`.
+    // When depth > 0, we are inside a non-test block and skip tokens without checking
+    // for test/describe keywords.
+    let mut block_depth: usize = 0;
+
     while *i < tokens.len() {
+        // Inside a non-test block (e.g., a helper `fn` body) — skip tokens until `end`.
+        if block_depth > 0 {
+            match &tokens[*i] {
+                TToken::Do => { block_depth += 1; }
+                TToken::End => {
+                    block_depth -= 1;
+                    // When depth returns to 0, we've exited the non-test block.
+                }
+                _ => {}
+            }
+            *i += 1;
+            continue;
+        }
+
         match &tokens[*i] {
             TToken::TestKw => {
                 // test(STRING) do BODY end
@@ -466,10 +497,7 @@ fn extract_blocks_at(
                 // Now parse the describe body: find setup, teardown, and test blocks.
                 let (inner_setup, inner_teardown, inner_end) =
                     peek_describe_body(tokens, *i);
-                // Recurse into describe body using peek_describe_body's position info.
-                // We do NOT call extract_blocks_at here because it would encounter
-                // setup/teardown sub-block End tokens and return prematurely.
-                // Instead, we walk only the test tokens between setup/teardown sub-blocks.
+                // Walk only the test tokens between setup/teardown sub-blocks.
                 extract_tests_from_describe(
                     tokens,
                     *i,
@@ -482,10 +510,21 @@ fn extract_blocks_at(
                 // Advance past the describe body.
                 *i = inner_end;
             }
-            TToken::End => {
-                // End of a describe block (caller handles this).
+            TToken::Do => {
+                // A `do` at the top level of the scan — we're entering a non-test block
+                // (e.g., a helper function body). Track depth so we skip its `end`.
+                block_depth += 1;
                 *i += 1;
-                return;
+            }
+            TToken::End => {
+                if group_prefix.is_some() {
+                    // End of a describe block (caller handles this).
+                    *i += 1;
+                    return;
+                }
+                // At top level: this `end` shouldn't be here unmatched
+                // (depth tracking above handles normal cases). Skip it.
+                *i += 1;
             }
             _ => {
                 *i += 1;
@@ -526,9 +565,10 @@ fn extract_tests_from_describe(
 
         if skip_depth > 0 {
             // Inside a setup/teardown block body — skip everything and track nesting.
+            // Only `do` opens a block; keywords like `if`, `case`, `while` precede `do`
+            // and must not be double-counted.
             match &tokens[i] {
-                TToken::Do | TToken::If | TToken::While
-                | TToken::Case | TToken::For | TToken::Receive => {
+                TToken::Do => {
                     skip_depth += 1;
                 }
                 TToken::End => {
@@ -614,9 +654,10 @@ fn peek_describe_body(
                 let body = extract_block_body_raw(tokens, &mut i);
                 teardown = Some(body);
             }
-            // Same rule: only `do`, `if`, `while`, `case`, `for`, `receive` increase depth.
-            TToken::Do | TToken::If | TToken::While
-            | TToken::Case | TToken::For | TToken::Receive => {
+            // Only `do` opens a block and increases depth.
+            // Keywords like `if`, `while`, `case`, `for`, `receive` precede a `do` and
+            // must NOT be double-counted — the `do` that follows them handles depth.
+            TToken::Do => {
                 depth += 1;
                 i += 1;
             }
@@ -701,22 +742,29 @@ fn extract_block_body(tokens: &[TToken], i: &mut usize) -> String {
 
 /// Extract block body as raw source text, tracking do/end nesting.
 ///
-/// Only `do` (and keywords that introduce do..end blocks) increments depth.
-/// `fn` by itself does NOT increment depth — it's the `do` keyword that follows it.
-/// The nesting keywords tracked here are exactly those that require a matching `end`.
+/// Only `do` increments depth — it is the actual block opener in all Mesh constructs.
+/// Keywords like `if`, `while`, `case`, `for`, `receive` always precede a `do` keyword
+/// that opens the block; they do NOT increment depth themselves (that would double-count).
+///
+/// Pattern:
+///   `if X do BODY end`      — `do` opens, `end` closes (depth: +1 by `do`, -1 by `end`)
+///   `case X do ARMS end`    — same
+///   `while X do BODY end`   — same
+///   `for X in Y do BODY end`— same
+///   `receive do ARMS end`   — same
+///   `fn X(args) do BODY end`— `fn` not counted; `do` opens, `end` closes
 fn extract_block_body_raw(tokens: &[TToken], i: &mut usize) -> String {
     let mut body = String::new();
     let mut depth = 1usize;
 
     while *i < tokens.len() {
         match &tokens[*i] {
-            // Only `do`, `if`, `while`, `case`, `for`, `receive` increase depth.
-            // `fn` does NOT — in Mesh, `fn() do body end`, the `do` following `fn` does.
-            // `actor`, `service` definitions always have a `do` block, so don't double-count.
-            TToken::Do | TToken::If | TToken::While
-            | TToken::Case | TToken::For | TToken::Receive => {
+            // Only `do` opens a block and increases depth.
+            // All other keywords (`if`, `while`, `case`, `for`, `receive`, `fn`) are emitted
+            // as text only — the `do` that follows them handles the depth increment.
+            TToken::Do => {
                 depth += 1;
-                body.push_str(&token_to_str(&tokens[*i]));
+                body.push_str("do");
             }
             TToken::End => {
                 if depth == 0 {
@@ -731,8 +779,13 @@ fn extract_block_body_raw(tokens: &[TToken], i: &mut usize) -> String {
                 body.push_str("end");
             }
             TToken::Fn => body.push_str("fn"),
+            TToken::If => body.push_str("if"),
+            TToken::While => body.push_str("while"),
+            TToken::Case => body.push_str("case"),
+            TToken::For => body.push_str("for"),
             TToken::Actor => body.push_str("actor"),
             TToken::Service => body.push_str("service"),
+            TToken::Receive => body.push_str("receive"),
             TToken::TestKw => body.push_str("test"),
             TToken::DescribeKw => body.push_str("describe"),
             TToken::SetupKw => body.push_str("setup"),
@@ -797,11 +850,10 @@ fn emit_non_test_items(source: &str, out: &mut String) {
 
         if skip_depth > 0 {
             // Inside a test/describe block body — skip everything and track nesting.
-            // Only `do`, `if`, `while`, `case`, `for`, `receive` open new blocks.
-            // `fn` does NOT — the `do` that follows it does.
+            // Only `do` opens a block; keywords like `if`, `case`, `while`, `for`, `receive`
+            // precede a `do` and must not be double-counted.
             match tok {
-                TToken::Do | TToken::If | TToken::While
-                | TToken::Case | TToken::For | TToken::Receive => {
+                TToken::Do => {
                     skip_depth += 1;
                 }
                 TToken::End => {
@@ -828,16 +880,17 @@ fn emit_non_test_items(source: &str, out: &mut String) {
         }
 
         // Not skipping. emit_depth tracks depth of user-defined blocks being emitted.
+        // Only `do` increments depth; keywords like `if`, `case`, `while`, `for`, `receive`
+        // are emitted as text only — the `do` that follows them handles depth.
         match tok {
             TToken::TestKw | TToken::DescribeKw if emit_depth == 0 => {
                 // Start of a test/describe block at top level — suppress it entirely.
                 skipping = true;
                 // Do not emit the keyword.
             }
-            TToken::Do | TToken::If | TToken::While
-            | TToken::Case | TToken::For | TToken::Receive => {
+            TToken::Do => {
                 emit_depth += 1;
-                out.push_str(&token_to_str(tok));
+                out.push_str("do");
             }
             TToken::End => {
                 if emit_depth > 0 {
@@ -943,6 +996,68 @@ fn split_assert_receive_args(rest: &str) -> (String, String) {
         None => {
             // No comma — entire rest is the pattern; use default timeout.
             (rest.trim().to_string(), "100".to_string())
+        }
+    }
+}
+
+// ── Copy project sources into temp dir for cross-module test compilation ──
+
+/// Copy all non-test .mpl source files from `project_dir` into `tmp_dir`,
+/// preserving relative directory structure.
+///
+/// This enables test files that import project modules (e.g., `from Ingestion.Fingerprint
+/// import compute_fingerprint`) to compile successfully. The test file itself is written
+/// as `main.mpl` by the caller after this function runs.
+///
+/// Files excluded from copying:
+/// - `*.test.mpl` files (they are test DSL, not regular Mesh modules)
+/// - `main.mpl` at the project root (the test's preprocessed source replaces it)
+/// - Hidden directories (names starting with `.`)
+/// - The `target` directory (build artifacts)
+///
+/// Errors during copy are silently ignored — if a source file cannot be copied,
+/// the compiler will emit a "module not found" error for the affected import,
+/// which is the correct behaviour.
+fn copy_project_sources_to_tmp(project_dir: &Path, tmp_dir: &Path) {
+    copy_sources_recursive(project_dir, project_dir, tmp_dir);
+}
+
+fn copy_sources_recursive(project_root: &Path, dir: &Path, tmp_dir: &Path) {
+    let entries = match std::fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let name = entry.file_name();
+        let name_str = name.to_string_lossy();
+
+        // Skip hidden directories and build artifacts
+        if name_str.starts_with('.') || name_str == "target" {
+            continue;
+        }
+
+        if path.is_dir() {
+            copy_sources_recursive(project_root, &path, tmp_dir);
+        } else if path.extension().and_then(|e| e.to_str()) == Some("mpl") {
+            // Skip test files and the project entry point (main.mpl at root)
+            if name_str.ends_with(".test.mpl") {
+                continue;
+            }
+            let relative = match path.strip_prefix(project_root) {
+                Ok(r) => r,
+                Err(_) => continue,
+            };
+            // Skip the project's main.mpl — the test's preprocessed source replaces it
+            if relative == std::path::Path::new("main.mpl") {
+                continue;
+            }
+            let dest = tmp_dir.join(relative);
+            // Ensure destination directory exists
+            if let Some(parent) = dest.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            let _ = std::fs::copy(&path, &dest);
         }
     }
 }

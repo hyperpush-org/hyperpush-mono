@@ -202,12 +202,28 @@ impl<'ctx> CodeGen<'ctx> {
         intrinsics::declare_intrinsics(&self.module);
 
         // Step 2: Create type layouts and store MIR struct defs for field lookup.
+        //
+        // Order matters here due to cross-dependencies:
+        //   - Sum type layouts for Option/Result need to know if variant fields are
+        //     pointer-sized (to choose { i8, ptr } vs { i8, [N x i8] } layout).
+        //     Struct fields are always heap-allocated pointers, so they don't need
+        //     the struct size — just the opaque struct type as a placeholder.
+        //   - Struct LLVM types need sum type layouts for fields like
+        //     `exception :: Option<ExceptionInfo>` to use { i8, ptr } correctly.
+        //
+        // Solution: three-pass type creation:
+        //   Pass A: register opaque struct placeholders (forward declarations)
+        //   Pass B: create sum type layouts (can reference opaque struct types)
+        //   Pass C: set struct type bodies (can reference sum type layouts)
+        for s in &mir.structs {
+            self.context.opaque_struct_type(&s.name);
+        }
+        self.create_sum_type_layouts(&mir.sum_types);
         self.create_struct_types(&mir.structs);
         for s in &mir.structs {
             self.mir_struct_defs
                 .insert(s.name.clone(), s.fields.clone());
         }
-        self.create_sum_type_layouts(&mir.sum_types);
 
         // Step 3: Forward-declare all functions.
         self.declare_functions(&mir.functions);
