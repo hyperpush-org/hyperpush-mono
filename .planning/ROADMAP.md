@@ -334,11 +334,11 @@ Plans:
   2. User can run `meshpkg login` to store an auth token in `~/.mesh/credentials`, then `meshpkg publish` to upload a package tarball to the registry with SHA-256 content addressing
   3. User can run `meshpkg install <name>` to download and extract a package from the hosted registry into the project's dependencies
   4. User can run `meshpkg search <query>` and see matching package names and descriptions from the registry
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 139-01: mesh.toml manifest extension (Dependency::Registry variant, mesh.lock lockfile generation) in mesh-pkg crate
-- [ ] 139-02: meshpkg CLI binary (compiler/meshpkg/ new crate, publish/install/search/login subcommands, tar+gz tarball, SHA-256)
+- [ ] 139-01-PLAN.md — mesh-pkg extension: Dependency::Registry variants, license field, sha256 in LockedPackage, re-exports
+- [ ] 139-02-PLAN.md — meshpkg binary crate: login/publish/install/search subcommands, tar+gz tarball, SHA-256 verification, spinner + colored output
 
 ### Phase 140: Package Registry Backend & Website
 **Goal**: A hosted package registry accepts authenticated package publications, stores tarballs with SHA-256 content addressing, exposes a search/download API, and presents a browsable website with per-package pages
