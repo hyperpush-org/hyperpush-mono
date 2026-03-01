@@ -24,6 +24,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         )
         // Metadata routes
         .route("/api/v1/packages/{name}", get(metadata::package_handler))
+        .route("/api/v1/packages/{name}/versions", get(metadata::versions_handler))
         .route("/api/v1/packages/{name}/{version}", get(metadata::version_handler))
         // Download — streaming
         .route(

@@ -7,6 +7,36 @@ use serde::Serialize;
 use crate::{db, error::AppError, state::AppState};
 
 #[derive(Serialize)]
+pub struct VersionListItem {
+    pub version: String,
+    pub published_at: chrono::DateTime<chrono::Utc>,
+    pub download_count: i64,
+    pub size_bytes: i64,
+}
+
+/// GET /api/v1/packages/{name}/versions
+/// Returns all versions for a package ordered newest first.
+pub async fn versions_handler(
+    State(state): State<Arc<AppState>>,
+    Path(name): Path<String>,
+) -> Result<Json<Vec<VersionListItem>>, AppError> {
+    // Ensure package exists (returns 404 if not)
+    db::packages::get_package(&state.pool, &name)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or(AppError::NotFound)?;
+    let versions = db::packages::list_versions(&state.pool, &name)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    Ok(Json(versions.into_iter().map(|v| VersionListItem {
+        version: v.version,
+        published_at: v.published_at,
+        download_count: v.download_count,
+        size_bytes: v.size_bytes,
+    }).collect()))
+}
+
+#[derive(Serialize)]
 pub struct VersionMeta {
     pub sha256: String,
 }
