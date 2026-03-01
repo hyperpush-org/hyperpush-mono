@@ -380,19 +380,21 @@ Plans:
 **Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 141-01-PLAN.md — Replace pgcrypto token generation with Crypto.uuid4() in create_api_key and create_session; add mesher/mesh.toml package manifest
-- [ ] 141-02-PLAN.md — Write unit tests for fingerprint and validation pure functions using meshc test
-- [ ] 141-03-PLAN.md — Build verification and human approval checkpoint
+- [x] 141-01-PLAN.md — Replace pgcrypto token generation with Crypto.uuid4() in create_api_key and create_session; add mesher/mesh.toml package manifest
+- [x] 141-02-PLAN.md — Write unit tests for fingerprint and validation pure functions using meshc test
+- [x] 141-03-PLAN.md — Build verification and human approval checkpoint
 
 ### Phase 142: Update docs page with changes/additions from v14
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Documentation site and agent skill files reflect all v14.0 additions — new stdlib reference (Crypto, Encoding, DateTime), Testing Framework guide, updated HTTP Client section with fluent builder API, updated tooling page with meshc test and meshpkg, cheatsheet entries, and updated skill files
+**Requirements**: CRYPTO-01, CRYPTO-02, CRYPTO-03, CRYPTO-04, CRYPTO-05, CRYPTO-06, ENCODE-01, ENCODE-02, ENCODE-03, ENCODE-04, ENCODE-05, ENCODE-06, DTIME-01, DTIME-02, DTIME-03, DTIME-04, DTIME-05, DTIME-06, DTIME-07, DTIME-08, HTTP-01, HTTP-02, HTTP-03, HTTP-04, HTTP-05, HTTP-06, HTTP-07, TEST-01, TEST-02, TEST-03, TEST-04, TEST-05, TEST-06, TEST-07, TEST-08, TEST-09, TEST-10, PKG-01, PKG-02, PKG-03, PKG-04, PKG-05, PKG-06
 **Depends on:** Phase 141
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 142 to break down)
+- [ ] 142-01-PLAN.md — VitePress config (sidebar + meshVersion 14.0) + new stdlib doc page + new testing doc page
+- [ ] 142-02-PLAN.md — Update tooling page (meshc test + meshpkg) + web page (HTTP Client v14) + cheatsheet (testing + stdlib)
+- [ ] 142-03-PLAN.md — Update Mesh top-level SKILL.md + HTTP skill with v14 client builder
 
 ### Phase 143: Deploy everything including new stuff from v14
 
