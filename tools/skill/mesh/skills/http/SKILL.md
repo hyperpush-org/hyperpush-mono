@@ -1,6 +1,6 @@
 ---
 name: mesh-http
-description: Mesh HTTP: server routing (HTTP.router/route/serve), middleware (HTTP.use), path parameters, HTTP client (HTTP.get), response helpers, and WebSocket.
+description: Mesh HTTP: server routing (HTTP.router/route/serve), middleware (HTTP.use), path parameters, HTTP client v14 fluent builder (Http.build/send/stream), legacy HTTP.get, and WebSocket.
 ---
 
 ## HTTP Server Basics
@@ -111,6 +111,73 @@ let result = HTTP.get("http://api.example.com/data")
 case result do
   Ok(body) -> println(body)
   Err(msg) -> println("request failed: #{msg}")
+end
+```
+
+## HTTP Client v14 (Builder API)
+
+Rules:
+1. `Http.build(method, url)` — creates a new request. `method` is an atom: `:get`, `:post`, `:put`, `:delete`. Returns a Request handle.
+2. `Http.header(req, key, value)` — adds a header. Returns updated request (rebind).
+3. `Http.body(req, s)` — sets the request body string (for POST/PUT). Returns updated request.
+4. `Http.timeout(req, ms)` — sets a per-request timeout in milliseconds. Returns updated request.
+5. `Http.send(req)` — executes the request. Returns `Result<String, String>` — `Ok(body)` on 2xx, `Err(message)` otherwise.
+6. `Http.stream(req, fn chunk -> ... end)` — streams response body chunk by chunk in an OS thread. Callback returns `"ok"` to continue, `"stop"` to cancel. Does not buffer the full body.
+7. `Http.client()` — creates a keep-alive HTTP client handle for connection reuse.
+8. `Http.send_with(client, req)` — sends request using the client's connection pool. Returns `Result<String, String>`.
+9. `Http.client_close(client)` — releases the client and its connections.
+10. CRITICAL: `Http.*` (lowercase) = HTTP CLIENT. `HTTP.*` (uppercase) = HTTP SERVER. Never mix them.
+
+Code example — GET with headers (from tests/e2e/http_client_builder.mpl):
+```mesh
+fn main() do
+  let req = Http.build(:get, "https://api.example.com/data")
+  let req = Http.header(req, "Authorization", "Bearer token")
+  let req = Http.timeout(req, 5000)
+  let result = Http.send(req)
+  case result do
+    Ok(resp) -> println(resp)
+    Err(e) -> println("error: #{e}")
+  end
+end
+```
+
+Code example — POST with body (from tests/e2e/http_client_builder.mpl):
+```mesh
+fn main() do
+  let req = Http.build(:post, "https://api.example.com/items")
+  let req = Http.header(req, "Content-Type", "application/json")
+  let req = Http.body(req, json { name: "widget" })
+  let result = Http.send(req)
+  case result do
+    Ok(resp) -> println(resp)
+    Err(e) -> println(e)
+  end
+end
+```
+
+Code example — Streaming (from tests/e2e/http_stream_compile.mpl):
+```mesh
+fn main() do
+  let req = Http.build(:get, "https://example.com/stream")
+  let _handle = Http.stream(req, fn chunk do
+    println(chunk)
+    "ok"
+  end)
+end
+```
+
+Code example — Keep-alive client (from tests/e2e/http_client_keepalive.mpl):
+```mesh
+fn main() do
+  let client = Http.client()
+  let req = Http.build(:get, "https://api.example.com/data")
+  let result = Http.send_with(client, req)
+  case result do
+    Ok(resp) -> println(resp)
+    Err(e) -> println(e)
+  end
+  Http.client_close(client)
 end
 ```
 
