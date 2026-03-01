@@ -278,49 +278,37 @@ uninstall() {
     say_green "meshc has been uninstalled."
 }
 
-# --- Install ---
+# --- Install binary helper ---
 
-install() {
-    local _version="$1"
+install_binary() {
+    local _bin_name="$1"
+    local _bin_version="$2"
     local _platform _archive _url _tmpdir _checksum_file _expected_hash
-
-    detect_downloader
-
-    # Determine version
-    if [ -z "$_version" ]; then
-        say "Fetching latest version..."
-        _version="$(get_latest_version)"
-    fi
-
-    # Check if update needed
-    if ! check_update_needed "$_version"; then
-        return 0
-    fi
 
     # Detect platform
     _platform="$(detect_platform)"
 
-    say "Installing meshc v${_version} (${_platform})..."
+    say "Installing ${_bin_name} v${_bin_version} (${_platform})..."
 
     # Construct download URL
-    _archive="meshc-v${_version}-${_platform}.tar.gz"
-    _url="https://github.com/${REPO}/releases/download/v${_version}/${_archive}"
+    _archive="${_bin_name}-v${_bin_version}-${_platform}.tar.gz"
+    _url="https://github.com/${REPO}/releases/download/v${_bin_version}/${_archive}"
 
     # Create temp directory
     _tmpdir="$(mktemp -d)"
-    trap 'rm -rf "$_tmpdir"' EXIT
 
     # Download tarball
     if ! download "$_url" "$_tmpdir/$_archive"; then
-        say_red "error: Failed to download meshc v${_version} (HTTP error)."
+        say_red "error: Failed to download ${_bin_name} v${_bin_version} (HTTP error)."
         say_red "  URL: $_url"
         say_red "  Check https://github.com/${REPO}/releases for available versions."
+        rm -rf "$_tmpdir"
         return 1
     fi
 
     # Download and verify checksum
     _checksum_file="$_tmpdir/SHA256SUMS"
-    if download "https://github.com/${REPO}/releases/download/v${_version}/SHA256SUMS" "$_checksum_file" 2>/dev/null; then
+    if download "https://github.com/${REPO}/releases/download/v${_bin_version}/SHA256SUMS" "$_checksum_file" 2>/dev/null; then
         _expected_hash="$(grep "$_archive" "$_checksum_file" | cut -d' ' -f1)"
         if [ -n "$_expected_hash" ]; then
             verify_checksum "$_tmpdir/$_archive" "$_expected_hash"
@@ -336,15 +324,42 @@ install() {
 
     # Install binary
     mkdir -p "$INSTALL_DIR"
-    mv "$_tmpdir/meshc" "$INSTALL_DIR/meshc"
-    chmod +x "$INSTALL_DIR/meshc"
+    mv "$_tmpdir/${_bin_name}" "$INSTALL_DIR/${_bin_name}"
+    chmod +x "$INSTALL_DIR/${_bin_name}"
 
     # Remove macOS quarantine attribute
     case "$(uname -s)" in
         Darwin)
-            xattr -d com.apple.quarantine "$INSTALL_DIR/meshc" 2>/dev/null || true
+            xattr -d com.apple.quarantine "$INSTALL_DIR/${_bin_name}" 2>/dev/null || true
             ;;
     esac
+
+    rm -rf "$_tmpdir"
+}
+
+# --- Install ---
+
+install() {
+    local _version="$1"
+
+    detect_downloader
+
+    # Determine version
+    if [ -z "$_version" ]; then
+        say "Fetching latest version..."
+        _version="$(get_latest_version)"
+    fi
+
+    # Check if update needed
+    if ! check_update_needed "$_version"; then
+        return 0
+    fi
+
+    # Install meshc
+    install_binary "meshc" "$_version"
+
+    # Install meshpkg
+    install_binary "meshpkg" "$_version"
 
     # Write version file
     echo "$_version" > "$VERSION_FILE"
@@ -352,8 +367,8 @@ install() {
     # Configure PATH
     configure_path
 
-    say_green "Installed meshc v${_version} to ~/.mesh/bin/meshc"
-    say "Run 'meshc --version' to verify, or restart your shell."
+    say_green "Installed meshc and meshpkg v${_version} to ~/.mesh/bin/"
+    say "Run 'meshc --version' and 'meshpkg --version' to verify, or restart your shell."
 }
 
 # --- Usage ---
