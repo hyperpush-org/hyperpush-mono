@@ -377,7 +377,7 @@ Plans:
 **Goal:** Mesher uses v14.0 Crypto stdlib for token generation (replacing pgcrypto DB round-trips), declares itself as a Mesh package via mesh.toml, and has unit tests for its pure utility functions using the Testing Framework
 **Requirements**: DOGFEED-141
 **Depends on:** Phase 140
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 141-01-PLAN.md — Replace pgcrypto token generation with Crypto.uuid4() in create_api_key and create_session; add mesher/mesh.toml package manifest

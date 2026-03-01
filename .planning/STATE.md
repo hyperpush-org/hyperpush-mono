@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Ecosystem & Standard Library
 status: unknown
-last_updated: "2026-03-01T05:30:12.839Z"
+last_updated: "2026-03-01T06:00:25.575Z"
 progress:
-  total_phases: 128
+  total_phases: 131
   completed_phases: 128
-  total_plans: 336
-  completed_plans: 336
+  total_plans: 339
+  completed_plans: 337
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v14.0 Phase 140 — Package Registry Backend & Website (plan 04 of 04 done)
+**Current focus:** v14.0 Phase 141 — Dogfeed v14 Changes to Mesher (plan 01 of 03 done)
 
 ## Current Position
 
-Phase: 140 of 140 (Package Registry Backend & Website) — Plan 4 of 4 complete
-Plan: 4 of 4 in current phase — COMPLETE
-Status: Phase 140 Plan 04 complete — packages website section shipped; REG-02, REG-03, REG-04 satisfied
-Last activity: 2026-03-01 — Phase 140 Plan 04 complete: packages browse+search page and per-package detail page; PackageBrowse, PackageCard, PackageList, PackagePage Vue components; ClientOnly runtime fetch pattern; Packages nav entry in config.mts
+Phase: 141 of 143 (Dogfeed v14 Changes to Mesher) — Plan 1 of 3 complete
+Plan: 1 of 3 in current phase — In Progress
+Status: Phase 141 Plan 01 complete — Crypto.uuid4() token generation in Mesher; mesher/mesh.toml manifest added; DOGFEED-141 (CRYPTO-03 + PKG-01 dogfeed) satisfied
+Last activity: 2026-03-01 — Phase 141 Plan 01 complete: create_api_key and create_session use Crypto.uuid4(); mesher/mesh.toml declares Mesher as Mesh package
 
 Progress: [██████████] 99%  (13/13 plans)
 
@@ -48,6 +48,7 @@ Progress: [██████████] 99%  (13/13 plans)
 | 140. Package Registry Backend & Website | 4 | In Progress (1/4 summaries) |
 | Phase 140 P01 | 12 | 2 tasks | 19 files |
 | Phase 140 P02 | 3 | 2 tasks | 7 files |
+| Phase 141 P01 | 1 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,13 @@ Recent decisions affecting current work:
 - [Phase 140]: Runtime sqlx::query_as() for user UUID lookup in publish (no sqlx::query! macro — no live DB or .sqlx/ cache)
 - [Phase 140]: extract_readme_from_tarball case-insensitive match (readme.md) for README.md/readme.md/Readme.md variants using flate2+tar
 - [Phase 140]: DefaultBodyLimit::max(50MB) applied via .layer() on publish route chain (not globally)
+- [Phase 141]: Crypto.uuid4() for Mesher tokens: API key format changes from 53 to 41 chars (mshr_+UUID4); session uses two stripped UUIDs for 64-char hex; bcrypt preserved via pgcrypto — no stdlib equivalent
+
+### Roadmap Evolution
+
+- Phase 141 added: Dogfeed v14 changes to mesher
+- Phase 142 added: Update docs page with changes/additions from v14
+- Phase 143 added: Deploy everything including new stuff from v14
 
 ### Pending Todos
 
@@ -128,5 +136,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 140-03-PLAN.md — GitHub OAuth flow (github_login, github_callback), tower-sessions PostgresStore middleware, dashboard page, token management API (create_token_handler, list_tokens_handler), argon2 hash in DB; REG-01 satisfied
+Stopped at: Completed 141-01-PLAN.md — Crypto.uuid4() token generation in Mesher storage layer (create_api_key, create_session); mesher/mesh.toml package manifest added; DOGFEED-141 (CRYPTO-03 + PKG-01 dogfeed) complete
 Resume file: None
