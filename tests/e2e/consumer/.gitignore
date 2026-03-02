@@ -1,0 +1,5 @@
+# Installed packages (managed by meshpkg install)
+.mesh/
+
+# Compiled binary
+consumer

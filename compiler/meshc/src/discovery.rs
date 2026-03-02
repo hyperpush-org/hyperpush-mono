@@ -221,18 +221,46 @@ pub fn build_project(project_root: &Path) -> Result<ProjectData, String> {
     }
 
     // Phase 1b: Discover installed package modules from .mesh/packages/*/.
+    //
+    // Supports both unscoped layout (.mesh/packages/{name}@{version}/) and
+    // scoped/owner-prefixed layout (.mesh/packages/{owner}/{name}@{version}/).
+    // A versioned package directory is identified by containing '@' in its name.
     let packages_dir = project_root.join(".mesh").join("packages");
     if packages_dir.exists() {
+        // Collect all versioned package dirs (contain '@') from up to 2 levels deep.
+        let mut pkg_dirs: Vec<PathBuf> = Vec::new();
         for entry in std::fs::read_dir(&packages_dir)
             .map_err(|e| format!("Failed to read .mesh/packages: {}", e))?
         {
             let entry = entry.map_err(|e| format!("Failed to read packages entry: {}", e))?;
-            let pkg_dir = entry.path();
-            if !pkg_dir.is_dir() {
+            let path = entry.path();
+            if !path.is_dir() {
                 continue;
             }
+            let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            if name.contains('@') {
+                // Unscoped layout: .mesh/packages/{name}@{version}/
+                pkg_dirs.push(path);
+            } else {
+                // Owner/scope directory: .mesh/packages/{owner}/
+                // Iterate one level deeper to find versioned package dirs.
+                if let Ok(sub_entries) = std::fs::read_dir(&path) {
+                    for sub_entry in sub_entries.flatten() {
+                        let sub_path = sub_entry.path();
+                        if !sub_path.is_dir() {
+                            continue;
+                        }
+                        let sub_name = sub_path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                        if sub_name.contains('@') {
+                            pkg_dirs.push(sub_path);
+                        }
+                    }
+                }
+            }
+        }
 
-            let pkg_files = discover_mesh_files(&pkg_dir)?;
+        for pkg_dir in &pkg_dirs {
+            let pkg_files = discover_mesh_files(pkg_dir)?;
             for relative_path in &pkg_files {
                 let name = match path_to_module_name(relative_path) {
                     Some(n) => n,

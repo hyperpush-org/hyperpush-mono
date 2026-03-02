@@ -1,0 +1,7 @@
+[package]
+name = "consumer"
+version = "0.1.0"
+description = "Test consumer for mesh-slug package"
+
+[dependencies]
+"snowdamiz/mesh-slug" = "1.0.0"

@@ -1,0 +1,8 @@
+version = 1
+
+[[packages]]
+name = "snowdamiz/mesh-slug"
+version = "1.0.0"
+source = "https://api.packages.meshlang.dev/api/v1/packages/snowdamiz/mesh-slug/1.0.0/download"
+revision = "1.0.0"
+sha256 = "1405b356932535959314418c9347e7e7b21997d6bd6356904abeb02d5695557e"
