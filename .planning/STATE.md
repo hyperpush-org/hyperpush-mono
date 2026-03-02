@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Package Dogfood
 status: unknown
-last_updated: "2026-03-02T04:20:18.929Z"
+last_updated: "2026-03-02T05:24:30Z"
 progress:
   total_phases: 124
   completed_phases: 123
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v15.0 Package Dogfood — Phase 147 Plans 01-02 complete, Plan 03 (integrate) next
+**Current focus:** v15.0 Package Dogfood — Phase 147 Plans 01-03 complete (awaiting human checkpoint), Phase 148 (integrate) next
 
 ## Current Position
 
 Phase: 147 of 148 (Publish and Verify)
-Plan: 2 of 3 complete in phase 147
-Status: Phase 147 Plan 02 complete — Plan 03 (integrate mesh-slug in a Mesher project) is next
-Last activity: 2026-03-02 — snowdamiz/mesh-slug@1.0.0 published to registry.meshlang.dev; visible on packages.meshlang.dev; DIST-01/DIST-02/DIST-03 complete
+Plan: 3 of 3 complete in phase 147 (checkpoint 2 awaiting human verification)
+Status: Phase 147 Plan 03 complete — consumer project installs mesh-slug, compiles, prints "hello-world"; Checkpoint 2 (final human verify) in progress
+Last activity: 2026-03-02 — e2e consumer project created; meshpkg install+meshc build+runtime all succeed; DIST-04 complete
 
 Progress: [██░░░░░░░░] 20% (v15.0)
 
@@ -43,6 +43,7 @@ Progress: [██░░░░░░░░] 20% (v15.0)
 | 146-slug-library | 02 | 6min | 2 | 2 |
 | 147-publish-and-verify | 01 | 12min | 2 | 2 |
 | 147-publish-and-verify | 02 | 25min | 3 | 1 |
+| 147-publish-and-verify | 03 | 3min | 1 | 5 |
 
 ## Accumulated Context
 
@@ -65,6 +66,7 @@ Recent decisions affecting current work:
 - [146-02]: split/filter-empty/join is the idiomatic Mesh pattern for slug normalization
 - [Phase 147-01]: Root-level .mpl files added to meshpkg tarball before src/ block; installed packages discovered from .mesh/packages/*/ in meshc build_project()
 - [Phase 147-02]: Registry publish requires GitHub-scoped name in mesh.toml ({owner}/{package}); meshpkg login --token stores to ~/.mesh/credentials; 409 on re-publish is acceptable (immutable registry)
+- [Phase 147-03]: Scoped packages install to .mesh/packages/{owner}/{name}@{version}/ (two-level layout); discovery.rs Phase 1b must walk two levels deep; default meshpkg registry is api.packages.meshlang.dev
 
 ### Pending Todos
 
@@ -83,5 +85,5 @@ None for v15.0.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 147-02-PLAN.md — snowdamiz/mesh-slug@1.0.0 published to registry.meshlang.dev; Plan 03 (integrate) next
+Stopped at: Completed 147-03-PLAN.md — e2e consumer created, install+compile+run verified; Checkpoint 2 awaiting human verification
 Resume file: None

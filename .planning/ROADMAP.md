@@ -270,7 +270,7 @@ See milestones/v14.0-ROADMAP.md for full phase details.
 **Milestone Goal:** Validate the end-to-end package manager workflow by building, publishing, and consuming a real Mesh package (`mesh-slug`) in production.
 
 - [x] **Phase 146: Slug Library** - Build the mesh-slug Mesh package with full API and meshc test coverage (completed 2026-03-02)
-- [ ] **Phase 147: Publish and Verify** - Publish mesh-slug to the registry and confirm discoverability and installability
+- [x] **Phase 147: Publish and Verify** - Publish mesh-slug to the registry and confirm discoverability and installability (completed 2026-03-02)
 - [ ] **Phase 148: Mesher Integration** - Integrate mesh-slug into Mesher as a real registry-installed dependency
 
 ## Phase Details
@@ -327,5 +327,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 146. Slug Library | 2/2 | Complete    | 2026-03-02 |
-| 147. Publish and Verify | 2/3 | In Progress|  |
+| 147. Publish and Verify | 3/3 | Complete   | 2026-03-02 |
 | 148. Mesher Integration | 0/TBD | Not started | - |
