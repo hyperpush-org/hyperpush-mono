@@ -9,6 +9,7 @@ export interface SidebarItem {
   collapsed?: boolean
   base?: string
   docFooterText?: string
+  icon?: string
 }
 
 export function useSidebar() {
