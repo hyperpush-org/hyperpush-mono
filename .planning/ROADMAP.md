@@ -285,7 +285,11 @@ See milestones/v14.0-ROADMAP.md for full phase details.
   3. `Slug.truncate("hello-world-foo", 11)` returns `"hello-world"` (cuts at last separator boundary)
   4. `Slug.is_valid("hello-world")` returns `true`; `Slug.is_valid("Hello World!")` returns `false`
   5. `meshc test` runs the mesh-slug test suite and all tests pass (normal cases + edge cases: empty string, all-special input, long string)
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 146-01-PLAN.md — Scaffold mesh-slug package (mesh.toml, slug.mpl stubs, main.mpl)
+- [ ] 146-02-PLAN.md — TDD implementation of all 4 slug functions + full test suite
 
 ### Phase 147: Publish and Verify
 **Goal**: mesh-slug is live on the Mesh package registry and any project can install it
@@ -317,6 +321,6 @@ See milestones/v14.0-ROADMAP.md for full phase details.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 146. Slug Library | 0/TBD | Not started | - |
+| 146. Slug Library | 0/2 | In planning | - |
 | 147. Publish and Verify | 0/TBD | Not started | - |
 | 148. Mesher Integration | 0/TBD | Not started | - |
