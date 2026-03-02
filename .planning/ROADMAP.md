@@ -316,7 +316,11 @@ Plans:
   2. `meshpkg install` in the mesher/ directory installs mesh-slug without error
   3. Mesher uses `Slug.slugify` for project slug generation in at least one real code path (replacing any existing ad-hoc logic or adding new slug behavior)
   4. Mesher compiles with zero errors and all existing HTTP API endpoints return expected responses
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 148-01-PLAN.md — Add mesh-slug dependency to mesher/mesh.toml and run meshpkg install
+- [ ] 148-02-PLAN.md — Import Slug.slugify in queries.mpl, integrate into insert_org, compile and verify
 
 ## Progress
 
@@ -328,4 +332,4 @@ Plans:
 |-------|----------------|--------|-----------|
 | 146. Slug Library | 2/2 | Complete    | 2026-03-02 |
 | 147. Publish and Verify | 3/3 | Complete    | 2026-03-02 |
-| 148. Mesher Integration | 0/TBD | Not started | - |
+| 148. Mesher Integration | 0/2 | Not started | - |
