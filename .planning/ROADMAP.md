@@ -271,7 +271,7 @@ See milestones/v14.0-ROADMAP.md for full phase details.
 
 - [x] **Phase 146: Slug Library** - Build the mesh-slug Mesh package with full API and meshc test coverage (completed 2026-03-02)
 - [x] **Phase 147: Publish and Verify** - Publish mesh-slug to the registry and confirm discoverability and installability (completed 2026-03-02)
-- [ ] **Phase 148: Mesher Integration** - Integrate mesh-slug into Mesher as a real registry-installed dependency
+- [x] **Phase 148: Mesher Integration** - Integrate mesh-slug into Mesher as a real registry-installed dependency (completed 2026-03-02)
 
 ## Phase Details
 
@@ -332,4 +332,4 @@ Plans:
 |-------|----------------|--------|-----------|
 | 146. Slug Library | 2/2 | Complete    | 2026-03-02 |
 | 147. Publish and Verify | 3/3 | Complete    | 2026-03-02 |
-| 148. Mesher Integration | 1/2 | In Progress|  |
+| 148. Mesher Integration | 2/2 | Complete   | 2026-03-02 |

@@ -27,8 +27,8 @@ Build, publish, and consume a real Mesh package (mesh-slug) to validate the end-
 
 - [x] **INTG-01**: Mesher's `mesh.toml` declares `mesh-slug` as a dependency with its published version
 - [x] **INTG-02**: `meshpkg install` successfully downloads and installs mesh-slug into Mesher
-- [ ] **INTG-03**: Mesher imports mesh-slug and uses `Slug.slugify` for project slug generation
-- [ ] **INTG-04**: Mesher compiles and all existing functionality works correctly with the mesh-slug dependency
+- [x] **INTG-03**: Mesher imports mesh-slug and uses `Slug.slugify` for project slug generation
+- [x] **INTG-04**: Mesher compiles and all existing functionality works correctly with the mesh-slug dependency
 
 ## Future Requirements
 
@@ -59,8 +59,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DIST-04 | Phase 147 | Complete |
 | INTG-01 | Phase 148 | Complete |
 | INTG-02 | Phase 148 | Complete |
-| INTG-03 | Phase 148 | Pending |
-| INTG-04 | Phase 148 | Pending |
+| INTG-03 | Phase 148 | Complete |
+| INTG-04 | Phase 148 | Complete |
 
 **Coverage:**
 - v15 requirements: 13 total

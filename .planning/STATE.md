@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Package Dogfood
 status: unknown
-last_updated: "2026-03-02T06:03:37Z"
+last_updated: "2026-03-02T06:16:08Z"
 progress:
   total_phases: 124
   completed_phases: 124
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Expressive, readable concurrency -- writing concurrent programs should feel as natural and clean as writing sequential code, with the safety net of supervision and fault tolerance built into the language.
-**Current focus:** v15.0 Package Dogfood — Phase 147 complete (all plans done, DIST-04 satisfied), Phase 148 (integrate) next
+**Current focus:** v15.0 Package Dogfood — COMPLETE — Phase 148 done, all INTG requirements satisfied, milestone shipped
 
 ## Current Position
 
 Phase: 148 of 148 (Integrate)
-Plan: 1 of 2 complete in phase 148
-Status: Phase 148-01 complete — mesher declared mesh-slug@1.0.0 dependency and installed from live registry; INTG-01 + INTG-02 satisfied
-Last activity: 2026-03-02 — 148-01 complete: mesh-slug added to mesher/mesh.toml, meshpkg install succeeded, mesh.lock generated
+Plan: 2 of 2 complete in phase 148
+Status: Phase 148-02 complete — INTG-03 + INTG-04 satisfied; Mesher calls slugify() from registry-installed mesh-slug in a real code path; v15.0 milestone complete
+Last activity: 2026-03-02 — 148-02 complete: queries.mpl imports mesh-slug, insert_org uses slugify(name) for auto-slug, meshc build exits 0
 
-Progress: [███░░░░░░░] 30% (v15.0)
+Progress: [██████████] 100% (v15.0)
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Progress: [███░░░░░░░] 30% (v15.0)
 | 147-publish-and-verify | 02 | 25min | 3 | 1 |
 | 147-publish-and-verify | 03 | 3min | 1 | 5 |
 | 148-mesher-integration | 01 | 1min | 1 | 3 |
+| 148-mesher-integration | 02 | 10min | 2 | 2 |
 
 ## Accumulated Context
 
@@ -69,6 +70,7 @@ Recent decisions affecting current work:
 - [Phase 147-02]: Registry publish requires GitHub-scoped name in mesh.toml ({owner}/{package}); meshpkg login --token stores to ~/.mesh/credentials; 409 on re-publish is acceptable (immutable registry)
 - [Phase 147-03]: Scoped packages install to .mesh/packages/{owner}/{name}@{version}/ (two-level layout); discovery.rs Phase 1b must walk two levels deep; default meshpkg registry is api.packages.meshlang.dev
 - [Phase 148-01]: mesher/mesh.toml now declares "snowdamiz/mesh-slug" = "1.0.0"; meshpkg install succeeds without --registry flag; credentials from ~/.mesh/credentials used automatically; sha256 checksum in mesh.lock matches e2e consumer verification
+- [Phase 148-02]: insert_org uses empty-string sentinel for optional slug param: "" triggers slugify(name) auto-generation; non-empty slug uses as-is; seed migration unaffected (uses raw SQL INSERT); from Slug import slugify is the correct import pattern for installed Mesh packages
 
 ### Pending Todos
 
@@ -87,5 +89,5 @@ None for v15.0.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 148-01-PLAN.md (mesher dependency declaration + install)
+Stopped at: Completed 148-02-PLAN.md (mesh-slug integration into Mesher queries.mpl) — v15.0 milestone complete
 Resume file: None
