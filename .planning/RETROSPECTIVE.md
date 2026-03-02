@@ -4,6 +4,52 @@
 
 ---
 
+## Milestone: v15.0 — Package Dogfood
+
+**Shipped:** 2026-03-02
+**Phases:** 3 (146-148) | **Plans:** 7 | **Duration:** 1 day (2026-03-01 → 2026-03-02)
+
+### What Was Built
+
+- mesh-slug library: 4 functions (slugify, slugify_with_sep, truncate, is_valid), 26 tests via `meshc test`
+- Fixed meshpkg tarball packing and discovery.rs scoped package two-level layout
+- Published `snowdamiz/mesh-slug@1.0.0` to live registry; searchable on packages.meshlang.dev
+- E2E consumer project verifying install → import → compile → execute
+- Mesher integrated mesh-slug: `insert_org` auto-generates org slugs from name when no slug provided
+- Mesher binary recompiled at 24MB with zero errors against registry-installed package
+
+### What Worked
+
+- **Plan quality was high:** Detailed `<interfaces>` blocks in each plan (showing current code + expected output) meant executors had no ambiguity about what to change
+- **Phased approach (library → publish → integrate):** Each phase built on a verified artifact from the previous, so failure modes were isolated
+- **TDD for the library:** Writing tests before implementation (146-02) caught edge cases early and gave clear done criteria
+- **Scoped checkpoint in 147-02:** The OAuth token step was correctly identified as `human-action` — automation couldn't handle it, and the plan surfaced it cleanly
+
+### What Was Inefficient
+
+- **Compiler fixes inserted mid-phase (146):** Arity overloading limitation wasn't discovered until TDD revealed it; required 3 `wip` commits and a gap-closure plan before the library worked. Earlier spiking in a `list-phase-assumptions` pass would have caught this.
+- **Registry URL confusion:** Plans initially referenced `registry.meshlang.dev` (Vercel frontend) instead of `api.packages.meshlang.dev` (Axum backend); documented in decisions but caused one failed attempt during 147-02.
+
+### Patterns Established
+
+- **Scoped package naming:** `{owner}/{package}` in mesh.toml [dependencies] is now validated and documented
+- **Two-level discovery layout:** `.mesh/packages/{owner}/{name}@{version}/` pattern fixed in discovery.rs Phase 1b
+- **Empty-string sentinel for optional params:** `insert_org(pool, name, "")` triggers auto-slug generation — a clean Mesh pattern where arity overloading is unavailable
+
+### Key Lessons
+
+1. For integration milestones involving external services (registry, OAuth), always identify the human-action gates upfront in the plan — they break automation chains
+2. When a library package will be compiled by the consumer's compiler, test the full round-trip (publish → install → import → compile) early — tarball packing and discovery bugs only appear at this boundary
+3. `list-phase-assumptions` before planning is especially valuable for language/compiler feature phases — hidden constraints (arity overloading, parser rules) are cheap to discover before planning and expensive to discover mid-execution
+
+### Cost Observations
+
+- Model mix: executor/verifier on sonnet throughout
+- Sessions: ~3 (plan, execute, complete-milestone)
+- Notable: Smallest milestone by phase count (3) in many versions; clean and focused
+
+---
+
 ## Milestone: v14.0 — Ecosystem & Standard Library
 
 **Shipped:** 2026-03-01
@@ -210,6 +256,8 @@
 | v11.0 | 11 | 22 | ORM query builder + full application rewrite |
 | v12.0 | 10 | 24 | Language ergonomics + open source readiness + benchmarks |
 | v13.0 | 9 | 19 | Language completeness — type system, traits, json literals, tooling |
+| v14.0 | 11 | 32 | Full ecosystem: Crypto/Encoding/DateTime stdlib, HTTP client, testing, package registry, CI/CD |
+| v15.0 | 3 | 7 | Package dogfood — first published Mesh package, E2E registry workflow validated in Mesher |
 
 ### Top Lessons (Cross-Milestone)
 
