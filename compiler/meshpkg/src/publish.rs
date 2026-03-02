@@ -49,6 +49,26 @@ fn create_tarball(project_dir: &Path, _manifest: &Manifest) -> Result<(Vec<u8>, 
         archive.append_path_with_name(&mesh_toml, "mesh.toml")
             .map_err(|e| format!("Failed to add mesh.toml to tarball: {}", e))?;
 
+        // Add root-level .mpl files (package source — e.g. slug.mpl, main.mpl)
+        // Exclude *.test.mpl files (test-only, not needed by consumers)
+        for entry in std::fs::read_dir(project_dir)
+            .map_err(|e| format!("Failed to read project dir: {}", e))?
+        {
+            let entry = entry.map_err(|e| format!("Failed to read dir entry: {}", e))?;
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                    if ext == "mpl" {
+                        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                        if !name.ends_with(".test.mpl") {
+                            archive.append_path_with_name(&path, name)
+                                .map_err(|e| format!("Failed to add {} to tarball: {}", name, e))?;
+                        }
+                    }
+                }
+            }
+        }
+
         // Add src/ directory at archive root
         let src_dir = project_dir.join("src");
         if src_dir.exists() {
