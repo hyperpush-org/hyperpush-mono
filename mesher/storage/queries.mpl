@@ -3,6 +3,7 @@
 # with documented ORM boundaries for complex expressions (PG crypto, JSONB extraction, server-side functions).
 # All functions take the pool handle (PoolHandle) as first argument.
 
+from Slug import slugify
 from Types.Project import Organization, Project, ApiKey
 from Types.User import User, OrgMembership, Session
 from Types.Issue import Issue
@@ -35,8 +36,10 @@ end
 # --- Organization queries ---
 
 # Insert a new organization. Returns the generated UUID.
+# If slug is "" (empty string), auto-generates a slug from the org name via Slug.slugify.
 pub fn insert_org(pool :: PoolHandle, name :: String, slug :: String) -> String!String do
-  let fields = %{"name" => name, "slug" => slug}
+  let actual_slug = if String.length(slug) == 0 do slugify(name) else slug end
+  let fields = %{"name" => name, "slug" => actual_slug}
   let row = Repo.insert(pool, Organization.__table__(), fields)?
   Ok(Map.get(row, "id"))
 end
