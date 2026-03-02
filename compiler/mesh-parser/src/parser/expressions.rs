@@ -966,9 +966,24 @@ fn parse_match_arm(p: &mut Parser) {
     // Expect `->`.
     p.expect(SyntaxKind::ARROW);
 
-    // Parse arm body: a single expression.
+    // Parse arm body: a single expression, or a do...end block.
+    // The block form allows let bindings and multiple statements:
+    //   pattern -> do
+    //     let x = expr
+    //     x
+    //   end
     if !p.has_error() {
-        expr(p);
+        if p.at(SyntaxKind::DO_KW) {
+            p.advance(); // DO_KW
+            parse_block_body(p);
+            if p.at(SyntaxKind::END_KW) {
+                p.advance(); // END_KW
+            } else {
+                p.error("expected `end` to close case arm `do` block");
+            }
+        } else {
+            expr(p);
+        }
     }
 
     p.close(m, SyntaxKind::MATCH_ARM);
