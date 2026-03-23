@@ -1,6 +1,7 @@
 from Config import database_url_key, port_key, job_poll_ms_key, missing_required_env, invalid_positive_int
 from Api.Router import build_router
 from Runtime.Registry import start_registry
+from Jobs.Worker import start_worker
 
 fn log_config_error(message :: String) do
   println("[reference-backend] Config error: #{message}")
@@ -31,6 +32,8 @@ fn on_pool_ready(port :: Int, job_poll_ms :: Int, pool :: PoolHandle) do
   println("[reference-backend] PostgreSQL pool ready")
   let _ = start_registry(pool)
   println("[reference-backend] Runtime registry ready")
+  let _ = start_worker(pool, job_poll_ms)
+  println("[reference-backend] Job worker ready")
   start_runtime(port, job_poll_ms)
 end
 

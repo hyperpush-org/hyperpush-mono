@@ -109,7 +109,6 @@ fn generate_migration_main(direction: &str) -> String {
         r#"from Migration import {dir}
 
 fn handle_ok(pool :: PoolHandle) do
-  Pool.close(pool)
   println("MIGRATION_OK")
 end
 

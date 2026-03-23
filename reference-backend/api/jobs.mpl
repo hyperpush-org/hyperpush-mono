@@ -28,7 +28,7 @@ fn log_create_success(job :: Job, payload :: String) do
 end
 
 fn log_get_success(job :: Job) do
-  println("[reference-backend] Job fetched id=#{job.id} status=#{job.status} attempts=#{job.attempts}")
+  println("[reference-backend] Job fetched id=#{job.id} status=#{job.status} attempts=#{job.attempts} processed_at=#{job.processed_at}")
 end
 
 fn create_job_response(job :: Job, payload :: String) do

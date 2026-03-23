@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M028/S01/T03",
+  "timestamp": 1774249856142,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "DATABASE_URL=${DATABASE_URL:?set DATABASE_URL} cargo run -p meshc -- migrate up reference-backend",
+      "exitCode": 127,
+      "durationMs": 50,
+      "verdict": "fail"
+    },
+    {
+      "command": "cargo build -p mesh-rt",
+      "exitCode": 0,
+      "durationMs": 507,
+      "verdict": "pass"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2,
+  "runtimeErrors": [
+    {
+      "source": "bg-shell",
+      "severity": "crash",
+      "message": "[reference-backend-manual] exitCode=134 errors: thread caused non-unwinding panic. aborting.",
+      "blocking": true
+    }
+  ]
+}
