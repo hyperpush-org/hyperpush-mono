@@ -15,17 +15,6 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: mapped
 - Notes: Recovery behavior must be explicit, observable, and tied to the reference backend.
 
-### R005 — Mesh’s native-binary workflow is proven through a deployment path that feels closer to shipping a Go app than to assembling a fragile language stack.
-- Class: launchability
-- Status: active
-- Description: Mesh’s native-binary workflow is proven through a deployment path that feels closer to shipping a Go app than to assembling a fragile language stack.
-- Why it matters: Easier deployment is one of the first ways the user wants Mesh to beat Elixir.
-- Source: user
-- Primary owning slice: M028/S04
-- Supporting slices: M028/S06
-- Validation: mapped
-- Notes: The milestone does not need every deployment target, but it does need one honest boring path.
-
 ### R007 — Mesh projects have a believable dependency/package workflow for building and shipping backend applications with reproducible inputs.
 - Class: launchability
 - Status: active
@@ -149,6 +138,17 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: Validated by M028/S02 through live Postgres-backed compiler e2e coverage in `compiler/meshc/tests/e2e_reference_backend.rs`: `e2e_reference_backend_runtime_starts`, `e2e_reference_backend_migration_status_and_apply`, `e2e_reference_backend_job_flow_updates_health_and_db`, `e2e_reference_backend_claim_contention_is_not_failure`, and `e2e_reference_backend_multi_instance_claims_once` proving migration pending→applied truth, HTTP/DB/health agreement for job lifecycle state, and two-instance exact-once shared-DB processing without benign claim contention inflating `failed_jobs` or `last_error`.
 - Notes: S02 kept runtime-correctness proof on the canonical reference-backend harness and moved exact-once truth to direct `jobs` reads, cross-instance `/jobs/:id`, and per-instance processed-job logs while treating `/health.failed_jobs` + `/health.last_error` as the stable contention signal.
 
+### R005 — Mesh’s native-binary workflow is proven through a deployment path that feels closer to shipping a Go app than to assembling a fragile language stack.
+- Class: launchability
+- Status: validated
+- Description: Mesh’s native-binary workflow is proven through a deployment path that feels closer to shipping a Go app than to assembling a fragile language stack.
+- Why it matters: Easier deployment is one of the first ways the user wants Mesh to beat Elixir.
+- Source: user
+- Primary owning slice: M028/S04
+- Supporting slices: M028/S06
+- Validation: Validated by M028/S04 through live native-deployment proof for `reference-backend/`: `cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_builds -- --nocapture`, staged bundle verification via `reference-backend/scripts/stage-deploy.sh`, `cargo test -p meshc e2e_self_contained_binary -- --nocapture`, ignored operational proof `cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_deploy_artifact_smoke -- --ignored --nocapture`, missing-artifact diagnostics in `apply-deploy-migrations.sh`, and operator-facing docs/env contract in `reference-backend/README.md` and `reference-backend/.env.example`. Proof covers build-host staging, runtime-host `psql` migration apply without `meshc`, staged binary startup outside the repo root, `/health`, job creation + processing, `_mesh_migrations` recording, and log redaction of `DATABASE_URL`.
+- Notes: S04 proves one honest boring deployment path for `reference-backend/` with staged native binary + checked-in SQL artifact + thin runtime scripts. It does not claim broader platform packaging or supervision/recovery guarantees; those remain for later slices.
+
 ### R006 — Diagnostics, formatter, LSP, tests, and the coverage story are credible enough that a backend engineer can use Mesh daily without fighting the toolchain.
 - Class: quality-attribute
 - Status: validated
@@ -249,7 +249,7 @@ This file is the explicit capability and coverage contract for the project.
 | R002 | core-capability | validated | M028/S01 | M028/S02, M028/S04, M028/S05, M028/S06 | Validated by M028/S01 through live end-to-end verification of `reference-backend/`: compiler/runtime build, explicit missing-env failure, Postgres-backed startup, migration status and apply, `GET /health`, `POST /jobs`, `GET /jobs/:id`, timer-driven worker transition from `pending` to `processed`, package-local `reference-backend/scripts/smoke.sh`, and compiler-facing ignored smoke coverage in `e2e_reference_backend_postgres_smoke`. |
 | R003 | quality-attribute | validated | M028/S02 | M028/S06 | Validated by M028/S02 through live Postgres-backed compiler e2e coverage in `compiler/meshc/tests/e2e_reference_backend.rs`: `e2e_reference_backend_runtime_starts`, `e2e_reference_backend_migration_status_and_apply`, `e2e_reference_backend_job_flow_updates_health_and_db`, `e2e_reference_backend_claim_contention_is_not_failure`, and `e2e_reference_backend_multi_instance_claims_once` proving migration pending→applied truth, HTTP/DB/health agreement for job lifecycle state, and two-instance exact-once shared-DB processing without benign claim contention inflating `failed_jobs` or `last_error`. |
 | R004 | quality-attribute | active | M028/S05 | M028/S02, M028/S06 | mapped |
-| R005 | launchability | active | M028/S04 | M028/S06 | mapped |
+| R005 | launchability | validated | M028/S04 | M028/S06 | Validated by M028/S04 through live native-deployment proof for `reference-backend/`: `cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_builds -- --nocapture`, staged bundle verification via `reference-backend/scripts/stage-deploy.sh`, `cargo test -p meshc e2e_self_contained_binary -- --nocapture`, ignored operational proof `cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_deploy_artifact_smoke -- --ignored --nocapture`, missing-artifact diagnostics in `apply-deploy-migrations.sh`, and operator-facing docs/env contract in `reference-backend/README.md` and `reference-backend/.env.example`. Proof covers build-host staging, runtime-host `psql` migration apply without `meshc`, staged binary startup outside the repo root, `/health`, job creation + processing, `_mesh_migrations` recording, and log redaction of `DATABASE_URL`. |
 | R006 | quality-attribute | validated | M028/S03 | M030/S01 (provisional), M030/S02 (provisional) | S03 closure reran the full tooling trust gate on `reference-backend/`: `cargo test -p mesh-fmt -- --nocapture`, `cargo test -p meshc --test e2e_fmt -- --nocapture`, `cargo run -p meshc -- fmt --check reference-backend`, `cargo run -p meshc -- test reference-backend`, `! cargo run -p meshc -- test --coverage reference-backend`, `cargo test -p meshc --test tooling_e2e -- --nocapture`, `cargo test -p meshc --test e2e_lsp -- --nocapture`, `cargo test -p mesh-lsp -- --nocapture`, and the stale-string sweep over README/website/VS Code/reference-backend docs all passed. |
 | R007 | launchability | active | M030/S01 (provisional) | M030/S02 (provisional) | mapped |
 | R008 | launchability | active | M028/S06 | M028/S01, M028/S03, M028/S04, M028/S05 | mapped |
@@ -269,7 +269,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 10
-- Mapped to slices: 10
-- Validated: 4 (R001, R002, R003, R006)
+- Active requirements: 9
+- Mapped to slices: 9
+- Validated: 5 (R001, R002, R003, R005, R006)
 - Unmapped active requirements: 0
