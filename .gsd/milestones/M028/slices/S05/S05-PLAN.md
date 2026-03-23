@@ -49,7 +49,7 @@
   - Verify: `cargo test -p mesh-rt supervisor::tests:: --lib -- --nocapture && cargo test -p meshc --test e2e_supervisors -- --nocapture`
   - Done when: `e2e_supervisors` fails if compiled Mesh supervisors stop starting children or restarting crashes, and the runtime supervisor donor tests still pass.
   - Resume note (2026-03-23): Investigation reproduced the real gap with a direct-call probe: `BootSup()` returned and `main_done` printed, but the supervised child never emitted its `child_boot` marker. The likely first fix is in `compiler/mesh-codegen/src/codegen/expr.rs` because `codegen_supervisor_start(...)` serializes fewer child-spec fields than `compiler/mesh-rt/src/actor/mod.rs::parse_supervisor_config(...)` consumes.
-- [ ] **T02: Wire `reference-backend` worker startup under supervision and expose restart bookkeeping** `est:2h`
+- [x] **T02: Wire `reference-backend` worker startup under supervision and expose restart bookkeeping** `est:2h`
   - Why: The backend still boots its worker with a plain `spawn(...)` plus captured args, and the current state service cannot distinguish a healthy worker from a dead worker whose bookkeeping process survived.
   - Files: `reference-backend/main.mpl`, `reference-backend/runtime/registry.mpl`, `reference-backend/jobs/worker.mpl`, `reference-backend/api/health.mpl`, `compiler/meshc/tests/e2e_reference_backend.rs`
   - Do: Move worker runtime dependencies behind registry/service lookups so a supervisor child can start from a simple Mesh source path, start the worker under supervision from `main.mpl`, and extend worker state plus `/health` with worker identity/restart metadata that proves the supervised child is the thing actually running.
