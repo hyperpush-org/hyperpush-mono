@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M028/S07/T03",
+  "timestamp": 1774321949905,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo run -p meshc -- fmt --check reference-backend",
+      "exitCode": 0,
+      "durationMs": 5751,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo run -p meshc -- test reference-backend",
+      "exitCode": 0,
+      "durationMs": 6765,
+      "verdict": "pass"
+    },
+    {
+      "command": "set -a",
+      "exitCode": 0,
+      "durationMs": 36,
+      "verdict": "pass"
+    },
+    {
+      "command": "source .env",
+      "exitCode": 0,
+      "durationMs": 13,
+      "verdict": "pass"
+    },
+    {
+      "command": "set +a",
+      "exitCode": 0,
+      "durationMs": 20,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_worker_crash_recovers_job -- --ignored --nocapture",
+      "exitCode": 101,
+      "durationMs": 2086,
+      "verdict": "fail"
+    },
+    {
+      "command": "cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_worker_restart_is_visible_in_health -- --ignored --nocapture",
+      "exitCode": 101,
+      "durationMs": 1326,
+      "verdict": "fail"
+    },
+    {
+      "command": "cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_process_restart_recovers_inflight_job -- --ignored --nocapture",
+      "exitCode": 101,
+      "durationMs": 1571,
+      "verdict": "fail"
+    },
+    {
+      "command": "cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_migration_status_and_apply -- --ignored --nocapture",
+      "exitCode": 101,
+      "durationMs": 1305,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

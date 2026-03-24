@@ -169,20 +169,6 @@ service JobWorkerState do
   end
 end
 
-supervisor JobWorkerSupervisor do
-  strategy : one_for_one
-  
-  max_restarts : 20
-  
-  max_seconds : 60
-  
-  child worker do
-    start: fn->spawn(supervised_job_worker)end
-    restart: permanent
-    shutdown: 5000
-  end
-end
-
 fn worker_state_pid() do
   Process.whereis("reference_backend_worker_state")
 end
@@ -193,6 +179,50 @@ end
 
 fn current_unix_ms() -> Int do
   DateTime.to_unix_ms(DateTime.utc_now())
+end
+
+fn worker_tick_age_ms(last_tick_at :: String) -> Int do
+  if String.length(last_tick_at) == 0 do
+    -1
+  else
+    let parsed = DateTime.from_iso8601(last_tick_at)
+    case parsed do
+      Ok( dt) -> current_unix_ms() - DateTime.to_unix_ms(dt)
+      Err( _) -> -1
+    end
+  end
+end
+
+fn worker_tick_stale_threshold_ms(poll_ms :: Int) -> Int do
+  let tripled_poll_ms = poll_ms * 3
+  if tripled_poll_ms < 1000 do
+    1000
+  else
+    tripled_poll_ms
+  end
+end
+
+fn worker_tick_is_stale(poll_ms :: Int, tick_age_ms :: Int) -> Bool do
+  if tick_age_ms < 0 do
+    true
+  else
+    tick_age_ms > worker_tick_stale_threshold_ms(poll_ms)
+  end
+end
+
+fn worker_needs_restart(worker_state) -> Bool do
+  let poll_ms = JobWorkerState.get_poll_ms(worker_state)
+  let last_status = JobWorkerState.get_last_status(worker_state)
+  let tick_age_ms = worker_tick_age_ms(JobWorkerState.get_last_tick_at(worker_state))
+  if last_status == "crashing" do
+    worker_tick_is_stale(poll_ms, tick_age_ms)
+  else
+    if last_status == "processing" do
+      worker_tick_is_stale(poll_ms, tick_age_ms)
+    else
+      false
+    end
+  end
 end
 
 fn recovery_reclaim_grace_ms(poll_ms :: Int) -> Int do
@@ -249,7 +279,7 @@ end
 fn pause_after_recovery(worker_state, recovered_jobs :: Int) do
   if recovered_jobs > 0 do
     let poll_ms = JobWorkerState.get_poll_ms(worker_state)
-    Timer.sleep(poll_ms)
+    Timer.sleep(recovery_reclaim_grace_ms(poll_ms))
     0
   else
     0
@@ -525,10 +555,28 @@ actor supervised_job_worker() do
   end
 end
 
+actor job_worker_supervisor_loop() do
+  let worker_state = worker_state_pid()
+  
+  let poll_ms = JobWorkerState.get_poll_ms(worker_state)
+  
+  Timer.sleep(poll_ms)
+  
+  let _ = if worker_needs_restart(worker_state) == true do
+    let _ = spawn(supervised_job_worker)
+    0
+  else
+    0
+  end
+  
+  job_worker_supervisor_loop()
+end
+
 pub fn start_worker(job_poll_ms :: Int) do
   let worker_state = JobWorkerState.start(job_poll_ms)
   let _ = Process.register("reference_backend_worker_state", worker_state)
-  spawn(JobWorkerSupervisor)
+  let _ = spawn(supervised_job_worker)
+  spawn(job_worker_supervisor_loop)
 end
 
 pub fn get_worker_poll_ms() -> Int do

@@ -4,17 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R004 — Mesh concurrency and supervision are proven under crash, restart, and failure-reporting scenarios instead of only being advertised as features.
-- Class: quality-attribute
-- Status: active
-- Description: Mesh concurrency and supervision are proven under crash, restart, and failure-reporting scenarios instead of only being advertised as features.
-- Why it matters: The user explicitly said “concurrency exists but isn’t trustworthy” would be a failure state for the project.
-- Source: user
-- Primary owning slice: M028/S05
-- Supporting slices: M028/S02, M028/S06
-- Validation: mapped
-- Notes: Recovery behavior must be explicit, observable, and tied to the reference backend.
-
 ### R007 — Mesh projects have a believable dependency/package workflow for building and shipping backend applications with reproducible inputs.
 - Class: launchability
 - Status: active
@@ -35,18 +24,7 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M028/S06
 - Supporting slices: M028/S01, M028/S03, M028/S04, M028/S05
 - Validation: mapped
-- Notes: S03 advanced the documentation truth surface by syncing README, website tooling/testing/cheatsheet docs, reference-backend docs, and the VS Code README to the verified `meshc fmt`, project-directory `meshc test`, honest `--coverage` contract, and JSON-RPC-proven LSP feature set. S06 partially added the production proof page, README/generic-doc routing, and doc-truth verifier, but R008 remains open until the promoted recovery proofs are green again.
-
-### R009 — Mesh proves itself through a real reference backend that exercises the language as a backend platform instead of proving subsystems only in isolation.
-- Class: differentiator
-- Status: active
-- Description: Mesh proves itself through a real reference backend that exercises the language as a backend platform instead of proving subsystems only in isolation.
-- Why it matters: Dogfooding is how the project turns “all types of backend code” from ambition into grounded engineering pressure.
-- Source: inferred
-- Primary owning slice: M028/S06
-- Supporting slices: M028/S01, M028/S02, M028/S05
-- Validation: mapped
-- Notes: The reference backend remains the real end-to-end proof target. S06 restored build/fmt/test, deploy-smoke, and public proof-surface discoverability, but the crash/recovery visibility proofs are still the blocker before this requirement can be validated.
+- Notes: S03 advanced the documentation truth surface by syncing README, website tooling/testing/cheatsheet docs, reference-backend docs, and the VS Code README to the verified `meshc fmt`, project-directory `meshc test`, honest `--coverage` contract, and JSON-RPC-proven LSP feature set. S06 added the production proof page, README/generic-doc routing, and doc-truth verifier, and S07 restored the green recovery-aware backend proofs. R008 remains open because S08 still needs to reconcile the public README/docs/UAT promotion surfaces so they point only at those now-green recovery-aware proof paths.
 
 ### R010 — The project can point to specific ways Mesh is easier to deploy, measurably fast, and nicer for backend development rather than vaguely claiming it is “better than Elixir.”
 - Class: differentiator
@@ -137,6 +115,28 @@ This file is the explicit capability and coverage contract for the project.
 - Supporting slices: M028/S06
 - Validation: Validated by M028/S02 through live Postgres-backed compiler e2e coverage in `compiler/meshc/tests/e2e_reference_backend.rs`: `e2e_reference_backend_runtime_starts`, `e2e_reference_backend_migration_status_and_apply`, `e2e_reference_backend_job_flow_updates_health_and_db`, `e2e_reference_backend_claim_contention_is_not_failure`, and `e2e_reference_backend_multi_instance_claims_once` proving migration pending→applied truth, HTTP/DB/health agreement for job lifecycle state, and two-instance exact-once shared-DB processing without benign claim contention inflating `failed_jobs` or `last_error`.
 - Notes: S02 kept runtime-correctness proof on the canonical reference-backend harness and moved exact-once truth to direct `jobs` reads, cross-instance `/jobs/:id`, and per-instance processed-job logs while treating `/health.failed_jobs` + `/health.last_error` as the stable contention signal.
+
+### R004 — Mesh concurrency and supervision are proven under crash, restart, and failure-reporting scenarios instead of only being advertised as features.
+- Class: quality-attribute
+- Status: validated
+- Description: Mesh concurrency and supervision are proven under crash, restart, and failure-reporting scenarios instead of only being advertised as features.
+- Why it matters: The user explicitly said “concurrency exists but isn’t trustworthy” would be a failure state for the project.
+- Source: user
+- Primary owning slice: M028/S05
+- Supporting slices: M028/S02, M028/S06, M028/S07
+- Validation: Validated by M028/S07 through live recovery proof on `reference-backend/`: `cargo run -p meshc -- build reference-backend`, `cargo run -p meshc -- fmt --check reference-backend`, `cargo run -p meshc -- test reference-backend`, and ignored compiler e2e proofs `e2e_reference_backend_worker_crash_recovers_job`, `e2e_reference_backend_worker_restart_is_visible_in_health`, `e2e_reference_backend_process_restart_recovers_inflight_job`, `e2e_reference_backend_migration_status_and_apply`, and `e2e_reference_backend_deploy_artifact_smoke`. The proof shows a real degraded/recovering window, restart-count and exit metadata on `/health`, stale-cutoff reclaim of abandoned `processing` rows, and exact-once completion after both worker crash and whole-process restart on the canonical backend path.
+- Notes: S07 closed the remaining concurrency-trust gap by moving recovery ownership onto the restarted worker boundary, exposing restart evidence on `/health`, and proving crash/process restart recovery against the same reference backend used for the rest of M028.
+
+### R009 — Mesh proves itself through a real reference backend that exercises the language as a backend platform instead of proving subsystems only in isolation.
+- Class: differentiator
+- Status: validated
+- Description: Mesh proves itself through a real reference backend that exercises the language as a backend platform instead of proving subsystems only in isolation.
+- Why it matters: Dogfooding is how the project turns “all types of backend code” from ambition into grounded engineering pressure.
+- Source: inferred
+- Primary owning slice: M028/S06
+- Supporting slices: M028/S01, M028/S02, M028/S05, M028/S07
+- Validation: Validated by M028/S07 on top of the existing S01-S06 proof surface. The `reference-backend/` package now has green end-to-end build/fmt/test, migration/deploy smoke, worker-crash recovery, restart-visibility, and whole-process restart proofs in `compiler/meshc/tests/e2e_reference_backend.rs`, so Mesh is being judged through one real backend that exercises compiler, runtime, HTTP, Postgres, migrations, background jobs, and recovery instead of isolated subsystem demos.
+- Notes: The reference backend is now a genuinely recovery-aware end-to-end proof target. S08 still needs to reconcile README/docs/UAT promotion to point only at the green recovery-aware paths, but the backend proof itself is now validated.
 
 ### R005 — Mesh’s native-binary workflow is proven through a deployment path that feels closer to shipping a Go app than to assembling a fragile language stack.
 - Class: launchability
@@ -248,12 +248,12 @@ This file is the explicit capability and coverage contract for the project.
 | R001 | launchability | validated | M028/S01 | M028/S06 | Validated by M028/S01 through the shipped `reference-backend/` package, canonical startup contract (`DATABASE_URL`, `PORT`, `JOB_POLL_MS`), package README/.env example, compiler e2e proof (`e2e_reference_backend_builds`, `e2e_reference_backend_runtime_starts`, `e2e_reference_backend_postgres_smoke`), migration status/up commands, and the package-local smoke path proving the baseline with concrete commands instead of abstract claims. |
 | R002 | core-capability | validated | M028/S01 | M028/S02, M028/S04, M028/S05, M028/S06 | Validated by M028/S01 through live end-to-end verification of `reference-backend/`: compiler/runtime build, explicit missing-env failure, Postgres-backed startup, migration status and apply, `GET /health`, `POST /jobs`, `GET /jobs/:id`, timer-driven worker transition from `pending` to `processed`, package-local `reference-backend/scripts/smoke.sh`, and compiler-facing ignored smoke coverage in `e2e_reference_backend_postgres_smoke`. |
 | R003 | quality-attribute | validated | M028/S02 | M028/S06 | Validated by M028/S02 through live Postgres-backed compiler e2e coverage in `compiler/meshc/tests/e2e_reference_backend.rs`: `e2e_reference_backend_runtime_starts`, `e2e_reference_backend_migration_status_and_apply`, `e2e_reference_backend_job_flow_updates_health_and_db`, `e2e_reference_backend_claim_contention_is_not_failure`, and `e2e_reference_backend_multi_instance_claims_once` proving migration pending→applied truth, HTTP/DB/health agreement for job lifecycle state, and two-instance exact-once shared-DB processing without benign claim contention inflating `failed_jobs` or `last_error`. |
-| R004 | quality-attribute | active | M028/S05 | M028/S02, M028/S06 | mapped |
+| R004 | quality-attribute | validated | M028/S05 | M028/S02, M028/S06, M028/S07 | Validated by M028/S07 through live recovery proof on `reference-backend/`: `cargo run -p meshc -- build reference-backend`, `cargo run -p meshc -- fmt --check reference-backend`, `cargo run -p meshc -- test reference-backend`, and ignored compiler e2e proofs `e2e_reference_backend_worker_crash_recovers_job`, `e2e_reference_backend_worker_restart_is_visible_in_health`, `e2e_reference_backend_process_restart_recovers_inflight_job`, `e2e_reference_backend_migration_status_and_apply`, and `e2e_reference_backend_deploy_artifact_smoke`. The proof shows a real degraded/recovering window, restart-count and exit metadata on `/health`, stale-cutoff reclaim of abandoned `processing` rows, and exact-once completion after both worker crash and whole-process restart on the canonical backend path. |
 | R005 | launchability | validated | M028/S04 | M028/S06 | Validated by M028/S04 through live native-deployment proof for `reference-backend/`: `cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_builds -- --nocapture`, staged bundle verification via `reference-backend/scripts/stage-deploy.sh`, `cargo test -p meshc e2e_self_contained_binary -- --nocapture`, ignored operational proof `cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_deploy_artifact_smoke -- --ignored --nocapture`, missing-artifact diagnostics in `apply-deploy-migrations.sh`, and operator-facing docs/env contract in `reference-backend/README.md` and `reference-backend/.env.example`. Proof covers build-host staging, runtime-host `psql` migration apply without `meshc`, staged binary startup outside the repo root, `/health`, job creation + processing, `_mesh_migrations` recording, and log redaction of `DATABASE_URL`. |
 | R006 | quality-attribute | validated | M028/S03 | M030/S01 (provisional), M030/S02 (provisional) | S03 closure reran the full tooling trust gate on `reference-backend/`: `cargo test -p mesh-fmt -- --nocapture`, `cargo test -p meshc --test e2e_fmt -- --nocapture`, `cargo run -p meshc -- fmt --check reference-backend`, `cargo run -p meshc -- test reference-backend`, `! cargo run -p meshc -- test --coverage reference-backend`, `cargo test -p meshc --test tooling_e2e -- --nocapture`, `cargo test -p meshc --test e2e_lsp -- --nocapture`, `cargo test -p mesh-lsp -- --nocapture`, and the stale-string sweep over README/website/VS Code/reference-backend docs all passed. |
 | R007 | launchability | active | M030/S01 (provisional) | M030/S02 (provisional) | mapped |
 | R008 | launchability | active | M028/S06 | M028/S01, M028/S03, M028/S04, M028/S05 | mapped |
-| R009 | differentiator | active | M028/S06 | M028/S01, M028/S02, M028/S05 | mapped |
+| R009 | differentiator | validated | M028/S06 | M028/S01, M028/S02, M028/S05, M028/S07 | Validated by M028/S07 on top of the existing S01-S06 proof surface. The `reference-backend/` package now has green end-to-end build/fmt/test, migration/deploy smoke, worker-crash recovery, restart-visibility, and whole-process restart proofs in `compiler/meshc/tests/e2e_reference_backend.rs`, so Mesh is being judged through one real backend that exercises compiler, runtime, HTTP, Postgres, migrations, background jobs, and recovery instead of isolated subsystem demos. |
 | R010 | differentiator | active | M029/S01 (provisional) | M028/S04, M028/S06, M029/S02 (provisional) | mapped |
 | R011 | differentiator | active | M029/S02 (provisional) | M029/S03 (provisional) | mapped |
 | R012 | core-capability | active | M031/S01 (provisional) | M031/S02 (provisional), M031/S03 (provisional) | mapped |
@@ -269,7 +269,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 9
-- Mapped to slices: 9
-- Validated: 5 (R001, R002, R003, R005, R006)
+- Active requirements: 8
+- Mapped to slices: 8
+- Validated: 6 (R001, R002, R003, R004, R005, R006)
 - Unmapped active requirements: 0
