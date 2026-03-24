@@ -2,7 +2,7 @@ from Types. Job import Job
 
 from Storage. Jobs import claim_next_pending_job, reclaim_processing_jobs, mark_job_failed, mark_job_processed
 
-from Runtime. Registry import get_pool, get_poll_ms
+from Runtime. Registry import get_poll_ms
 
 struct WorkerState do
   poll_ms :: Int
@@ -208,59 +208,73 @@ fn recovery_hint(restart_count :: Int) -> String do
 end
 
 fn log_worker_boot(boot_id :: String, restart_count :: Int) do
-  println("[reference-backend] Job worker boot id=#{boot_id} restart_count=#{restart_count}")
+  let _ = println("[reference-backend] Job worker boot id=#{boot_id} restart_count=#{restart_count}")
+  0
 end
 
 fn log_worker_recovery(recovery_count :: Int, last_job_id :: String) do
   if recovery_count > 0 do
-    println("[reference-backend] Job worker recovered jobs=#{recovery_count} last_job_id=#{last_job_id}")
+    let _ = println("[reference-backend] Job worker recovered jobs=#{recovery_count} last_job_id=#{last_job_id}")
+    0
+  else
+    0
   end
 end
 
 fn log_worker_idle() do
-  println("[reference-backend] Job worker idle")
+  let _ = println("[reference-backend] Job worker idle")
+  0
 end
 
 fn log_worker_claim_miss(error_message :: String) do
-  println("[reference-backend] Job worker contention miss treated as idle: #{error_message}")
+  let _ = println("[reference-backend] Job worker contention miss treated as idle: #{error_message}")
+  0
 end
 
 fn log_worker_claimed(job :: Job) do
-  println("[reference-backend] Job worker claimed id=#{job.id} attempts=#{job.attempts}")
+  let _ = println("[reference-backend] Job worker claimed id=#{job.id} attempts=#{job.attempts}")
+  0
 end
 
 fn log_worker_processed(job :: Job) do
-  println("[reference-backend] Job worker processed id=#{job.id} status=#{job.status} attempts=#{job.attempts}")
+  let _ = println("[reference-backend] Job worker processed id=#{job.id} status=#{job.status} attempts=#{job.attempts}")
+  0
 end
 
 fn log_worker_failure(job_id :: String, error_message :: String) do
   if String.length(job_id) > 0 do
-    println("[reference-backend] Job worker failed id=#{job_id}: #{error_message}")
+    let _ = println("[reference-backend] Job worker failed id=#{job_id}: #{error_message}")
+    0
   else
-    println("[reference-backend] Job worker failed: #{error_message}")
+    let _ = println("[reference-backend] Job worker failed: #{error_message}")
+    0
   end
 end
 
 fn record_idle(worker_state, ts :: String) do
-  JobWorkerState.note_idle(worker_state, ts)
-  log_worker_idle()
+  let _ = JobWorkerState.note_idle(worker_state, ts)
+  let _ = log_worker_idle()
+  0
 end
 
 fn record_idle_claim_miss(worker_state, ts :: String, error_message :: String) do
-  JobWorkerState.note_idle(worker_state, ts)
-  log_worker_claim_miss(error_message)
+  let _ = JobWorkerState.note_idle(worker_state, ts)
+  let _ = log_worker_claim_miss(error_message)
+  0
 end
 
 fn record_failure(worker_state, job_id :: String, error_message :: String) do
   let ts = current_timestamp()
-  JobWorkerState.note_failed(worker_state, ts, job_id, error_message)
-  log_worker_failure(job_id, error_message)
+  let _ = JobWorkerState.note_failed(worker_state, ts, job_id, error_message)
+  let _ = log_worker_failure(job_id, error_message)
+  0
 end
 
 fn record_processed(worker_state, job :: Job) do
   let ts = current_timestamp()
-  JobWorkerState.note_processed(worker_state, ts, job.id)
-  log_worker_processed(job)
+  let _ = JobWorkerState.note_processed(worker_state, ts, job.id)
+  let _ = log_worker_processed(job)
+  0
 end
 
 fn mark_failed_after_processing(pool :: PoolHandle,
@@ -290,47 +304,54 @@ fn should_crash_after_claim(job :: Job) -> Bool do
   end
 end
 
-fn do_crash(0) = 0
+fn force_worker_crash(0) = 0
+fn force_worker_crash(n) when n == 0 = n
 
-fn crash_after_claim(worker_state, job :: Job) do
+fn crash_after_claim(worker_state, job :: Job) -> Bool do
   let ts = current_timestamp()
   let reason = "worker_crash_after_claim"
-  JobWorkerState.note_crash_soon(worker_state, ts, job.id, reason)
-  println("[reference-backend] Job worker crash injected id=#{job.id} attempts=#{job.attempts}")
-  do_crash(42)
-  Timer.sleep(0)
+  let _ = JobWorkerState.note_crash_soon(worker_state, ts, job.id, reason)
+  let _ = println("[reference-backend] Job worker crash injected id=#{job.id} attempts=#{job.attempts}")
+  false
 end
 
-fn process_claimed_job(pool :: PoolHandle, worker_state, job :: Job) do
+fn process_claimed_job(pool :: PoolHandle, worker_state, job :: Job) -> Bool do
   let claim_ts = current_timestamp()
-  JobWorkerState.note_claimed(worker_state, claim_ts, job.id)
-  log_worker_claimed(job)
+  let _ = JobWorkerState.note_claimed(worker_state, claim_ts, job.id)
+  let _ = log_worker_claimed(job)
   if should_crash_after_claim(job) == true do
     crash_after_claim(worker_state, job)
   else
     let processed_result = mark_job_processed(pool, job.id)
     case processed_result do
-      Ok( processed_job) -> record_processed(worker_state, processed_job)
-      Err( error_message) -> handle_process_claim_error(pool, worker_state, job, error_message)
+      Ok( processed_job) ->
+        let _ = record_processed(worker_state, processed_job)
+        true
+      Err( error_message) ->
+        let _ = handle_process_claim_error(pool, worker_state, job, error_message)
+        true
     end
   end
 end
 
-fn handle_claim_error(worker_state, tick_ts :: String, error_message :: String) do
+fn handle_claim_error(worker_state, tick_ts :: String, error_message :: String) -> Bool do
   if error_message == "no pending jobs" do
-    record_idle(worker_state, tick_ts)
+    let _ = record_idle(worker_state, tick_ts)
+    true
   else
     if String.contains(error_message, "no rows matched") == true do
-      record_idle_claim_miss(worker_state, tick_ts, error_message)
+      let _ = record_idle_claim_miss(worker_state, tick_ts, error_message)
+      true
     else
-      record_failure(worker_state, "", error_message)
+      let _ = record_failure(worker_state, "", error_message)
+      true
     end
   end
 end
 
-fn process_next_job(pool :: PoolHandle, worker_state) do
+fn process_next_job(pool :: PoolHandle, worker_state) -> Bool do
   let tick_ts = current_timestamp()
-  JobWorkerState.note_tick(worker_state, tick_ts)
+  let _ = JobWorkerState.note_tick(worker_state, tick_ts)
   let claim_result = claim_next_pending_job(pool)
   case claim_result do
     Ok( job) -> process_claimed_job(pool, worker_state, job)
@@ -353,10 +374,20 @@ fn recover_abandoned_jobs(pool :: PoolHandle, worker_state) do
   end
 end
 
-actor job_worker_loop(pool :: PoolHandle, worker_state, poll_ms :: Int) do
+fn job_worker_loop(pool :: PoolHandle, worker_state, poll_ms :: Int) do
   Timer.sleep(poll_ms)
   process_next_job(pool, worker_state)
   job_worker_loop(pool, worker_state, poll_ms)
+end
+
+fn run_supervised_job_worker(pool :: PoolHandle, worker_state, poll_ms :: Int) do
+  recover_abandoned_jobs(pool, worker_state)
+  job_worker_loop(pool, worker_state, poll_ms)
+end
+
+fn handle_worker_pool_open_error(worker_state, error_message :: String) do
+  record_failure(worker_state, "", error_message)
+  force_worker_crash(1)
 end
 
 actor supervised_job_worker() do
@@ -365,10 +396,13 @@ actor supervised_job_worker() do
   JobWorkerState.note_boot(worker_state, boot_ts, boot_ts)
   let restart_count = JobWorkerState.get_restart_count(worker_state)
   log_worker_boot(boot_ts, restart_count)
-  let pool = get_pool()
+  let database_url = Env.get("DATABASE_URL", "")
   let poll_ms = get_poll_ms()
-  recover_abandoned_jobs(pool, worker_state)
-  job_worker_loop(pool, worker_state, poll_ms)
+  let pool_result = Pool.open(database_url, 1, 1, 5000)
+  case pool_result do
+    Ok( pool) -> run_supervised_job_worker(pool, worker_state, poll_ms)
+    Err( error_message) -> handle_worker_pool_open_error(worker_state, error_message)
+  end
 end
 
 pub fn start_worker(poll_ms :: Int) do

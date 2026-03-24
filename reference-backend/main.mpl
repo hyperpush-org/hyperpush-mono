@@ -31,9 +31,9 @@ fn start_runtime(port :: Int, job_poll_ms :: Int) do
   HTTP.serve(router, port)
 end
 
-fn on_pool_ready(port :: Int, job_poll_ms :: Int, pool :: PoolHandle) do
+fn on_pool_ready(database_url :: String, port :: Int, job_poll_ms :: Int, pool :: PoolHandle) do
   println("[reference-backend] PostgreSQL pool ready")
-  let _ = start_registry(pool, job_poll_ms)
+  let _ = start_registry(pool, database_url, job_poll_ms)
   println("[reference-backend] Runtime registry ready")
   let _ = start_worker(job_poll_ms)
   println("[reference-backend] Job worker ready")
@@ -45,7 +45,7 @@ fn start_with_values(database_url :: String, port :: Int, job_poll_ms :: Int) do
   println("[reference-backend] Connecting to PostgreSQL pool...")
   let pool_result = Pool.open(database_url, 1, 4, 5000)
   case pool_result do
-    Ok( pool) -> on_pool_ready(port, job_poll_ms, pool)
+    Ok( pool) -> on_pool_ready(database_url, port, job_poll_ms, pool)
     Err( e) -> println("[reference-backend] PostgreSQL connect failed: #{e}")
   end
 end

@@ -92,6 +92,36 @@ Resume order:
 
 The key remaining code path is `reference-backend/jobs/worker.mpl`. If the build still fails, focus on the worker-state update calls first; the storage export gap in `reference-backend/storage/jobs.mpl` is already fixed on disk.
 
+### 2026-03-24 closer wrap-up
+
+I used this slice-close attempt to verify the assembled backend proof instead of just trusting the task summaries. The supervisor donor tests and compiled supervisor e2e tests still pass, but the ignored `reference-backend` crash/recovery proof does **not** pass yet, so S05 is still incomplete.
+
+What changed during this closer pass:
+
+- `reference-backend/runtime/registry.mpl` now also carries `database_url` alongside the shared pool and `poll_ms`.
+- `reference-backend/main.mpl` now passes `database_url` into `start_registry(...)`.
+- `reference-backend/jobs/worker.mpl` was iterated again:
+  - worker boot now opens its own pool from `Env.get("DATABASE_URL", "")` instead of reusing the registry pool handle (the earlier registry-pool path was crashing at `mesh_pool_checkout` with null/misaligned handle failures during startup recovery);
+  - helper functions were rewritten around `call ... :: Int` state updates plus explicit `0` returns to get back past the previous `expected Int, found ()` compile blockers;
+  - the worker crash path was changed from "panic the runtime" experiments to a cooperative `false` return from `process_claimed_job(...)`, with the intent that the supervised worker should exit and be restarted by the permanent supervisor rather than abort the whole backend process.
+
+Important failed experiments / new evidence:
+
+- A registry-provided `PoolHandle` inside the supervised worker path crashed during `reclaim_processing_jobs(...)` with runtime null/misaligned pointer failures in `mesh_pool_checkout` / `mesh_pool_open`. That is why the worker now opens its own local pool at boot.
+- Simulating a crash via `List.head(List.tail([0]))` or via a non-exhaustive-match path that reaches `mesh_panic` **does not** give a restartable actor failure here. Both paths aborted the entire backend with `panic in a function that cannot unwind`, so they are not valid supervision proof techniques for this slice.
+- The current on-disk worker code still does not satisfy the T03/T04 proof. The latest failing run reached runtime, injected the one-shot crash-after-claim event, and showed `/health` entering `{"status":"degraded","worker":{"status":"crashing", ...}}`, but the backend then died before the supervisor restart could become visible. The focused harness failure was:
+  - `worker health never exposed degraded recovery state; last_health={..."liveness":"recovering"..."restart_count":0..."status":"crashing"...}; last_issue=GET /health failed on <port>: Connection refused`
+
+Fastest safe resume path from the current disk state:
+
+1. Start with `reference-backend/jobs/worker.mpl`; do **not** spend more time on parser/typechecker research first.
+2. Finish the cooperative supervised-exit path instead of trying more panic-based crash tricks:
+   - make `job_worker_loop(...)` stop recursing and let the worker actor return when `process_next_job(...)` reports the crash-after-claim branch,
+   - make `handle_worker_pool_open_error(...)` also exit cooperatively so supervisor restart semantics are consistent.
+3. Re-run the focused proof command above until `e2e_reference_backend_worker_crash_recovers_job` passes.
+4. Then run `e2e_reference_backend_worker_restart_is_visible_in_health`.
+5. Only after both pass should the next unit add the T04 whole-process restart proof and README section.
+
 ## Deviations
 
 I did not reach the planned T04 harness/README work because the checked-out backend still failed at the prerequisite T03 build/proof layer. I made no README changes and no T04 process-restart test changes in this unit.
