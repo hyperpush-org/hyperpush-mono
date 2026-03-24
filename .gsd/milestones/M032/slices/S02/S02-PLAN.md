@@ -42,7 +42,7 @@
 
 ## Tasks
 
-- [ ] **T01: Repair inferred-export lowering and freeze regression coverage** `est:3h`
+- [x] **T01: Repair inferred-export lowering and freeze regression coverage** `est:3h`
   - Why: The slice only counts if it fixes the actual ABI/root-cause bug rather than swapping one verifier symptom for another. The repair needs durable proof on both the local single-file path and the imported cross-module path.
   - Files: `compiler/meshc/tests/e2e.rs`, `compiler/meshc/src/main.rs`, `compiler/mesh-codegen/src/lib.rs`, `compiler/mesh-codegen/src/mir/lower.rs`, `compiler/mesh-codegen/src/mir/types.rs`
   - Do: Replace the old `xmod_identity` failure-only proof with passing `m032_inferred_*` coverage in `compiler/meshc/tests/e2e.rs`: local inferred identity must round-trip both `Int` and `String`, imported inferred identity must do the same through a real multifile build, and the tests must stay narrow enough that `e2e_cross_module_polymorphic` / `e2e_cross_module_service` remain the adjacency controls instead of being rewritten. Then thread concrete function-usage evidence from `compiler/meshc/src/main.rs` through `mesh_codegen::lower_to_mir_raw(...)` into the MIR lowerer so imported functions can recover unresolved parameter and return types from call-site evidence; extend `lower_fn_def(...)` to repair unresolved returns as well as parameters, and do not hide real unresolved types with verifier suppression or broad generic machinery.
