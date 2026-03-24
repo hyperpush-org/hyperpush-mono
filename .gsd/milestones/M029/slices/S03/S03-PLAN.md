@@ -35,7 +35,7 @@
   - Do: Rewrite the four overlong imports in `mesher/main.mpl` and the long `Storage.Queries` import in `mesher/ingestion/routes.mpl` to match the backend multiline anchor exactly, preserving imported names and order, and do not touch compiler code or `reference-backend/` source.
   - Verify: `! rg -n '^from .{121,}' mesher/main.mpl mesher/ingestion/routes.mpl && ! rg -n '^from .*\. ' mesher/main.mpl mesher/ingestion/routes.mpl`
   - Done when: Both files use the canonical parenthesized multiline style and neither file contains an over-120-char `from` import or spaced dotted path.
-- [ ] **T02: Rewrite API and service imports to canonical multiline form** `est:35m`
+- [x] **T02: Rewrite API and service imports to canonical multiline form** `est:35m`
   - Why: These five files are the rest of the true human-authored readability surface; finishing them before formatter churn keeps the import intent reviewable and directly advances R024.
   - Files: `reference-backend/api/health.mpl`, `mesher/api/alerts.mpl`, `mesher/api/dashboard.mpl`, `mesher/api/team.mpl`, `mesher/services/project.mpl`, `mesher/services/user.mpl`
   - Do: Convert the remaining five overlong `Storage.Queries` imports to the exact backend multiline pattern, keep imported names stable, and stop if any import rewrite would require compiler-side work rather than Mesher-source cleanup.

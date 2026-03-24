@@ -2,7 +2,14 @@
 # Thin actor wrapper for project CRUD and API key management.
 # Delegates to query functions in Storage.Queries.
 
-from Storage.Queries import insert_project, get_project, list_projects_by_org, create_api_key, get_project_by_api_key, revoke_api_key
+from Storage.Queries import (
+  insert_project,
+  get_project,
+  list_projects_by_org,
+  create_api_key,
+  get_project_by_api_key,
+  revoke_api_key
+)
 from Types.Project import Project
 
 service ProjectService do

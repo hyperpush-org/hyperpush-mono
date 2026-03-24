@@ -33,6 +33,12 @@ Finish the true hand-authored import cleanup surface in Mesher. This task conver
 - `! rg -n '^from .{121,}' mesher/api/alerts.mpl mesher/api/dashboard.mpl mesher/api/team.mpl mesher/services/project.mpl mesher/services/user.mpl`
 - `! rg -n '^from .*\. ' mesher/api/alerts.mpl mesher/api/dashboard.mpl mesher/api/team.mpl mesher/services/project.mpl mesher/services/user.mpl`
 
+## Observability Impact
+
+- Signals added/changed: none; this task only normalizes import layout in five Mesher API/service files.
+- How a future agent inspects this: compare each rewritten import against `reference-backend/api/health.mpl`, then rerun the two targeted `rg` checks across the five touched files.
+- Failure state exposed: the overlong-import grep catches any missed single-line imports, while the spaced-dotted-path grep catches shape corruption such as `Storage. Queries` introduced during manual rewrites or later formatter churn.
+
 ## Inputs
 
 - `reference-backend/api/health.mpl` — canonical multiline import style anchor

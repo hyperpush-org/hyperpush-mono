@@ -4,7 +4,14 @@
 # All handlers follow the PipelineRegistry pattern for pool lookup.
 
 from Ingestion.Pipeline import PipelineRegistry
-from Storage.Queries import event_volume_hourly, error_breakdown_by_level, top_issues_by_frequency, event_breakdown_by_tag, issue_event_timeline, project_health_summary
+from Storage.Queries import (
+  event_volume_hourly,
+  error_breakdown_by_level,
+  top_issues_by_frequency,
+  event_breakdown_by_tag,
+  issue_event_timeline,
+  project_health_summary
+)
 from Api.Helpers import query_or_default, to_json_array, require_param, get_registry, resolve_project_id
 
 # --- Shared helpers (leaf functions first, per define-before-use requirement) ---

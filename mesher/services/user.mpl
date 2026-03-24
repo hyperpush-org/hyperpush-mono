@@ -2,7 +2,16 @@
 # Thin actor wrapper for user auth, sessions, and org membership.
 # Delegates to query functions in Storage.Queries.
 
-from Storage.Queries import create_user, authenticate_user, get_user, create_session, validate_session, delete_session, add_member, get_members
+from Storage.Queries import (
+  create_user,
+  authenticate_user,
+  get_user,
+  create_session,
+  validate_session,
+  delete_session,
+  add_member,
+  get_members
+)
 from Types.User import User, Session, OrgMembership
 
 # Helper function for two-step login: authenticate then create session.

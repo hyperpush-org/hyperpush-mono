@@ -3,7 +3,15 @@
 # Fired alerts have a lifecycle: active -> acknowledged -> resolved (ALERT-06).
 
 from Ingestion.Pipeline import PipelineRegistry
-from Storage.Queries import create_alert_rule, list_alert_rules, toggle_alert_rule, delete_alert_rule, list_alerts, acknowledge_alert, resolve_fired_alert
+from Storage.Queries import (
+  create_alert_rule,
+  list_alert_rules,
+  toggle_alert_rule,
+  delete_alert_rule,
+  list_alerts,
+  acknowledge_alert,
+  resolve_fired_alert
+)
 from Api.Helpers import require_param, query_or_default, to_json_array, get_registry, resolve_project_id
 
 # --- Helper functions (defined before handlers) ---
