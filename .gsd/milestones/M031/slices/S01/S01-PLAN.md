@@ -37,7 +37,7 @@ cargo run -p meshc -- build mesher
 
 ## Tasks
 
-- [ ] **T01: Fix trailing-closure disambiguation in control-flow conditions** `est:1h`
+- [x] **T01: Fix trailing-closure disambiguation in control-flow conditions** `est:1h`
   - Why: R016 — `if fn_call() do` is misparsed because the Pratt parser's postfix loop eagerly treats `do` after `)` as a trailing closure, even inside control-flow conditions where `do` is the block opener.
   - Files: `compiler/mesh-parser/src/parser/mod.rs`, `compiler/mesh-parser/src/parser/expressions.rs`, `compiler/meshc/tests/e2e.rs`
   - Do: Add `suppress_trailing_closure: bool` to `Parser` struct. Set it `true` before `expr(p)` in the 4 control-flow condition sites (`parse_if_expr`, `parse_while_expr`, `parse_case_expr`, `parse_for_in_expr`), restore after. Guard the `DO_KW` trailing-closure check at line 111 of `expressions.rs` with `!p.suppress_trailing_closure`. Add e2e tests for all 4 control-flow forms and regression tests for `test("name") do ... end`.

@@ -104,6 +104,11 @@ pub(crate) struct Parser<'src> {
     errors: Vec<ParseError>,
     /// Whether an error has been encountered (first-error-only strategy).
     has_error: bool,
+    /// When true, the Pratt postfix loop will NOT treat `DO_KW` after a call
+    /// as a trailing closure. Set by control-flow parsers (`if`, `while`,
+    /// `case`, `for`) around their condition/scrutinee/iterable expression
+    /// so that `if fn_call() do ... end` parses `do` as the block opener.
+    suppress_trailing_closure: bool,
 }
 
 impl<'src> Parser<'src> {
@@ -119,6 +124,7 @@ impl<'src> Parser<'src> {
             brace_depth: 0,
             errors: Vec::new(),
             has_error: false,
+            suppress_trailing_closure: false,
         }
     }
 
@@ -367,6 +373,13 @@ impl<'src> Parser<'src> {
     /// Parse functions should check this and bail early.
     pub(crate) fn has_error(&self) -> bool {
         self.has_error
+    }
+
+    /// Whether trailing closures (`foo() do ... end`) are currently
+    /// suppressed. Control-flow parsers set this while parsing conditions
+    /// so the Pratt postfix loop does not consume `do` as a closure.
+    pub(crate) fn suppress_trailing_closure(&self) -> bool {
+        self.suppress_trailing_closure
     }
 
     // ── Newline significance ───────────────────────────────────────────

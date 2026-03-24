@@ -6177,3 +6177,130 @@ fn e2e_http_cancel_compiles() {
     // Network may be unavailable; compile success + handle type-check is the goal.
     let _ = compile_and_run(&source);
 }
+
+// ── Trailing-closure disambiguation in control-flow conditions ────────
+
+/// Trailing closure fix: `if fn_call() do ... end` must treat `do` as the
+/// block opener, not a trailing closure on the call.
+#[test]
+fn e2e_trailing_closure_if_fn_call_condition() {
+    let source = r#"
+fn is_big(n :: Int) -> Bool do
+  n > 10
+end
+
+fn main() do
+  if is_big(15) do
+    println("big")
+  else
+    println("small")
+  end
+end
+"#;
+    let output = compile_and_run(source);
+    assert_eq!(output, "big\n");
+}
+
+/// Trailing closure fix: `while fn_call() do ... end` must treat `do` as
+/// the block opener.
+#[test]
+fn e2e_trailing_closure_while_fn_call_condition() {
+    let source = r#"
+fn always_false() -> Bool do
+  false
+end
+
+fn main() do
+  while always_false() do
+    println("never")
+  end
+  println("done")
+end
+"#;
+    let output = compile_and_run(source);
+    assert_eq!(output, "done\n");
+}
+
+/// Trailing closure fix: `case fn_call() do ... end` must treat `do` as
+/// the block opener.
+#[test]
+fn e2e_trailing_closure_case_fn_call_scrutinee() {
+    let source = r#"
+fn get_val() -> Int do
+  42
+end
+
+fn main() do
+  case get_val() do
+    42 -> println("forty-two")
+    _ -> println("other")
+  end
+end
+"#;
+    let output = compile_and_run(source);
+    assert_eq!(output, "forty-two\n");
+}
+
+/// Trailing closure fix: `for x in fn_call() do ... end` must treat `do`
+/// as the block opener.
+#[test]
+fn e2e_trailing_closure_for_fn_call_iterable() {
+    let source = r#"
+fn get_list() -> List<Int> do
+  [1, 2, 3]
+end
+
+fn main() do
+  for item in get_list() do
+    println("${item}")
+  end
+end
+"#;
+    let output = compile_and_run(source);
+    assert_eq!(output, "1\n2\n3\n");
+}
+
+/// Regression: trailing closures in expression-statement position must
+/// still work. `test("name") do ... end` and `describe("name") do ... end`
+/// use trailing closure syntax — verify they still parse and run correctly.
+#[test]
+fn e2e_trailing_closure_still_works() {
+    // test("name") do ... end is a trailing-closure call parsed by meshc test.
+    // This verifies the suppression flag doesn't break trailing closures.
+    let temp_dir = tempfile::tempdir().expect("failed to create temp dir");
+    let test_file = temp_dir.path().join("trailing.test.mpl");
+    std::fs::write(
+        &test_file,
+        r#"test("trailing closure parses") do
+  assert(1 + 1 == 2)
+end
+
+describe("group") do
+  test("nested trailing closure") do
+    assert(true)
+  end
+end
+"#,
+    )
+    .expect("failed to write test file");
+
+    let meshc = find_meshc();
+    let output = std::process::Command::new(&meshc)
+        .args(["test", test_file.to_str().unwrap()])
+        .output()
+        .expect("failed to invoke meshc test");
+
+    assert!(
+        output.status.success(),
+        "meshc test failed for trailing closure regression:\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("2 passed"),
+        "expected 2 passing tests, got: {}",
+        stdout
+    );
+}

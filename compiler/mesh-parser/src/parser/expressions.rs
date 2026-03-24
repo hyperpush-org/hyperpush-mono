@@ -108,7 +108,9 @@ fn expr_bp(p: &mut Parser, min_bp: u8) -> Option<MarkClosed> {
             let m = p.open_before(lhs);
             parse_arg_list(p);
             // Check for trailing closure: `foo() do ... end`
-            if p.at(SyntaxKind::DO_KW) {
+            // Suppressed inside control-flow conditions so `if fn() do`
+            // treats `do` as the block opener, not a trailing closure.
+            if p.at(SyntaxKind::DO_KW) && !p.suppress_trailing_closure() {
                 parse_trailing_closure(p);
             }
             lhs = p.close(m, SyntaxKind::CALL_EXPR);
@@ -868,8 +870,11 @@ fn parse_if_expr(p: &mut Parser) -> MarkClosed {
     let m = p.open();
     p.advance(); // IF_KW
 
-    // Parse condition.
+    // Parse condition — suppress trailing closures so `do` is the block opener.
+    let old = p.suppress_trailing_closure;
+    p.suppress_trailing_closure = true;
     expr(p);
+    p.suppress_trailing_closure = old;
 
     // Expect `do`.
     let do_span = p.current_span();
@@ -916,8 +921,11 @@ fn parse_case_expr(p: &mut Parser) -> MarkClosed {
     let m = p.open();
     p.advance(); // CASE_KW or MATCH_KW
 
-    // Parse scrutinee.
+    // Parse scrutinee — suppress trailing closures so `do` is the block opener.
+    let old = p.suppress_trailing_closure;
+    p.suppress_trailing_closure = true;
     expr(p);
+    p.suppress_trailing_closure = old;
 
     // Expect `do`.
     let do_span = p.current_span();
@@ -1464,8 +1472,11 @@ fn parse_while_expr(p: &mut Parser) -> MarkClosed {
     let m = p.open();
     p.advance(); // WHILE_KW
 
-    // Parse condition.
+    // Parse condition — suppress trailing closures so `do` is the block opener.
+    let old = p.suppress_trailing_closure;
+    p.suppress_trailing_closure = true;
     expr(p);
+    p.suppress_trailing_closure = old;
 
     // Expect `do`.
     let do_span = p.current_span();
@@ -1547,8 +1558,12 @@ fn parse_for_in_expr(p: &mut Parser) -> MarkClosed {
     p.expect(SyntaxKind::IN_KW);
 
     // Parse iterable expression (e.g., 0..10 parses as BINARY_EXPR with DOT_DOT).
+    // Suppress trailing closures so `do` is the block opener.
     if !p.has_error() {
+        let old = p.suppress_trailing_closure;
+        p.suppress_trailing_closure = true;
         expr(p);
+        p.suppress_trailing_closure = old;
     }
 
     // Optional filter clause: `when condition`
