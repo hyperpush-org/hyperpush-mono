@@ -51,3 +51,9 @@ Move `reference-backend/` out of its corrupted-but-stable state. This task rewri
 - `reference-backend/api/router.mpl` — canonical dotted imports
 - `reference-backend/api/jobs.mpl` — canonical dotted imports
 - `reference-backend/jobs/worker.mpl` — canonical dotted imports
+
+## Observability Impact
+
+- The primary inspection surface stays textual: `cargo run -q -p meshc -- fmt reference-backend && cargo run -q -p meshc -- fmt --check reference-backend` must show a clean round-trip, and any regression should surface as a formatter diff instead of a silent semantic rewrite.
+- The cheap corruption detector remains `! rg -n "^from .*\\. " reference-backend -g '*.mpl'`; if this task regresses, it immediately pinpoints any backend file that still contains spaced dotted imports.
+- `reference-backend/api/health.mpl` remains the multiline import smoke target, so future agents can inspect that file directly when checking whether parenthesized dotted imports stayed multiline after a formatter change.

@@ -54,7 +54,7 @@
   - Do: Extend the formatter library regressions to dotted imports, add CLI temp-file tests that assert exact formatted text for dotted single-line imports, parenthesized multiline imports, and qualified impl headers, and keep the existing multiline-import compiler e2e green.
   - Verify: `cargo test -q -p meshc --test e2e_fmt -- --nocapture && cargo test -q -p meshc --test e2e e2e_multiline_import_paren -- --nocapture`
   - Done when: The higher-level tests would fail on the old dot-spacing bug and still prove multiline imports stay multiline.
-- [ ] **T03: Repair reference-backend imports and prove round-trip cleanliness** `est:30m`
+- [x] **T03: Repair reference-backend imports and prove round-trip cleanliness** `est:30m`
   - Why: `reference-backend/` is already in a corrupted-but-stable formatter state, and R027 is not satisfied until the real dogfood source is rewritten to canonical dotted imports and survives `meshc fmt --check`.
   - Files: `reference-backend/main.mpl`, `reference-backend/api/health.mpl`, `reference-backend/storage/jobs.mpl`, `reference-backend/api/router.mpl`, `reference-backend/api/jobs.mpl`, `reference-backend/jobs/worker.mpl`
   - Do: Restore the six affected backend imports to canonical `Foo.Bar` form, preserve the multiline parenthesized import shape in `api/health.mpl`, run the fixed formatter on `reference-backend/`, and stop if the work starts drifting into mesher cleanup or unrelated backend refactors.

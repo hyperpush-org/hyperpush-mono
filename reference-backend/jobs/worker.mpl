@@ -1,6 +1,6 @@
-from Types. Job import Job
+from Types.Job import Job
 
-from Storage. Jobs import RecoveryResult, claim_next_pending_job, reclaim_processing_jobs, mark_job_failed, mark_job_processed
+from Storage.Jobs import RecoveryResult, claim_next_pending_job, reclaim_processing_jobs, mark_job_failed, mark_job_processed
 
 struct WorkerState do
   poll_ms :: Int

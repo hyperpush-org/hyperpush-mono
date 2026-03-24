@@ -1,10 +1,10 @@
 from Config import database_url_key, port_key, job_poll_ms_key, missing_required_env, invalid_positive_int
 
-from Api. Router import build_router
+from Api.Router import build_router
 
-from Runtime. Registry import start_registry
+from Runtime.Registry import start_registry
 
-from Jobs. Worker import start_worker
+from Jobs.Worker import start_worker
 
 fn log_config_error(message :: String) do
   println("[reference-backend] Config error: #{message}")

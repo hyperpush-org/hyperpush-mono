@@ -1,4 +1,4 @@
-from Types. Job import Job
+from Types.Job import Job
 
 pub struct RecoveryResult do
   count :: Int
