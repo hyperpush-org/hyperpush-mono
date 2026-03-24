@@ -62,7 +62,7 @@ The final task adds the missing end-to-end closure that S06 prematurely advertis
   - Do: Tie worker liveness to explicit lifecycle evidence such as `tick_age_ms`, preserve coherent `boot_id`/`started_at`/`last_recovery_*` fields across restarts, and tighten the slower restart-visibility proof so it asserts degraded recovery, pending-row visibility during reclaim, and healthy settlement after the restarted worker resumes processing.
   - Verify: `set -a && source .env && set +a && cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_worker_restart_is_visible_in_health -- --ignored --nocapture`
   - Done when: the 500ms recovery proof reliably observes degraded/recovering health with stable metadata, then returns to healthy without null/corrupted fields or runtime panic.
-- [ ] **T03: Add deterministic whole-process restart recovery proof** `est:3h`
+- [x] **T03: Add deterministic whole-process restart recovery proof** `est:3h`
   - Why: S07 is not closed until the canonical harness can kill the entire backend process during an in-flight job, restart it, and prove the recovered job completes on the real reference backend path.
   - Files: `reference-backend/jobs/worker.mpl`, `reference-backend/storage/jobs.mpl`, `compiler/meshc/tests/e2e_reference_backend.rs`
   - Do: Add a deterministic in-flight hold-after-claim seam that the Rust harness can trigger without creating a second test surface, implement `e2e_reference_backend_process_restart_recovers_inflight_job` in the canonical harness, and rerun the full slice gate set so worker-crash, restart-visibility, process-restart, migration, deploy, build, fmt, and project tests all agree on the final recovery contract.

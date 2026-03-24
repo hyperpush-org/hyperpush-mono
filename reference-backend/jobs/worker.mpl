@@ -214,6 +214,38 @@ fn wait_for_reclaim_window(worker_state) do
   Timer.sleep(recovery_reclaim_grace_ms(poll_ms))
 end
 
+fn hold_after_claim_ms(poll_ms :: Int) -> Int do
+  let scaled_hold_ms = poll_ms * 12
+  if scaled_hold_ms < 1500 do
+    1500
+  else
+    scaled_hold_ms
+  end
+end
+
+fn hold_after_claim_step_ms(poll_ms :: Int) -> Int do
+  if poll_ms < 100 do
+    poll_ms
+  else
+    100
+  end
+end
+
+fn hold_after_claim_ticks(worker_state, remaining_ms :: Int, step_ms :: Int) do
+  if remaining_ms > 0 do
+    let current_step_ms = if remaining_ms < step_ms do
+      remaining_ms
+    else
+      step_ms
+    end
+    Timer.sleep(current_step_ms)
+    let _ = JobWorkerState.note_tick(worker_state, current_timestamp())
+    hold_after_claim_ticks(worker_state, remaining_ms - current_step_ms, step_ms)
+  else
+    0
+  end
+end
+
 fn pause_after_recovery(worker_state, recovered_jobs :: Int) do
   if recovered_jobs > 0 do
     let poll_ms = JobWorkerState.get_poll_ms(worker_state)
@@ -344,6 +376,23 @@ fn should_crash_after_claim(job :: Job) -> Bool do
   end
 end
 
+fn should_hold_after_claim(job :: Job) -> Bool do
+  String.contains(job.payload, "hold_after_claim_once") == true
+end
+
+fn log_worker_hold(job :: Job, hold_ms :: Int) do
+  let _ = println("[reference-backend] Job worker hold-after-claim id=#{job.id} attempts=#{job.attempts} hold_ms=#{hold_ms}")
+  0
+end
+
+fn hold_after_claim(worker_state, job :: Job) do
+  let poll_ms = JobWorkerState.get_poll_ms(worker_state)
+  let hold_ms = hold_after_claim_ms(poll_ms)
+  let step_ms = hold_after_claim_step_ms(poll_ms)
+  let _ = log_worker_hold(job, hold_ms)
+  hold_after_claim_ticks(worker_state, hold_ms, step_ms)
+end
+
 fn crash_after_claim(worker_state, job :: Job) -> Bool do
   let crash_ts = current_timestamp()
   let reason = "worker_crash_after_claim"
@@ -374,6 +423,11 @@ fn handle_claimed_job(pool :: PoolHandle, worker_state, job :: Job) -> Bool do
   let claim_ts = current_timestamp()
   let _ = JobWorkerState.note_claimed(worker_state, claim_ts, job.id)
   let _ = log_worker_claimed(job)
+  let _ = if should_hold_after_claim(job) == true do
+    hold_after_claim(worker_state, job)
+  else
+    0
+  end
   if should_crash_after_claim(job) == true do
     crash_after_claim(worker_state, job)
   else

@@ -351,6 +351,30 @@ fn wait_for_reference_backend(config: &ReferenceBackendConfig) -> Value {
     );
 }
 
+fn collect_stopped_reference_backend(
+    mut child: Child,
+    stdout_path: PathBuf,
+    stderr_path: PathBuf,
+) -> StoppedReferenceBackend {
+    child
+        .wait()
+        .expect("failed to collect reference-backend exit status");
+
+    let stdout = fs::read_to_string(&stdout_path)
+        .unwrap_or_else(|e| panic!("failed to read {}: {}", stdout_path.display(), e));
+    let stderr = fs::read_to_string(&stderr_path)
+        .unwrap_or_else(|e| panic!("failed to read {}: {}", stderr_path.display(), e));
+    let _ = fs::remove_file(&stdout_path);
+    let _ = fs::remove_file(&stderr_path);
+    let combined = format!("{stdout}{stderr}");
+
+    StoppedReferenceBackend {
+        stdout,
+        stderr,
+        combined,
+    }
+}
+
 fn stop_reference_backend(spawned: SpawnedReferenceBackend) -> StoppedReferenceBackend {
     let SpawnedReferenceBackend {
         mut child,
@@ -369,23 +393,20 @@ fn stop_reference_backend(spawned: SpawnedReferenceBackend) -> StoppedReferenceB
     {
         let _ = child.kill();
     }
-    child
-        .wait()
-        .expect("failed to collect reference-backend exit status");
 
-    let stdout = fs::read_to_string(&stdout_path)
-        .unwrap_or_else(|e| panic!("failed to read {}: {}", stdout_path.display(), e));
-    let stderr = fs::read_to_string(&stderr_path)
-        .unwrap_or_else(|e| panic!("failed to read {}: {}", stderr_path.display(), e));
-    let _ = fs::remove_file(&stdout_path);
-    let _ = fs::remove_file(&stderr_path);
-    let combined = format!("{stdout}{stderr}");
+    collect_stopped_reference_backend(child, stdout_path, stderr_path)
+}
 
-    StoppedReferenceBackend {
-        stdout,
-        stderr,
-        combined,
-    }
+fn kill_reference_backend(spawned: SpawnedReferenceBackend) -> StoppedReferenceBackend {
+    let SpawnedReferenceBackend {
+        mut child,
+        stdout_path,
+        stderr_path,
+    } = spawned;
+
+    let _ = child.kill();
+
+    collect_stopped_reference_backend(child, stdout_path, stderr_path)
 }
 
 fn stop_reference_backend_pair(
@@ -764,6 +785,93 @@ fn wait_for_processed_job_and_health(
     );
 }
 
+fn wait_for_inflight_processing_window(
+    config: &ReferenceBackendConfig,
+    database_url: &str,
+    job_id: &str,
+) -> (Value, Value, DbRow) {
+    let mut last_health = Value::Null;
+    let mut last_job = Value::Null;
+    let mut last_db_row: Option<DbRow> = None;
+    let mut last_issue = String::new();
+
+    for attempt in 0..120 {
+        if attempt > 0 {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+
+        let health = match send_http_request(config, "GET", "/health", None) {
+            Ok(response) if response.status_code == 200 => {
+                last_issue.clear();
+                assert_json_response(response, 200, "/health")
+            }
+            Ok(response) => {
+                last_issue =
+                    format!("unexpected HTTP {} for /health on :{}", response.status_code, config.port);
+                continue;
+            }
+            Err(e) => {
+                last_issue = format!("GET /health failed on {}: {}", config.port, e);
+                continue;
+            }
+        };
+
+        let job = match send_http_request(config, "GET", &format!("/jobs/{job_id}"), None) {
+            Ok(response) if response.status_code == 200 => {
+                last_issue.clear();
+                assert_json_response(response, 200, &format!("/jobs/{job_id}"))
+            }
+            Ok(response) => {
+                last_issue = format!(
+                    "unexpected HTTP {} for /jobs/{} on :{}",
+                    response.status_code, job_id, config.port
+                );
+                continue;
+            }
+            Err(e) => {
+                last_issue = format!("GET /jobs/{} failed on {}: {}", job_id, config.port, e);
+                continue;
+            }
+        };
+
+        let db_row = wait_for_job_row(database_url, job_id, "processing", "1");
+
+        let overall_status = health["status"].as_str().unwrap_or("");
+        let worker_status = health["worker"]["status"].as_str().unwrap_or("");
+        let liveness = health["worker"]["liveness"].as_str().unwrap_or("");
+        let recovery_active = health["worker"]["recovery_active"].as_bool().unwrap_or(true);
+        let restart_count = health["worker"]["restart_count"].as_i64().unwrap_or(-1);
+        let recovered_jobs = health["worker"]["recovered_jobs"].as_i64().unwrap_or(-1);
+        let last_job_id = health["worker"]["last_job_id"].as_str().unwrap_or("");
+        let job_status = job["status"].as_str().unwrap_or("");
+        let job_attempts = job["attempts"].as_i64().unwrap_or(-1);
+        let job_last_error = &job["last_error"];
+
+        if overall_status == "ok"
+            && worker_status == "processing"
+            && liveness == "healthy"
+            && !recovery_active
+            && restart_count == 0
+            && recovered_jobs == 0
+            && last_job_id == job_id
+            && job_status == "processing"
+            && job_attempts == 1
+            && job_last_error.is_null()
+            && db_row.get("last_error").map(String::as_str) == Some("")
+        {
+            return (health, job, db_row);
+        }
+
+        last_health = health;
+        last_job = job;
+        last_db_row = Some(db_row);
+    }
+
+    panic!(
+        "job never exposed deterministic in-flight processing window; last_health={last_health}; last_job={last_job}; last_db_row={last_db_row:?}; last_issue={last_issue}"
+    );
+}
+
 fn wait_for_worker_recovery_window(
     config: &ReferenceBackendConfig,
     database_url: &str,
@@ -858,6 +966,100 @@ fn wait_for_worker_recovery_window(
 
     panic!(
         "worker never exposed degraded recovery window with pending job visibility; last_health={last_health}; last_job={last_job}; last_db_row={last_db_row:?}; last_issue={last_issue}"
+    );
+}
+
+fn wait_for_boot_recovery_window(
+    config: &ReferenceBackendConfig,
+    database_url: &str,
+    job_id: &str,
+) -> (Value, Value, DbRow) {
+    let mut last_health = Value::Null;
+    let mut last_job = Value::Null;
+    let mut last_db_row: Option<DbRow> = None;
+    let mut last_issue = String::new();
+
+    for attempt in 0..120 {
+        if attempt > 0 {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+
+        let health = match send_http_request(config, "GET", "/health", None) {
+            Ok(response) if response.status_code == 200 => {
+                last_issue.clear();
+                assert_json_response(response, 200, "/health")
+            }
+            Ok(response) => {
+                last_issue =
+                    format!("unexpected HTTP {} for /health on :{}", response.status_code, config.port);
+                continue;
+            }
+            Err(e) => {
+                last_issue = format!("GET /health failed on {}: {}", config.port, e);
+                continue;
+            }
+        };
+
+        let job = match send_http_request(config, "GET", &format!("/jobs/{job_id}"), None) {
+            Ok(response) if response.status_code == 200 => {
+                last_issue.clear();
+                assert_json_response(response, 200, &format!("/jobs/{job_id}"))
+            }
+            Ok(response) => {
+                last_issue = format!(
+                    "unexpected HTTP {} for /jobs/{} on :{}",
+                    response.status_code, job_id, config.port
+                );
+                continue;
+            }
+            Err(e) => {
+                last_issue = format!("GET /jobs/{} failed on {}: {}", job_id, config.port, e);
+                continue;
+            }
+        };
+
+        let db_row = query_single_row(
+            database_url,
+            "SELECT id::text, status, attempts::text, COALESCE(last_error, '') AS last_error FROM jobs WHERE id = $1::uuid",
+            &[job_id],
+        );
+
+        let overall_status = health["status"].as_str().unwrap_or("");
+        let liveness = health["worker"]["liveness"].as_str().unwrap_or("");
+        let restart_count = health["worker"]["restart_count"].as_i64().unwrap_or(-1);
+        let recovered_jobs = health["worker"]["recovered_jobs"].as_i64().unwrap_or(-1);
+        let recovery_active = health["worker"]["recovery_active"].as_bool().unwrap_or(false);
+        let last_exit_reason = &health["worker"]["last_exit_reason"];
+        let job_status = job["status"].as_str().unwrap_or("");
+        let job_attempts = job["attempts"].as_i64().unwrap_or(-1);
+        let job_last_error = job["last_error"].as_str().unwrap_or("");
+        let db_status = db_row.get("status").map(String::as_str).unwrap_or("");
+        let db_attempts = db_row.get("attempts").map(String::as_str).unwrap_or("");
+        let db_last_error = db_row.get("last_error").map(String::as_str).unwrap_or("");
+
+        if overall_status == "degraded"
+            && liveness == "recovering"
+            && recovery_active
+            && restart_count == 0
+            && recovered_jobs >= 1
+            && last_exit_reason.is_null()
+            && job_status == "pending"
+            && job_attempts == 1
+            && job_last_error == "requeued abandoned processing job during boot recovery"
+            && db_status == "pending"
+            && db_attempts == "1"
+            && db_last_error == "requeued abandoned processing job during boot recovery"
+        {
+            return (health, job, db_row);
+        }
+
+        last_health = health;
+        last_job = job;
+        last_db_row = Some(db_row);
+    }
+
+    panic!(
+        "backend never exposed boot-recovery window with pending job visibility; last_health={last_health}; last_job={last_job}; last_db_row={last_db_row:?}; last_issue={last_issue}"
     );
 }
 
@@ -1973,6 +2175,250 @@ fn e2e_reference_backend_worker_restart_is_visible_in_health() {
             panic_payload_to_string(payload),
             logs.stdout,
             logs.stderr
+        ),
+    }
+}
+
+#[test]
+#[ignore]
+fn e2e_reference_backend_process_restart_recovers_inflight_job() {
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set for e2e_reference_backend_process_restart_recovers_inflight_job");
+
+    reset_reference_backend_database(&database_url);
+    assert_reference_backend_build_succeeds();
+    assert_reference_backend_migration_succeeds(&database_url, "up");
+
+    let config = reference_backend_test_config(100);
+    let mut first_backend = Some(spawn_reference_backend(&database_url, config));
+    let mut first_logs: Option<StoppedReferenceBackend> = None;
+    let mut restarted_backend: Option<SpawnedReferenceBackend> = None;
+    let test_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let startup_health = wait_for_reference_backend(&config);
+        let first_boot_id = startup_health["worker"]["boot_id"]
+            .as_str()
+            .expect("startup health must expose boot_id")
+            .to_string();
+        let first_started_at = startup_health["worker"]["started_at"]
+            .as_str()
+            .expect("startup health must expose started_at")
+            .to_string();
+        assert!(!first_boot_id.is_empty(), "startup boot_id must be non-empty");
+        assert!(
+            !first_started_at.is_empty(),
+            "startup started_at must be non-empty"
+        );
+        assert_eq!(startup_health["worker"]["restart_count"].as_i64(), Some(0));
+        assert_eq!(startup_health["worker"]["recovered_jobs"].as_i64(), Some(0));
+
+        let payload_body = r#"{"kind":"hold_after_claim_once","source":"rust-harness"}"#;
+        let payload_json: Value =
+            serde_json::from_str(payload_body).expect("payload must be valid JSON");
+        let created_job = post_json(&config, "/jobs", payload_body, 201);
+        let job_id = created_job["id"]
+            .as_str()
+            .expect("created job id must be a string")
+            .to_string();
+
+        let (inflight_health, inflight_job, inflight_db_row) =
+            wait_for_inflight_processing_window(&config, &database_url, &job_id);
+        assert_eq!(inflight_health["status"].as_str(), Some("ok"));
+        assert_eq!(inflight_health["worker"]["status"].as_str(), Some("processing"));
+        assert_eq!(inflight_health["worker"]["liveness"].as_str(), Some("healthy"));
+        assert_eq!(inflight_health["worker"]["restart_count"].as_i64(), Some(0));
+        assert_eq!(inflight_health["worker"]["recovered_jobs"].as_i64(), Some(0));
+        assert_eq!(inflight_health["worker"]["last_job_id"].as_str(), Some(job_id.as_str()));
+        assert_eq!(inflight_job["status"].as_str(), Some("processing"));
+        assert_eq!(inflight_job["attempts"].as_i64(), Some(1));
+        assert_eq!(inflight_job["last_error"], Value::Null);
+        assert_eq!(inflight_db_row.get("status").map(String::as_str), Some("processing"));
+        assert_eq!(inflight_db_row.get("attempts").map(String::as_str), Some("1"));
+        assert_eq!(inflight_db_row.get("last_error").map(String::as_str), Some(""));
+
+        first_logs = Some(kill_reference_backend(
+            first_backend.take().expect("first backend must exist before kill"),
+        ));
+        let first_runtime_logs = &first_logs.as_ref().unwrap().combined;
+        assert!(
+            first_runtime_logs.contains(&format!("Job worker claimed id={job_id}")),
+            "expected claimed log before process kill:\n{}",
+            first_runtime_logs
+        );
+        assert!(
+            first_runtime_logs.contains(&format!("Job worker hold-after-claim id={job_id}")),
+            "expected hold-after-claim log before process kill:\n{}",
+            first_runtime_logs
+        );
+        assert!(
+            !first_runtime_logs.contains(&format!("Job worker processed id={job_id}")),
+            "backend should have been killed before processing completed:\n{}",
+            first_runtime_logs
+        );
+
+        restarted_backend = Some(spawn_reference_backend(&database_url, config));
+        let (degraded_health, degraded_job, degraded_db_row) =
+            wait_for_boot_recovery_window(&config, &database_url, &job_id);
+
+        assert_eq!(degraded_health["status"].as_str(), Some("degraded"));
+        assert_eq!(degraded_health["worker"]["liveness"].as_str(), Some("recovering"));
+        assert_eq!(degraded_health["worker"]["restart_count"].as_i64(), Some(0));
+        assert_eq!(degraded_health["worker"]["recovered_jobs"].as_i64(), Some(1));
+        assert_eq!(degraded_health["worker"]["recovery_active"].as_bool(), Some(true));
+        assert_eq!(degraded_health["worker"]["last_exit_reason"], Value::Null);
+        let degraded_boot_id = degraded_health["worker"]["boot_id"]
+            .as_str()
+            .expect("degraded health must expose boot_id")
+            .to_string();
+        let degraded_started_at = degraded_health["worker"]["started_at"]
+            .as_str()
+            .expect("degraded health must expose started_at")
+            .to_string();
+        assert!(!degraded_boot_id.is_empty(), "degraded boot_id must be non-empty");
+        assert!(
+            !degraded_started_at.is_empty(),
+            "degraded started_at must be non-empty"
+        );
+        assert_ne!(
+            degraded_boot_id, first_boot_id,
+            "boot_id should change after whole-process restart"
+        );
+        assert_ne!(
+            degraded_started_at, first_started_at,
+            "started_at should change after whole-process restart"
+        );
+        assert!(
+            degraded_health["worker"]["last_recovery_at"]
+                .as_str()
+                .map(|value| !value.is_empty())
+                .unwrap_or(false),
+            "degraded health should expose last_recovery_at: {}",
+            degraded_health
+        );
+        assert_eq!(
+            degraded_health["worker"]["last_recovery_count"].as_i64(),
+            Some(1)
+        );
+        assert_eq!(
+            degraded_health["worker"]["last_recovery_job_id"].as_str(),
+            Some(job_id.as_str())
+        );
+        assert_eq!(degraded_job["status"].as_str(), Some("pending"));
+        assert_eq!(degraded_job["attempts"].as_i64(), Some(1));
+        assert_eq!(
+            degraded_job["last_error"].as_str(),
+            Some("requeued abandoned processing job during boot recovery")
+        );
+        assert_eq!(degraded_db_row.get("status").map(String::as_str), Some("pending"));
+        assert_eq!(degraded_db_row.get("attempts").map(String::as_str), Some("1"));
+        assert_eq!(
+            degraded_db_row.get("last_error").map(String::as_str),
+            Some("requeued abandoned processing job during boot recovery")
+        );
+
+        let (job_json, final_health) = wait_for_processed_job_and_health(&config, &job_id);
+        let db_row = wait_for_job_row(&database_url, &job_id, "processed", "2");
+
+        assert_eq!(job_json["id"].as_str(), Some(job_id.as_str()));
+        assert_eq!(job_json["status"].as_str(), Some("processed"));
+        assert_eq!(job_json["attempts"].as_i64(), Some(2));
+        assert_eq!(job_json["last_error"], Value::Null);
+        assert_eq!(job_json["payload"], payload_json);
+        assert!(
+            job_json["processed_at"]
+                .as_str()
+                .map(|value| !value.is_empty())
+                .unwrap_or(false),
+            "processed job should expose processed_at: {}",
+            job_json
+        );
+
+        assert_eq!(db_row.get("status").map(String::as_str), Some("processed"));
+        assert_eq!(db_row.get("attempts").map(String::as_str), Some("2"));
+        assert_eq!(db_row.get("last_error").map(String::as_str), Some(""));
+        assert!(
+            db_row
+                .get("processed_at")
+                .map(|value| !value.is_empty())
+                .unwrap_or(false),
+            "processed DB row should expose processed_at: {:?}",
+            db_row
+        );
+
+        assert_eq!(final_health["status"].as_str(), Some("ok"));
+        assert_eq!(final_health["worker"]["liveness"].as_str(), Some("healthy"));
+        assert_eq!(final_health["worker"]["restart_count"].as_i64(), Some(0));
+        assert_eq!(final_health["worker"]["recovered_jobs"].as_i64(), Some(1));
+        assert_eq!(final_health["worker"]["recovery_active"].as_bool(), Some(false));
+        assert_eq!(final_health["worker"]["last_exit_reason"], Value::Null);
+        assert_eq!(final_health["worker"]["last_job_id"].as_str(), Some(job_id.as_str()));
+        assert_eq!(
+            final_health["worker"]["boot_id"].as_str(),
+            Some(degraded_boot_id.as_str())
+        );
+        assert_eq!(
+            final_health["worker"]["started_at"].as_str(),
+            Some(degraded_started_at.as_str())
+        );
+        assert_eq!(
+            final_health["worker"]["last_recovery_job_id"].as_str(),
+            Some(job_id.as_str())
+        );
+        assert_eq!(
+            final_health["worker"]["last_recovery_count"].as_i64(),
+            Some(1)
+        );
+        assert!(
+            final_health["worker"]["last_recovery_at"]
+                .as_str()
+                .map(|value| !value.is_empty())
+                .unwrap_or(false),
+            "final health should preserve last_recovery_at: {}",
+            final_health
+        );
+    }));
+
+    let first_logs = match first_logs {
+        Some(logs) => logs,
+        None => first_backend
+            .take()
+            .map(stop_reference_backend)
+            .unwrap_or_else(|| StoppedReferenceBackend {
+                stdout: String::new(),
+                stderr: String::new(),
+                combined: String::new(),
+            }),
+    };
+    let restarted_logs = restarted_backend.take().map(stop_reference_backend);
+
+    match test_result {
+        Ok(()) => {
+            assert_startup_logs(&first_logs.combined, &config, &database_url);
+            let restarted_logs = restarted_logs.expect("restarted backend logs must exist on success");
+            assert_startup_logs(&restarted_logs.combined, &config, &database_url);
+            assert!(
+                restarted_logs.combined.contains("Job worker recovered jobs=1"),
+                "expected recovery log after whole-process restart:\n{}",
+                restarted_logs.combined
+            );
+            assert!(
+                restarted_logs.combined.contains("Job worker processed id="),
+                "expected processed log after whole-process restart:\n{}",
+                restarted_logs.combined
+            );
+        }
+        Err(payload) => panic!(
+            "reference-backend process-restart recovery assertions failed: {}\nfirst_stdout: {}\nfirst_stderr: {}\nrestarted_stdout: {}\nrestarted_stderr: {}",
+            panic_payload_to_string(payload),
+            first_logs.stdout,
+            first_logs.stderr,
+            restarted_logs
+                .as_ref()
+                .map(|logs| logs.stdout.as_str())
+                .unwrap_or(""),
+            restarted_logs
+                .as_ref()
+                .map(|logs| logs.stderr.as_str())
+                .unwrap_or("")
         ),
     }
 }
