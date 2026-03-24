@@ -442,13 +442,17 @@ fn issues_to_json(issues :: List < Issue >) -> String do
 end
 
 # Handle GET /api/v1/projects/:project_id/issues?status=unresolved
-# Defaults to listing 'unresolved' issues (query string parsing not available in Mesh).
 
 pub fn handle_list_issues(request) do
   let reg_pid = get_registry()
   let pool = PipelineRegistry.get_pool(reg_pid)
   let project_id = require_param(request, "project_id")
-  let result = list_issues_by_status(pool, project_id, "unresolved")
+  let status_opt = Request.query(request, "status")
+  let status = case status_opt do
+    Some( value) -> value
+    None -> "unresolved"
+  end
+  let result = list_issues_by_status(pool, project_id, status)
   case result do
     Ok( issues) -> HTTP.response(200, issues_to_json(issues))
     Err( e) -> HTTP.response(500, json { error : e })

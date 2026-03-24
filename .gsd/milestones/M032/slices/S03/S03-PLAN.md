@@ -41,7 +41,7 @@
 
 ## Tasks
 
-- [ ] **T01: Dogfood direct request-query handling in ingestion routes** `est:45m`
+- [x] **T01: Dogfood direct request-query handling in ingestion routes** `est:45m`
   - Why: This is the cleanest stale-folklore site and directly advances R035/R011 by replacing a disproven request-parsing workaround in a real mesher HTTP handler.
   - Files: `mesher/ingestion/routes.mpl`, `mesher/api/search.mpl`, `mesher/api/helpers.mpl`, `compiler/meshc/tests/e2e.rs`, `compiler/meshc/tests/e2e_stdlib.rs`
   - Do: Replace the hardcoded `"unresolved"` path in `handle_list_issues(...)` with direct inline `Request.query(request, "status")` defaulting to `"unresolved"`; remove only the stale query-parsing comment; preserve the top-of-file bare-function route keep-site and existing handler response semantics.
