@@ -21,10 +21,12 @@ Recent milestone state:
 - M029 completed the major formatter correctness and dogfood cleanup wave across `mesher/` and `reference-backend/`
 - M031 fixed several real DX/compiler rough edges found through dogfooding and expanded the regression suite
 - M032/S02 retired the unconstrained inferred-export blocker by threading concrete call-site signatures into MIR lowering, replaying `xmod_identity` as a success path, and dogfooding the repaired export via `mesher/storage/writer.mpl`
+- M032/S03 retired the stale request/handler/control-flow folklore in the audited `mesher/` modules by dogfooding direct `Request.query(...)`, inline service-call `case`, and inline cast-handler `if/else`, while preserving the real route-closure, nested-`&&`, and timer keep-sites
 
-The next planned work is a two-step dogfood-driven follow-up:
-1. finish the remaining M032 workaround-truth cleanup (`S03`-`S05`) on top of the repaired inferred-export path
-2. strengthen the ORM and migration/DDL surfaces in M033, with a neutral core and explicit database-specific extras where honest
+The next planned work is the remaining M032 closeout:
+1. finish the module-boundary workaround convergence in S04 without erasing the still-real keep-sites
+2. run the integrated mesher proof and publish the retained-limit ledger in S05
+3. then move into M033 to strengthen the ORM and migration/DDL surfaces, with a neutral core and explicit database-specific extras where honest
 
 ## Architecture / Key Patterns
 

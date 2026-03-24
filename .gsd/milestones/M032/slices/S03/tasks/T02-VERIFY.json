@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T02",
+  "unitId": "M032/S03/T02",
+  "timestamp": 1774392405000,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test -q -p meshc --test e2e e2e_m032_supported_service_call_case -- --nocapture",
+      "exitCode": 0,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo test -q -p meshc --test e2e e2e_m032_supported_cast_if_else -- --nocapture",
+      "exitCode": 0,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo test -q -p meshc --test e2e e2e_m032_limit_nested_and -- --nocapture",
+      "exitCode": 0,
+      "verdict": "pass"
+    },
+    {
+      "command": "! rg -n \"complex case expressions|parser limitation with if/else in cast handlers\" mesher/services/user.mpl mesher/services/stream_manager.mpl",
+      "exitCode": 0,
+      "verdict": "pass"
+    },
+    {
+      "command": "rg -n \"avoids && codegen issue inside nested if blocks|Timer.send_after delivers raw bytes\" mesher/services/stream_manager.mpl mesher/services/writer.mpl mesher/ingestion/pipeline.mpl",
+      "exitCode": 0,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo run -q -p meshc -- fmt --check mesher",
+      "exitCode": 0,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo run -q -p meshc -- build mesher",
+      "exitCode": 0,
+      "verdict": "pass"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

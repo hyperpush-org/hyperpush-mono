@@ -54,7 +54,7 @@ This milestone is complete only when all are true:
 - [x] **S02: Cross-module and inferred-export blocker retirement** `risk:high` `depends:[S01]`
   > After this: at least one live compiler or runtime blocker behind a mesher workaround is fixed in Mesh, regression-covered, and used from mesher.
 
-- [ ] **S03: Request, handler, and control-flow dogfood cleanup** `risk:medium` `depends:[S01]`
+- [x] **S03: Request, handler, and control-flow dogfood cleanup** `risk:medium` `depends:[S01]`
   > After this: mesher uses currently supported request and handler patterns directly in selected audited modules, with stale workaround comments removed.
 
 - [ ] **S04: Module-boundary JSON and workaround convergence** `risk:medium` `depends:[S01,S02]`

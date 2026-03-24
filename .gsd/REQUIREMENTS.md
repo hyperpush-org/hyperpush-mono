@@ -33,9 +33,9 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: This keeps the project from chasing clever language features that do not improve the target use case.
 - Source: user
 - Primary owning slice: M032/S01
-- Supporting slices: M032/S02, M033/S02 (provisional)
+- Supporting slices: M032/S02, M032/S03, M033/S02 (provisional)
 - Validation: mapped
-- Notes: The M032/M033 sequence is explicitly dogfood-first rather than speculative feature work.
+- Notes: The M032 wave now advances this through the S02 inferred-export repair and the S03 direct request/handler/control-flow dogfood cleanup in mesher.
 
 ### R035 — Comments in `mesher/` that claim a Mesh limitation or workaround must reflect current verified reality, not stale folklore.
 - Class: quality-attribute
@@ -44,9 +44,9 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Stale limitation comments make Mesh look weaker than it is and hide the real regression surface.
 - Source: execution
 - Primary owning slice: M032/S01
-- Supporting slices: M032/S05
+- Supporting slices: M032/S03, M032/S05
 - Validation: mapped
-- Notes: Each retained limitation note should either point to a current repro or disappear.
+- Notes: S01 classified the stale-vs-real workaround families, S03 retired the audited request/handler/control-flow folklore in mesher, and S05 still owns the final retained-limit ledger plus integrated closeout proof.
 
 ### R036 — The ORM and migration surfaces should keep a neutral baseline API while allowing explicit PG or SQLite extras when the underlying capability is not honestly portable.
 - Class: core-capability
@@ -475,7 +475,7 @@ This file is the explicit capability and coverage contract for the project.
 | R008 | launchability | validated | M028/S06 | M028/S01, M028/S03, M028/S04, M028/S05, M028/S07, M028/S08 | validated |
 | R009 | differentiator | validated | M028/S06 | M028/S01, M028/S02, M028/S05, M028/S07 | validated |
 | R010 | differentiator | active | M032/S05 | M028/S04, M028/S06, M033/S05 (provisional) | mapped |
-| R011 | differentiator | active | M032/S01 | M032/S02, M033/S02 (provisional) | mapped |
+| R011 | differentiator | active | M032/S01 | M032/S02, M032/S03, M033/S02 (provisional) | mapped |
 | R012 | core-capability | deferred | none | none | unmapped |
 | R013 | constraint | validated | M032/S02 | M032/S03, M032/S04 | Validated by `cargo test -p meshc --test e2e m032_inferred -- --nocapture`, `cargo test -p meshc --test e2e m032_inferred_cross_module_identity -- --nocapture`, `cargo test -p meshc --test e2e e2e_cross_module_polymorphic -- --nocapture`, `cargo test -p meshc --test e2e e2e_cross_module_service -- --nocapture`, `bash scripts/verify-m032-s01.sh`, `cargo run -q -p meshc -- fmt --check mesher`, and `cargo run -q -p meshc -- build mesher` after moving `flush_batch` into `mesher/storage/writer.mpl` and importing it from `mesher/services/writer.mpl`. |
 | R014 | constraint | deferred | none | none | unmapped |
@@ -497,7 +497,7 @@ This file is the explicit capability and coverage contract for the project.
 | R032 | constraint | out-of-scope | none | none | n/a |
 | R033 | constraint | out-of-scope | none | none | n/a |
 | R034 | anti-feature | out-of-scope | none | none | n/a |
-| R035 | quality-attribute | active | M032/S01 | M032/S05 | mapped |
+| R035 | quality-attribute | active | M032/S01 | M032/S03, M032/S05 | mapped |
 | R036 | core-capability | active | M033/S01 (provisional) | M033/S02, M033/S04 (provisional) | mapped |
 | R037 | integration | active | M033/S02 (provisional) | M033/S03, M033/S04 (provisional) | mapped |
 | R038 | quality-attribute | active | M033/S03 (provisional) | M033/S04, M033/S05 (provisional) | mapped |
