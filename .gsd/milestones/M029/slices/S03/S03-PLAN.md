@@ -41,7 +41,7 @@
   - Do: Convert the remaining five overlong `Storage.Queries` imports to the exact backend multiline pattern, keep imported names stable, and stop if any import rewrite would require compiler-side work rather than Mesher-source cleanup.
   - Verify: `! rg -n '^from .{121,}' mesher/api/alerts.mpl mesher/api/dashboard.mpl mesher/api/team.mpl mesher/services/project.mpl mesher/services/user.mpl && ! rg -n '^from .*\. ' mesher/api/alerts.mpl mesher/api/dashboard.mpl mesher/api/team.mpl mesher/services/project.mpl mesher/services/user.mpl`
   - Done when: All five files use canonical multiline imports and there are no remaining long single-line or spaced dotted imports in that set.
-- [ ] **T03: Canonicalize Mesher entrypoint and API modules with the fixed formatter** `est:35m`
+- [x] **T03: Canonicalize Mesher entrypoint and API modules with the fixed formatter** `est:35m`
   - Why: `mesher/main.mpl` and `mesher/api/*.mpl` are part of the known 35-file red surface, and formatting them as one scoped wave keeps the first bulk canonicalization pass under a single executor window.
   - Files: `mesher/main.mpl`, `mesher/api/alerts.mpl`, `mesher/api/dashboard.mpl`, `mesher/api/detail.mpl`, `mesher/api/helpers.mpl`, `mesher/api/search.mpl`, `mesher/api/settings.mpl`, `mesher/api/team.mpl`
   - Do: Run the fixed formatter over `mesher/main.mpl` and `mesher/api/`, inspect the resulting diffs for unexpected multiline-import collapse or dotted-path corruption, and keep scope limited to formatter-authored canonicalization inside these eight files.

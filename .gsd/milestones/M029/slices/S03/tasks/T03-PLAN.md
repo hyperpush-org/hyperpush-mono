@@ -33,6 +33,12 @@ Accept the first bounded formatter-canonicalization wave now that the hand-edite
 - `cargo run -q -p meshc -- fmt mesher/main.mpl && cargo run -q -p meshc -- fmt mesher/api && cargo run -q -p meshc -- fmt --check mesher/main.mpl && cargo run -q -p meshc -- fmt --check mesher/api`
 - `! rg -n '^from .{121,}' mesher/main.mpl mesher/api/alerts.mpl mesher/api/dashboard.mpl mesher/api/team.mpl && ! rg -n '^from .*\. ' mesher/main.mpl mesher/api -g '*.mpl'`
 
+## Observability Impact
+
+- Signals added/changed: none; this task only moves `mesher/main.mpl` and `mesher/api/*.mpl` onto canonical formatter output.
+- How a future agent inspects this: rerun the scoped formatter wave and `fmt --check` commands for `mesher/main.mpl` and `mesher/api`, then inspect the rewritten imports in `mesher/main.mpl`, `mesher/api/alerts.mpl`, `mesher/api/dashboard.mpl`, and `mesher/api/team.mpl` plus the spaced-dotted-path grep across `mesher/api`.
+- Failure state exposed: `fmt --check` shows whether these eight files are still off canonical output, the long-import grep catches multiline collapse back to overlong single-line imports, and the spaced-dotted-path grep catches formatter corruption such as `Api. Alerts` or `Storage. Queries` even if the formatter output is otherwise idempotent.
+
 ## Inputs
 
 - `mesher/main.mpl` — T01 multiline imports plus formatter-red entrypoint file
