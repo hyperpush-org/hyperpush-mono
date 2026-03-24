@@ -18,6 +18,18 @@ website/node_modules/
 website/docs/.vitepress/dist/
 website/docs/.vitepress/cache/
 
+# Compiled Mesh binaries (native LLVM output)
+reference-backend/reference-backend
+mesher/mesher
+benchmarks/*/benchmark
+
+# Temp probe/scratch directories (created during debugging)
+.tmp_*/
+.tmp_fmt_probe*/
+
+# Background shell state
+.bg-shell/
+
 # ── GSD baseline (auto-generated) ──
 .DS_Store
 Thumbs.db
