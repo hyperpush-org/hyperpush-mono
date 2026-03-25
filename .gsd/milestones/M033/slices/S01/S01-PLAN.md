@@ -18,6 +18,7 @@
 ## Verification
 
 - `cargo test -p meshc --test e2e_m033_s01 -- --nocapture`
+- `cargo test -p meshc --test e2e_m033_s01 expr_error_ -- --nocapture`
 - `cargo run -q -p meshc -- fmt --check mesher`
 - `cargo run -q -p meshc -- build mesher`
 - `bash scripts/verify-m033-s01.sh`

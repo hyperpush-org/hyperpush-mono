@@ -5,7 +5,7 @@
 //! `mesh_gc_alloc_actor`, copies the previous state, and modifies the
 //! relevant slots. The Query object is never mutated in place.
 //!
-//! ## Query object layout (13 slots, 104 bytes)
+//! ## Query object layout (14 slots, 112 bytes)
 //!
 //! | Slot | Offset | Name            | Type                   |
 //! |------|--------|-----------------|------------------------|
@@ -22,6 +22,7 @@
 //! | 10   |  80    | having_params   | *mut u8 (List<String>) |
 //! | 11   |  88    | fragment_parts  | *mut u8 (List<String>) |
 //! | 12   |  96    | fragment_params | *mut u8 (List<String>) |
+//! | 13   | 104    | select_params   | *mut u8 (List<String>) |
 
 use crate::collections::list::{mesh_list_append, mesh_list_get, mesh_list_length, mesh_list_new};
 use crate::gc::mesh_gc_alloc_actor;
@@ -29,8 +30,8 @@ use crate::string::{mesh_string_new, MeshString};
 
 // ── Constants ────────────────────────────────────────────────────────
 
-const QUERY_SLOTS: usize = 13;
-const QUERY_SIZE: usize = QUERY_SLOTS * 8; // 104 bytes
+const QUERY_SLOTS: usize = 14;
+const QUERY_SIZE: usize = QUERY_SLOTS * 8; // 112 bytes
 
 // Slot indices
 const SLOT_SOURCE: usize = 0;
@@ -46,6 +47,7 @@ const SLOT_HAVING_CLAUSES: usize = 9;
 const SLOT_HAVING_PARAMS: usize = 10;
 const SLOT_FRAGMENT_PARTS: usize = 11;
 const SLOT_FRAGMENT_PARAMS: usize = 12;
+const SLOT_SELECT_PARAMS: usize = 13;
 
 // ── Slot access helpers ──────────────────────────────────────────────
 
@@ -137,13 +139,14 @@ unsafe fn alloc_query() -> *mut u8 {
     query_set(q, SLOT_HAVING_PARAMS, mesh_list_new());
     query_set(q, SLOT_FRAGMENT_PARTS, mesh_list_new());
     query_set(q, SLOT_FRAGMENT_PARAMS, mesh_list_new());
+    query_set(q, SLOT_SELECT_PARAMS, mesh_list_new());
     // Integer slots: -1 means "not set"
     query_set_int(q, SLOT_LIMIT, -1);
     query_set_int(q, SLOT_OFFSET, -1);
     q
 }
 
-/// Clone a Query: allocate new 104 bytes and copy all data from source.
+/// Clone a Query: allocate new 112 bytes and copy all data from source.
 unsafe fn clone_query(src: *mut u8) -> *mut u8 {
     let dst = mesh_gc_alloc_actor(QUERY_SIZE as u64, 8);
     std::ptr::copy_nonoverlapping(src, dst, QUERY_SIZE);
@@ -382,6 +385,7 @@ pub extern "C" fn mesh_query_select(q: *mut u8, fields: *mut u8) -> *mut u8 {
     unsafe {
         let new_q = clone_query(q);
         query_set(new_q, SLOT_SELECT, fields);
+        query_set(new_q, SLOT_SELECT_PARAMS, mesh_list_new());
         new_q
     }
 }
