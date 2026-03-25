@@ -1081,24 +1081,6 @@ pub fn delete_expired_events(pool :: PoolHandle, project_id :: String, retention
   Repo.delete_where(pool, Event.__table__(), q)
 end
 
-# Find event partitions older than max_days (for partition cleanup).
-# Queries pg_inherits to find child tables of 'events' with names matching events_YYYYMMDD.
-# DDL/catalog query -- queries pg_inherits/pg_class system catalogs. Excluded from data query raw SQL count per ORM rewrite scope.
-
-pub fn get_expired_partitions(pool :: PoolHandle, max_days_str :: String) -> List < Map < String, String > > ! String do
-  let sql = "SELECT c.relname::text AS partition_name FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid JOIN pg_class p ON p.oid = i.inhparent WHERE p.relname = 'events' AND c.relname ~ '^events_[0-9]{8}$' AND to_date(substring(c.relname from '[0-9]{8}$'), 'YYYYMMDD') < (current_date - ($1 || ' days')::interval)"
-  let rows = Repo.query_raw(pool, sql, [max_days_str]) ?
-  Ok(rows)
-end
-
-# Drop a single event partition by name.
-# The partition_name comes from the trusted pg_inherits query, not user input.
-# DDL operation (DROP TABLE) -- excluded from data query raw SQL count per ORM rewrite scope.
-
-pub fn drop_partition(pool :: PoolHandle, partition_name :: String) -> Int ! String do
-  Repo.execute_raw(pool, "DROP TABLE IF EXISTS " <> partition_name, [])
-end
-
 # Get all projects with their retention settings for the cleanup loop.
 # Uses Query.select_exprs so the cleanup row shape is explicit and stable.
 

@@ -64,17 +64,34 @@ fn ok_int_result(value: i64) -> *mut u8 {
     alloc_result(0, boxed) as *mut u8
 }
 
-fn render_column_definition(column: &str, helper_name: &str) -> Result<(String, String), String> {
-    let parts: Vec<&str> = column.splitn(3, ':').collect();
+enum PartitionedTableEntry {
+    Column { name: String, sql: String },
+    Constraint(String),
+}
+
+fn render_partitioned_table_entry(
+    column: &str,
+    helper_name: &str,
+) -> Result<PartitionedTableEntry, String> {
+    let trimmed = column.trim();
+    if trimmed.is_empty() {
+        return Err(format!("{helper_name}: invalid column definition `{column}`"));
+    }
+
+    if !trimmed.contains(':') {
+        return Ok(PartitionedTableEntry::Constraint(trimmed.to_string()));
+    }
+
+    let parts: Vec<&str> = trimmed.splitn(3, ':').collect();
     match parts.as_slice() {
-        [name, sql_type, constraints] if !name.trim().is_empty() => Ok((
-            name.trim().to_string(),
-            format!("{} {} {}", quote_ident(name.trim()), sql_type.trim(), constraints.trim()),
-        )),
-        [name, sql_type] if !name.trim().is_empty() => Ok((
-            name.trim().to_string(),
-            format!("{} {}", quote_ident(name.trim()), sql_type.trim()),
-        )),
+        [name, sql_type, constraints] if !name.trim().is_empty() => Ok(PartitionedTableEntry::Column {
+            name: name.trim().to_string(),
+            sql: format!("{} {} {}", quote_ident(name.trim()), sql_type.trim(), constraints.trim()),
+        }),
+        [name, sql_type] if !name.trim().is_empty() => Ok(PartitionedTableEntry::Column {
+            name: name.trim().to_string(),
+            sql: format!("{} {}", quote_ident(name.trim()), sql_type.trim()),
+        }),
         _ => Err(format!("{helper_name}: invalid column definition `{column}`")),
     }
 }
@@ -106,27 +123,35 @@ pub(crate) fn build_create_range_partitioned_table_sql(
         );
     }
 
-    let rendered_columns: Vec<(String, String)> = columns
+    let rendered_entries: Vec<PartitionedTableEntry> = columns
         .iter()
-        .map(|column| render_column_definition(column, "Pg.create_range_partitioned_table"))
+        .map(|column| render_partitioned_table_entry(column, "Pg.create_range_partitioned_table"))
         .collect::<Result<_, _>>()?;
-    if rendered_columns.is_empty() {
+    if !rendered_entries
+        .iter()
+        .any(|entry| matches!(entry, PartitionedTableEntry::Column { .. }))
+    {
         return Err(
             "Pg.create_range_partitioned_table: at least one column is required".to_string(),
         );
     }
-    if !rendered_columns
-        .iter()
-        .any(|(name, _)| name == partition_column)
-    {
+    if !rendered_entries.iter().any(|entry| {
+        matches!(
+            entry,
+            PartitionedTableEntry::Column { name, .. } if name == partition_column
+        )
+    }) {
         return Err(format!(
             "Pg.create_range_partitioned_table: partition column `{partition_column}` is missing from `{table}`"
         ));
     }
 
-    let column_sql = rendered_columns
+    let column_sql = rendered_entries
         .iter()
-        .map(|(_, sql)| sql.as_str())
+        .map(|entry| match entry {
+            PartitionedTableEntry::Column { sql, .. } => sql.as_str(),
+            PartitionedTableEntry::Constraint(sql) => sql.as_str(),
+        })
         .collect::<Vec<_>>()
         .join(", ");
 
@@ -400,6 +425,21 @@ mod tests {
             err,
             "Pg.create_range_partitioned_table: partition column `received_at` is missing from `events`"
         );
+    }
+
+    #[test]
+    fn migration_pg_schema_build_create_range_partitioned_table_sql_allows_table_constraints() {
+        let sql = build_create_range_partitioned_table_sql(
+            "events",
+            &[
+                "id:UUID:NOT NULL DEFAULT gen_random_uuid()".to_string(),
+                "received_at:TIMESTAMPTZ:NOT NULL DEFAULT now()".to_string(),
+                "PRIMARY KEY (id, received_at)".to_string(),
+            ],
+            "received_at",
+        )
+        .expect("table constraints should be accepted for partitioned tables");
+        assert!(sql.contains("PRIMARY KEY (id, received_at)"));
     }
 
     #[test]

@@ -119,8 +119,8 @@ fn start_services(pool :: PoolHandle) do
   # Create initial partitions (7 days ahead)
   let partition_result = create_partitions_ahead(pool, 7)
   case partition_result do
-    Ok( _) -> println("[Mesher] Partitions created (7 days ahead)")
-    Err( _) -> println("[Mesher] Partition error")
+    Ok( _) -> println("[Mesher] Partition bootstrap succeeded (7 days ahead)")
+    Err( e) -> println("[Mesher] Partition bootstrap failed: #{e}")
   end
   # Start services
   let org_svc = OrgService.start(pool)

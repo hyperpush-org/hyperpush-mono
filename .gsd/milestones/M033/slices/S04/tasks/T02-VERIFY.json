@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T02",
+  "unitId": "M033/S04/T02",
+  "timestamp": 1774479501077,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test -p meshc --test e2e e2e_migration -- --nocapture\ncargo run -q -p meshc -- build mesher\n! rg -n \"Pool\\.execute\\(pool\" mesher/migrations/20260216120000_create_initial_schema.mpl",
+      "exitCode": 0,
+      "durationMs": 30383,
+      "verdict": "pass"
+    }
+  ]
+}

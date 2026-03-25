@@ -65,7 +65,7 @@ Must-Haves:
 cargo run -q -p meshc -- build mesher
 ! rg -n "Pool\.execute\(pool" mesher/migrations/20260216120000_create_initial_schema.mpl
 
-- [ ] **T03: Move runtime partition lifecycle into Storage.Schema** `est:2h`
+- [x] **T03: Move runtime partition lifecycle into Storage.Schema** `est:2h`
   Why: S04 owns the remaining runtime partition/catalog keep-sites, and they should collapse onto the new explicit helper family instead of staying split between storage modules.
 
 Steps:
