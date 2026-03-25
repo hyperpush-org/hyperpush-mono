@@ -63,6 +63,9 @@ This milestone is complete only when all are true:
 - [x] **S05: Integrated mesher proof and retained-limit ledger** `risk:low` `depends:[S02,S03,S04]`
   > After this: mesher build/format proof passes on the cleaned codebase and the remaining limitation comments form a short verified keep-list that hands cleanly into M033.
 
+- [ ] **S06: S01 acceptance artifact backfill** `risk:low` `depends:[S01]`
+  > After this: S01 has a real artifact-driven UAT script derived from its proof matrix instead of a doctor placeholder, so M032 can close with complete slice evidence.
+
 ## Boundary Map
 
 ### S01 → S02

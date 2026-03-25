@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T02",
+  "unitId": "M032/S05/T02",
+  "timestamp": 1774397144570,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test -q -p meshc --test e2e e2e_m032_supported_nested_wrapper_list_from_json -- --nocapture",
+      "exitCode": 0,
+      "durationMs": 8818,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo test -q -p meshc --test e2e e2e_m032_supported_inline_writer_cast_body -- --nocapture",
+      "exitCode": 0,
+      "durationMs": 7835,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo test -q -p meshc --test e2e m032_inferred -- --nocapture",
+      "exitCode": 0,
+      "durationMs": 8842,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo test -q -p meshc --test e2e_stdlib e2e_m032_route_closure_runtime_failure -- --nocapture",
+      "exitCode": 0,
+      "durationMs": 8122,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo run -q -p meshc -- fmt --check mesher",
+      "exitCode": 0,
+      "durationMs": 8060,
+      "verdict": "pass"
+    },
+    {
+      "command": "cargo run -q -p meshc -- build mesher",
+      "exitCode": 0,
+      "durationMs": 12521,
+      "verdict": "pass"
+    },
+    {
+      "command": "bash -lc 'test -s .gsd/milestones/M032/slices/S05/S05-SUMMARY.md",
+      "exitCode": 2,
+      "durationMs": 112,
+      "verdict": "fail"
+    },
+    {
+      "command": "test -s .gsd/milestones/M032/slices/S05/S05-UAT.md'",
+      "exitCode": 2,
+      "durationMs": 39,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}
