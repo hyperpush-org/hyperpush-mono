@@ -329,14 +329,14 @@ end
 
 # Check if an issue with the given fingerprint is discarded (ISSUE-05 suppression).
 # Returns true if the issue exists with status = 'discarded', false otherwise.
-# Uses ORM Query.where + Repo.all instead of Repo.query_raw.
+# Uses ORM Query.where + Repo.all with a plain id projection instead of raw SQL.
 
 pub fn is_issue_discarded(pool :: PoolHandle, project_id :: String, fingerprint :: String) -> Bool ! String do
   let q = Query.from(Issue.__table__())
     |> Query.where_raw("project_id = ?::uuid", [project_id])
     |> Query.where(:fingerprint, fingerprint)
     |> Query.where(:status, "discarded")
-    |> Query.select_raw(["1 AS found"])
+    |> Query.select(["id"])
   let rows = Repo.all(pool, q) ?
   Ok(List.length(rows) > 0)
 end
@@ -452,6 +452,68 @@ fn normalize_time_bucket(bucket :: String) -> String do
   end
 end
 
+# Helper: read the first row value for a key, defaulting to fallback.
+# Keeps the small Mesh-side decompositions honest without reintroducing
+# whole-query raw SQL for one-row composition helpers.
+
+fn first_row_value_or(rows, key :: String, fallback :: String) -> String do
+  if List.length(rows) > 0 do
+    Map.get(List.head(rows), key)
+  else
+    fallback
+  end
+end
+
+# Helper: count project events in a rolling minute window.
+# Returns an Int so alert-threshold evaluation can stay Mesh-side after the
+# count query, while the actual row scan remains builder-backed.
+
+fn count_project_events_in_window(pool :: PoolHandle, project_id :: String, window_str :: String) -> Int ! String do
+  let q = Query.from(Event.__table__())
+    |> Query.where_expr(Expr.eq(Expr.column("project_id"), Pg.uuid(Expr.value(project_id))))
+    |> Query.where_raw("received_at > now() - interval '1 minute' * ?::int", [window_str])
+    |> Query.select_expr(Expr.label(Pg.text(Expr.fn_call("count", [Expr.column("*")])), "cnt"))
+  let rows = Repo.all(pool, q) ?
+  Ok(parse_event_count(first_row_value_or(rows, "cnt", "0")))
+end
+
+# Helper: return the next event id for detail navigation.
+# Keeps the tuple comparison as a narrow raw predicate while the surrounding
+# query assembly, ordering, and projection stay on Query / Expr / Pg surfaces.
+
+fn get_next_event_id(pool :: PoolHandle,
+issue_id :: String,
+received_at :: String,
+event_id :: String) -> String ! String do
+  let q = Query.from(Event.__table__())
+    |> Query.where_expr(Expr.eq(Expr.column("issue_id"), Pg.uuid(Expr.value(issue_id))))
+    |> Query.where_raw("(received_at, id) > (?::timestamptz, ?::uuid)", [received_at, event_id])
+    |> Query.select_expr(Expr.label(Pg.text(Expr.column("id")), "id"))
+    |> Query.order_by(:received_at, :asc)
+    |> Query.order_by(:id, :asc)
+    |> Query.limit(1)
+  let rows = Repo.all(pool, q) ?
+  Ok(first_row_value_or(rows, "id", ""))
+end
+
+# Helper: return the previous event id for detail navigation.
+# Same decomposition pattern as get_next_event_id with descending ordering.
+
+fn get_prev_event_id(pool :: PoolHandle,
+issue_id :: String,
+received_at :: String,
+event_id :: String) -> String ! String do
+  let q = Query.from(Event.__table__())
+    |> Query.where_expr(Expr.eq(Expr.column("issue_id"), Pg.uuid(Expr.value(issue_id))))
+    |> Query.where_raw("(received_at, id) < (?::timestamptz, ?::uuid)", [received_at, event_id])
+    |> Query.select_expr(Expr.label(Pg.text(Expr.column("id")), "id"))
+    |> Query.order_by(:received_at, :desc)
+    |> Query.order_by(:id, :desc)
+    |> Query.limit(1)
+  let rows = Repo.all(pool, q) ?
+  Ok(first_row_value_or(rows, "id", ""))
+end
+
 # List issues for a project filtered by status (for API listing).
 # Constructs Issue structs manually with parse_event_count for the Int field.
 # Uses structured SELECT expressions plus regular ordering instead of raw projections.
@@ -496,10 +558,9 @@ end
 # last hour, it's auto-escalated to 'unresolved'. The WHERE status='archived'
 # naturally prevents re-escalation after the first flip (research Pitfall 5).
 # Returns number of escalated issues.
-# ORM boundary: Repo.update_where cannot express nested subquery with JOIN + HAVING +
-# GREATEST + interval arithmetic. The WHERE ... IN (SELECT ... JOIN ... GROUP BY ...
-# HAVING count(*) > GREATEST(10, subquery / 168 * 10)) pattern exceeds ORM query
-# builder expressiveness. Intentional raw SQL.
+# Honest raw S03 keep-site: Repo.update_where cannot express the correlated
+# subquery + JOIN + HAVING + GREATEST + interval arithmetic bundle in one
+# statement without inventing a fake universal SQL abstraction.
 
 pub fn check_volume_spikes(pool :: PoolHandle) -> Int ! String do
   Repo.execute_raw(pool,
@@ -532,12 +593,9 @@ end
 
 # --- Search, filter, and pagination queries (Phase 91 Plan 01) ---
 # SEARCH-01 + SEARCH-05: List issues with optional filters and keyset pagination.
-# Optional filters use SQL-side conditionals ($N = '' OR column = $N) to avoid injection.
-# Keyset pagination uses (last_seen, id) < ($cursor, $cursor_id) for stable browsing.
-# Returns raw Map rows (not Issue struct) for flexible JSON serialization.
-# ORM boundary: Variable-arity parameter binding for optional filters ($N = '' OR column = $N)
-# with keyset pagination requires conditional WHERE clauses with positional parameters that
-# change count based on cursor presence. Intentional raw SQL.
+# Builds the optional status/level/assigned_to predicates conditionally in Mesh,
+# then keeps only the tuple cursor predicate as a narrow raw fragment. This keeps
+# the caller-visible row keys stable without relying on a whole-query raw string.
 
 pub fn list_issues_filtered(pool :: PoolHandle,
 project_id :: String,
@@ -547,16 +605,43 @@ assigned_to :: String,
 cursor :: String,
 cursor_id :: String,
 limit_str :: String) -> List < Map < String, String > > ! String do
-  if String.length(cursor) > 0 do
-    let sql = "SELECT id::text, project_id::text, fingerprint, title, level, status, event_count::text, first_seen::text, last_seen::text, COALESCE(assigned_to::text, '') as assigned_to FROM issues WHERE project_id = $1::uuid AND ($2 = '' OR status = $2) AND ($3 = '' OR level = $3) AND ($4 = '' OR assigned_to = $4::uuid) AND (last_seen, id) < ($5::timestamptz, $6::uuid) ORDER BY last_seen DESC, id DESC LIMIT $7::int"
-    let rows = Repo.query_raw(pool,
-    sql,
-    [project_id, status, level, assigned_to, cursor, cursor_id, limit_str]) ?
-    Ok(rows)
+  let lim = parse_limit(limit_str)
+  let base = Query.from(Issue.__table__())
+    |> Query.where_expr(Expr.eq(Expr.column("project_id"), Pg.uuid(Expr.value(project_id))))
+    |> Query.select_exprs([
+      Expr.label(Pg.text(Expr.column("id")), "id"),
+      Expr.label(Expr.column("title"), "title"),
+      Expr.label(Expr.column("level"), "level"),
+      Expr.label(Expr.column("status"), "status"),
+      Expr.label(Pg.text(Expr.column("event_count")), "event_count"),
+      Expr.label(Pg.text(Expr.column("first_seen")), "first_seen"),
+      Expr.label(Pg.text(Expr.column("last_seen")), "last_seen"),
+      Expr.label(Expr.coalesce([Pg.text(Expr.column("assigned_to")), Expr.value("")]), "assigned_to")
+    ])
+    |> Query.order_by(:last_seen, :desc)
+    |> Query.order_by(:id, :desc)
+    |> Query.limit(lim)
+  let with_status = if String.length(status) > 0 do
+    base |> Query.where_expr(Expr.eq(Expr.column("status"), Expr.value(status)))
   else
-    let sql = "SELECT id::text, project_id::text, fingerprint, title, level, status, event_count::text, first_seen::text, last_seen::text, COALESCE(assigned_to::text, '') as assigned_to FROM issues WHERE project_id = $1::uuid AND ($2 = '' OR status = $2) AND ($3 = '' OR level = $3) AND ($4 = '' OR assigned_to = $4::uuid) ORDER BY last_seen DESC, id DESC LIMIT $5::int"
-    let rows = Repo.query_raw(pool, sql, [project_id, status, level, assigned_to, limit_str]) ?
-    Ok(rows)
+    base
+  end
+  let with_level = if String.length(level) > 0 do
+    with_status |> Query.where_expr(Expr.eq(Expr.column("level"), Expr.value(level)))
+  else
+    with_status
+  end
+  let with_assigned = if String.length(assigned_to) > 0 do
+    with_level |> Query.where_expr(Expr.eq(Expr.column("assigned_to"), Pg.uuid(Expr.value(assigned_to))))
+  else
+    with_level
+  end
+  if String.length(cursor) > 0 do
+    let q = with_assigned
+      |> Query.where_raw("(last_seen, id) < (?::timestamptz, ?::uuid)", [cursor, cursor_id])
+    Repo.all(pool, q)
+  else
+    Repo.all(pool, with_assigned)
   end
 end
 
@@ -605,7 +690,8 @@ end
 
 # Event listing within an issue with keyset pagination (for DETAIL-05 context).
 # Keyset pagination on (received_at, id) for stable browsing.
-# Keeps the tuple cursor predicate raw because the current builder still lacks OR/tuple expression support.
+# Keeps the tuple cursor predicate raw because the current builder still lacks OR/tuple expression support,
+# but the projection itself is fully builder-backed.
 
 pub fn list_events_for_issue(pool :: PoolHandle,
 issue_id :: String,
@@ -616,10 +702,10 @@ limit_str :: String) -> List < Map < String, String > > ! String do
   let base = Query.from(Event.__table__())
     |> Query.where_expr(Expr.eq(Expr.column("issue_id"), Pg.uuid(Expr.value(issue_id))))
     |> Query.select_exprs([
-      Expr.label(Expr.column("id"), "id"),
+      Expr.label(Pg.text(Expr.column("id")), "id"),
       Expr.label(Expr.column("level"), "level"),
       Expr.label(Expr.column("message"), "message"),
-      Expr.label(Expr.column("received_at"), "received_at")
+      Expr.label(Pg.text(Expr.column("received_at")), "received_at")
     ])
     |> Query.order_by(:received_at, :desc)
     |> Query.order_by(:id, :desc)
@@ -646,8 +732,8 @@ pub fn event_volume_hourly(pool :: PoolHandle, project_id :: String, bucket :: S
     |> Query.where_expr(Expr.eq(Expr.column("project_id"), Pg.uuid(Expr.value(project_id))))
     |> Query.where_raw("received_at > now() - interval '24 hours'", [])
     |> Query.select_exprs([
-      Expr.label(bucket_expr, "bucket"),
-      Expr.label(Expr.fn_call("count", [Expr.column("*")]), "count")
+      Expr.label(Pg.text(bucket_expr), "bucket"),
+      Expr.label(Pg.text(Expr.fn_call("count", [Expr.column("*")])), "count")
     ])
     |> Query.group_by(:bucket)
     |> Query.order_by(:bucket, :asc)
@@ -715,13 +801,18 @@ end
 
 # DASH-05: Per-issue event timeline (recent events for a specific issue).
 # Ordered by received_at DESC for chronological browsing.
-# Uses ORM Query.where_raw + Query.select_raw + Query.order_by + Query.limit + Repo.all.
+# Uses ORM Query.where_raw + Query.select_exprs + Query.order_by + Query.limit + Repo.all.
 
 pub fn issue_event_timeline(pool :: PoolHandle, issue_id :: String, limit_str :: String) -> List < Map < String, String > > ! String do
   let lim = parse_limit(limit_str)
   let q = Query.from(Event.__table__())
     |> Query.where_raw("issue_id = ?::uuid", [issue_id])
-    |> Query.select_raw(["id::text", "level", "message", "received_at::text"])
+    |> Query.select_exprs([
+      Expr.label(Pg.text(Expr.column("id")), "id"),
+      Expr.label(Expr.column("level"), "level"),
+      Expr.label(Expr.column("message"), "message"),
+      Expr.label(Pg.text(Expr.column("received_at")), "received_at")
+    ])
     |> Query.order_by(:received_at, :desc)
     |> Query.limit(lim)
   Repo.all(pool, q)
@@ -729,14 +820,27 @@ end
 
 # DASH-06: Project health summary with key metrics.
 # Returns single row: unresolved issue count, events in last 24h, new issues today.
-# ORM boundary: Three scalar subqueries in a single SELECT -- each subquery references
-# a different table (issues, events, issues) with independent WHERE conditions. The ORM
-# Query builder operates on a single FROM table and cannot compose cross-table scalar
-# subqueries in SELECT expressions. Intentional raw SQL.
+# Uses small Mesh-side composition over three simple builder-backed counts instead of
+# a cross-table scalar-subquery bundle.
 
 pub fn project_health_summary(pool :: PoolHandle, project_id :: String) -> List < Map < String, String > > ! String do
-  let sql = "SELECT (SELECT count(*) FROM issues WHERE project_id = $1::uuid AND status = 'unresolved')::text AS unresolved_count, (SELECT count(*) FROM events WHERE project_id = $1::uuid AND received_at > now() - interval '24 hours')::text AS events_24h, (SELECT count(*) FROM issues WHERE project_id = $1::uuid AND first_seen > now() - interval '24 hours')::text AS new_today"
-  let rows = Repo.query_raw(pool, sql, [project_id]) ?
+  let unresolved_rows = count_unresolved_issues(pool, project_id) ?
+  let unresolved_count = first_row_value_or(unresolved_rows, "cnt", "0")
+  let event_q = Query.from(Event.__table__())
+    |> Query.where_expr(Expr.eq(Expr.column("project_id"), Pg.uuid(Expr.value(project_id))))
+    |> Query.where_raw("received_at > now() - interval '24 hours'", [])
+    |> Query.select_expr(Expr.label(Pg.text(Expr.fn_call("count", [Expr.column("*")])), "cnt"))
+  let event_rows = Repo.all(pool, event_q) ?
+  let events_24h = first_row_value_or(event_rows, "cnt", "0")
+  let new_q = Query.from(Issue.__table__())
+    |> Query.where_expr(Expr.eq(Expr.column("project_id"), Pg.uuid(Expr.value(project_id))))
+    |> Query.where_raw("first_seen > now() - interval '24 hours'", [])
+    |> Query.select_expr(Expr.label(Pg.text(Expr.fn_call("count", [Expr.column("*")])), "cnt"))
+  let new_rows = Repo.all(pool, new_q) ?
+  let new_today = first_row_value_or(new_rows, "cnt", "0")
+  let row = %{"unresolved_count" => unresolved_count, "events_24h" => events_24h, "new_today" => new_today}
+  let rows = List.new()
+  let rows = List.append(rows, row)
   Ok(rows)
 end
 

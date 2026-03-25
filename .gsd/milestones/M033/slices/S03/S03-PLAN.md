@@ -76,7 +76,7 @@ Do: Keep the passing `basic_reads` family, then move the partial `composed_reads
   - Verify: cargo test -p meshc --test e2e_m033_s03 composed_reads -- --nocapture
 cargo run -q -p meshc -- build mesher
 
-- [ ] **T04: Retire the hard whole-query raw read families on the new proof surface** `est:3h`
+- [x] **T04: Retire the hard whole-query raw read families on the new proof surface** `est:3h`
   Why: Once the proof surface is honest again, S03 still has to retire the slice-owned whole-query raw families rather than leaving the main raw tail untouched.
 
 Do: Rewrite `list_issues_filtered`, `project_health_summary`, `get_event_neighbors`, and `evaluate_threshold_rule` to use conditional builder-backed reads plus small Mesh-side composition, then add named `hard_reads` proofs on the Mesher-backed harness. Re-evaluate `extract_event_fields`, `check_volume_spikes`, and `check_sample_rate` after the rewrite pass; retire any that become honest, and keep only the genuinely dishonest leftovers in an explicit named keep-list with justification instead of hiding them behind a fake universal query abstraction.

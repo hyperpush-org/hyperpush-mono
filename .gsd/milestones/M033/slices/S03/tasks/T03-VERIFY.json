@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M033/S03/T03",
+  "timestamp": 1774468490323,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "cargo test -p meshc --test e2e_m033_s03 composed_reads -- --nocapture\ncargo run -q -p meshc -- build mesher",
+      "exitCode": 127,
+      "durationMs": 120015,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}
