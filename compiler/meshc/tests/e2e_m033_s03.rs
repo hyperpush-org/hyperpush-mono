@@ -1,11 +1,15 @@
+use std::any::Any;
 use std::collections::HashMap;
-use std::fs;
+use std::fs::{self, File};
+use std::io::{Read as _, Write as _};
+use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output, Stdio};
+use std::process::{Child, Command, Output, Stdio};
 use std::sync::{Mutex, OnceLock};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mesh_rt::db::pg::{native_pg_close, native_pg_connect, native_pg_execute, native_pg_query};
+use serde_json::Value;
 
 type DbRow = HashMap<String, String>;
 type OutputMap = HashMap<String, String>;
@@ -13,6 +17,30 @@ type OutputMap = HashMap<String, String>;
 const MESHER_DATABASE_URL: &str = "postgres://mesh:mesh@127.0.0.1:5432/mesher";
 const POSTGRES_IMAGE: &str = "postgres:16";
 const POSTGRES_CONTAINER_PREFIX: &str = "mesh-m033-s03-pg";
+
+#[derive(Clone, Copy, Debug)]
+struct MesherConfig {
+    http_port: u16,
+    ws_port: u16,
+}
+
+struct SpawnedMesher {
+    child: Child,
+    stdout_path: PathBuf,
+    stderr_path: PathBuf,
+}
+
+struct StoppedMesher {
+    stdout: String,
+    stderr: String,
+    combined: String,
+}
+
+struct HttpResponse {
+    status_code: u16,
+    body: String,
+    raw: String,
+}
 
 struct PostgresContainer {
     name: String,
@@ -76,6 +104,342 @@ fn assert_command_success(output: &Output, description: &str) {
         "{description} failed:\n{}",
         command_output_text(output)
     );
+}
+
+fn panic_payload_to_string(payload: Box<dyn Any + Send>) -> String {
+    if let Some(msg) = payload.downcast_ref::<&str>() {
+        (*msg).to_string()
+    } else if let Some(msg) = payload.downcast_ref::<String>() {
+        msg.clone()
+    } else {
+        "non-string panic payload".to_string()
+    }
+}
+
+fn pick_unused_port() -> u16 {
+    TcpListener::bind("127.0.0.1:0")
+        .expect("failed to bind ephemeral port")
+        .local_addr()
+        .expect("failed to read ephemeral port")
+        .port()
+}
+
+fn mesher_test_config() -> MesherConfig {
+    MesherConfig {
+        http_port: pick_unused_port(),
+        ws_port: pick_unused_port(),
+    }
+}
+
+fn mesher_binary() -> PathBuf {
+    repo_root().join("mesher").join("mesher")
+}
+
+fn mesher_log_paths() -> (PathBuf, PathBuf) {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock before unix epoch")
+        .as_nanos();
+    let base = std::env::temp_dir();
+    let stdout_path = base.join(format!("mesher-{stamp}-stdout.log"));
+    let stderr_path = base.join(format!("mesher-{stamp}-stderr.log"));
+    (stdout_path, stderr_path)
+}
+
+fn build_mesher() -> Output {
+    Command::new(find_meshc())
+        .current_dir(repo_root())
+        .args(["build", "mesher"])
+        .output()
+        .expect("failed to invoke meshc build mesher")
+}
+
+fn ensure_mesher_binary() {
+    static BUILD_ONCE: OnceLock<()> = OnceLock::new();
+    BUILD_ONCE.get_or_init(|| {
+        let output = build_mesher();
+        assert_command_success(&output, "meshc build mesher");
+        assert!(mesher_binary().exists(), "mesher binary was not built");
+    });
+}
+
+fn spawn_mesher(config: MesherConfig) -> SpawnedMesher {
+    ensure_mesher_binary();
+
+    let binary = mesher_binary();
+    let (stdout_path, stderr_path) = mesher_log_paths();
+    let stdout_file = File::create(&stdout_path)
+        .unwrap_or_else(|e| panic!("failed to create {}: {}", stdout_path.display(), e));
+    let stderr_file = File::create(&stderr_path)
+        .unwrap_or_else(|e| panic!("failed to create {}: {}", stderr_path.display(), e));
+
+    let child = Command::new(&binary)
+        .current_dir(repo_root())
+        .env("MESHER_HTTP_PORT", config.http_port.to_string())
+        .env("MESHER_WS_PORT", config.ws_port.to_string())
+        .env("MESHER_RATE_LIMIT_WINDOW_SECONDS", "60")
+        .env("MESHER_RATE_LIMIT_MAX_EVENTS", "100")
+        .stdout(Stdio::from(stdout_file))
+        .stderr(Stdio::from(stderr_file))
+        .spawn()
+        .unwrap_or_else(|e| panic!("failed to spawn {}: {}", binary.display(), e));
+
+    SpawnedMesher {
+        child,
+        stdout_path,
+        stderr_path,
+    }
+}
+
+fn collect_stopped_mesher(
+    mut child: Child,
+    stdout_path: PathBuf,
+    stderr_path: PathBuf,
+) -> StoppedMesher {
+    child.wait().expect("failed to collect mesher exit status");
+
+    let stdout = fs::read_to_string(&stdout_path)
+        .unwrap_or_else(|e| panic!("failed to read {}: {}", stdout_path.display(), e));
+    let stderr = fs::read_to_string(&stderr_path)
+        .unwrap_or_else(|e| panic!("failed to read {}: {}", stderr_path.display(), e));
+    let _ = fs::remove_file(&stdout_path);
+    let _ = fs::remove_file(&stderr_path);
+    let combined = format!("{stdout}{stderr}");
+
+    StoppedMesher {
+        stdout,
+        stderr,
+        combined,
+    }
+}
+
+fn stop_mesher(spawned: SpawnedMesher) -> StoppedMesher {
+    let SpawnedMesher {
+        mut child,
+        stdout_path,
+        stderr_path,
+    } = spawned;
+
+    let _ = Command::new("kill")
+        .args(["-TERM", &child.id().to_string()])
+        .status();
+    std::thread::sleep(Duration::from_millis(250));
+    if child
+        .try_wait()
+        .expect("failed to probe mesher exit status")
+        .is_none()
+    {
+        let _ = child.kill();
+    }
+
+    collect_stopped_mesher(child, stdout_path, stderr_path)
+}
+
+fn assert_mesher_logs(logs: &StoppedMesher, config: &MesherConfig) {
+    assert!(
+        logs.combined.contains("[Mesher] Connecting to PostgreSQL..."),
+        "mesher logs never showed the Postgres connection banner:\n{}",
+        logs.combined
+    );
+    assert!(
+        logs.combined
+            .contains(&format!("[Mesher] HTTP server starting on :{}", config.http_port)),
+        "mesher logs never showed the HTTP listener on :{}:\n{}",
+        config.http_port,
+        logs.combined
+    );
+}
+
+fn send_http_request(
+    config: &MesherConfig,
+    method: &str,
+    path: &str,
+    body: Option<&str>,
+    headers: &[(&str, &str)],
+) -> std::io::Result<HttpResponse> {
+    let mut stream = TcpStream::connect(("127.0.0.1", config.http_port))?;
+    stream.set_read_timeout(Some(Duration::from_secs(10)))?;
+
+    let mut request =
+        format!("{method} {path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n");
+    for (name, value) in headers {
+        request.push_str(name);
+        request.push_str(": ");
+        request.push_str(value);
+        request.push_str("\r\n");
+    }
+    if let Some(body) = body {
+        request.push_str("Content-Type: application/json\r\n");
+        request.push_str(&format!("Content-Length: {}\r\n", body.len()));
+        request.push_str("\r\n");
+        request.push_str(body);
+    } else {
+        request.push_str("\r\n");
+    }
+
+    stream.write_all(request.as_bytes())?;
+    let mut raw = String::new();
+    stream.read_to_string(&mut raw)?;
+
+    let mut parts = raw.splitn(2, "\r\n\r\n");
+    let headers = parts.next().unwrap_or("");
+    let body = parts.next().unwrap_or("").to_string();
+    let status_code = headers
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|code| code.parse::<u16>().ok())
+        .unwrap_or(0);
+
+    Ok(HttpResponse {
+        status_code,
+        body,
+        raw,
+    })
+}
+
+fn assert_json_response(response: HttpResponse, expected_status: u16, description: &str) -> Value {
+    assert!(
+        response.status_code == expected_status,
+        "expected HTTP {expected_status} for {description}, got raw response:\n{}",
+        response.raw
+    );
+    serde_json::from_str(&response.body).unwrap_or_else(|e| {
+        panic!(
+            "expected JSON body for {description}, got parse error {e}: {}",
+            response.body
+        )
+    })
+}
+
+fn get_json(config: &MesherConfig, path: &str, expected_status: u16) -> Value {
+    let response = send_http_request(config, "GET", path, None, &[])
+        .unwrap_or_else(|e| panic!("GET {path} failed on {}: {}", config.http_port, e));
+    assert_json_response(response, expected_status, path)
+}
+
+fn post_json_with_headers(
+    config: &MesherConfig,
+    path: &str,
+    body: &str,
+    headers: &[(&str, &str)],
+    expected_status: u16,
+) -> Value {
+    let response = send_http_request(config, "POST", path, Some(body), headers)
+        .unwrap_or_else(|e| panic!("POST {path} failed on {}: {}", config.http_port, e));
+    assert_json_response(response, expected_status, path)
+}
+
+fn wait_for_mesher(config: &MesherConfig) -> Value {
+    let mut last_response = Value::Null;
+
+    for attempt in 0..60 {
+        if attempt > 0 {
+            std::thread::sleep(Duration::from_millis(250));
+        }
+
+        match send_http_request(
+            config,
+            "GET",
+            "/api/v1/projects/default/settings",
+            None,
+            &[],
+        ) {
+            Ok(response) if response.status_code == 200 => {
+                let json = assert_json_response(response, 200, "/api/v1/projects/default/settings");
+                if json["retention_days"].is_number() && json["sample_rate"].is_number() {
+                    return json;
+                }
+                last_response = json;
+            }
+            Ok(response) => last_response = Value::String(response.raw),
+            Err(_) => continue,
+        }
+    }
+
+    panic!(
+        "mesher never reached ready settings response on :{}; last_response={}",
+        config.http_port, last_response
+    );
+}
+
+fn wait_for_query_value(
+    database_url: &str,
+    sql: &str,
+    params: &[&str],
+    column: &str,
+    expected: &str,
+    description: &str,
+) -> DbRow {
+    let mut last_row = DbRow::new();
+
+    for attempt in 0..40 {
+        if attempt > 0 {
+            std::thread::sleep(Duration::from_millis(250));
+        }
+
+        let row = query_single_row(database_url, sql, params);
+        if row.get(column).map(String::as_str) == Some(expected) {
+            return row;
+        }
+        last_row = row;
+    }
+
+    panic!(
+        "timed out waiting for {description}; expected {column}={expected}, last_row={last_row:?}"
+    );
+}
+
+fn json_value_string(value: &Value) -> String {
+    match value {
+        Value::Null => String::new(),
+        Value::Bool(b) => b.to_string(),
+        Value::Number(n) => n.to_string(),
+        Value::String(s) => s.clone(),
+        other => serde_json::to_string(other).expect("failed to serialize nested JSON value"),
+    }
+}
+
+fn json_array_signature(items: &[Value], fields: &[&str]) -> String {
+    items.iter()
+        .map(|item| {
+            fields
+                .iter()
+                .map(|field| json_value_string(&item[*field]))
+                .collect::<Vec<_>>()
+                .join("~")
+        })
+        .collect::<Vec<_>>()
+        .join("|")
+}
+
+fn url_encode_component(value: &str) -> String {
+    let mut encoded = String::new();
+    for byte in value.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(byte as char)
+            }
+            _ => encoded.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    encoded
+}
+
+fn db_json(row: &DbRow, column: &str) -> Value {
+    serde_json::from_str(
+        row.get(column)
+            .unwrap_or_else(|| panic!("missing column {column} in row {row:?}")),
+    )
+    .unwrap_or_else(|e| panic!("failed to parse JSON column {column}: {e}; row={row:?}"))
+}
+
+fn assert_nullable_timestamp(value: &Value, expected: &str, field: &str) {
+    if expected.is_empty() {
+        assert!(value.is_null(), "expected null for {field}, got {value}");
+    } else {
+        assert_eq!(value.as_str(), Some(expected), "timestamp drifted for {field}");
+    }
 }
 
 fn cleanup_stale_mesher_postgres_containers() {
@@ -1341,13 +1705,12 @@ fn e2e_m033_s03_composed_reads_joined_issue_and_team_rows() {
         let migrate_output = run_mesher_migrations(MESHER_DATABASE_URL);
         assert_command_success(&migrate_output, "meshc migrate mesher up");
 
-        let project_id = insert_org_and_project(MESHER_DATABASE_URL, "m033-s03-composed-joined");
-        let org_id = project_org_id(MESHER_DATABASE_URL, &project_id);
+        let auth_project_id = insert_org_and_project(MESHER_DATABASE_URL, "m033-s03-composed-auth");
         let active_key = "mshr_s03_composed_active_key_0000000000000000000001";
         let revoked_key = "mshr_s03_composed_revoked_key_000000000000000000001";
         insert_api_key_row(
             MESHER_DATABASE_URL,
-            &project_id,
+            &auth_project_id,
             active_key,
             "active-composed",
             -15,
@@ -1355,13 +1718,15 @@ fn e2e_m033_s03_composed_reads_joined_issue_and_team_rows() {
         );
         insert_api_key_row(
             MESHER_DATABASE_URL,
-            &project_id,
+            &auth_project_id,
             revoked_key,
             "revoked-composed",
             -60,
             Some(-30),
         );
 
+        let project_id = insert_org_and_project(MESHER_DATABASE_URL, "m033-s03-composed-joined");
+        let org_id = project_org_id(MESHER_DATABASE_URL, &project_id);
         let member_user = insert_user(
             MESHER_DATABASE_URL,
             "m033-s03-member@example.com",
@@ -1428,151 +1793,105 @@ fn e2e_m033_s03_composed_reads_joined_issue_and_team_rows() {
             None,
         );
 
-        let template = r##"
-from Storage.Queries import get_project_by_api_key, list_issues_by_status, get_members_with_users
-from Types.Project import Project
-from Types.Issue import Issue
+        let config = mesher_test_config();
+        let spawned = spawn_mesher(config);
+        let result = std::panic::catch_unwind(|| {
+            wait_for_mesher(&config);
 
-fn issues_to_json(issues :: List < Issue >) -> String do
-  let items = issues
-    |> List.map(fn (issue) do Json.encode(issue) end)
-  "[#{String.join(items, ",")}]"
-end
+            let active_response = post_json_with_headers(
+                &config,
+                "/api/v1/events",
+                r#"{"message":"S03 auth proof accepted","level":"error"}"#,
+                &[("x-sentry-auth", active_key)],
+                202,
+            );
+            assert_eq!(active_response["status"].as_str(), Some("accepted"));
+            wait_for_query_value(
+                MESHER_DATABASE_URL,
+                "SELECT count(*)::text AS cnt FROM events WHERE project_id = $1::uuid",
+                &[&auth_project_id],
+                "cnt",
+                "1",
+                "authorized ingest event",
+            );
 
-fn join_member_rows(rows, i :: Int, total :: Int) -> String do
-  if i < total do
-    let row = List.get(rows, i)
-    let id = Map.get(row, "id")
-    let user_id = Map.get(row, "user_id")
-    let email = Map.get(row, "email")
-    let display_name = Map.get(row, "display_name")
-    let role = Map.get(row, "role")
-    let joined_at = Map.get(row, "joined_at")
-    let current = "#{id}~#{user_id}~#{email}~#{display_name}~#{role}~#{joined_at}"
-    let rest = join_member_rows(rows, i + 1, total)
-    if String.length(rest) > 0 do
-      "#{current}|#{rest}"
-    else
-      current
-    end
-  else
-    ""
-  end
-end
+            let revoked_response = post_json_with_headers(
+                &config,
+                "/api/v1/events",
+                r#"{"message":"S03 auth proof rejected","level":"error"}"#,
+                &[("x-sentry-auth", revoked_key)],
+                401,
+            );
+            assert_eq!(revoked_response["error"].as_str(), Some("unauthorized"));
+            let auth_event_count = query_single_row(
+                MESHER_DATABASE_URL,
+                "SELECT count(*)::text AS cnt FROM events WHERE project_id = $1::uuid",
+                &[&auth_project_id],
+            );
+            assert_eq!(auth_event_count.get("cnt").map(String::as_str), Some("1"));
 
-fn main() do
-  let pool_result = Pool.open("postgres://mesh:mesh@127.0.0.1:5432/mesher", 1, 1, 5000)
-  case pool_result do
-    Err( e) -> println("pool_err=#{e}")
-    Ok( pool) -> do
-      case get_project_by_api_key(pool, __ACTIVE_KEY__) do
-        Err( e) -> println("project_lookup_err=#{e}")
-        Ok( project) -> do
-          println("project_json=#{Json.encode(project)}")
-        end
-      end
-      case get_project_by_api_key(pool, __REVOKED_KEY__) do
-        Ok( _) -> println("revoked_lookup_status=unexpected_ok")
-        Err( e) -> println("revoked_lookup_status=#{e}")
-      end
-      case list_issues_by_status(pool, __PROJECT_ID__, "unresolved") do
-        Err( e) -> println("issue_list_err=#{e}")
-        Ok( issues) -> do
-          println("issue_count=#{List.length(issues)}")
-          println("issues_json=#{issues_to_json(issues)}")
-        end
-      end
-      case get_members_with_users(pool, __ORG_ID__) do
-        Err( e) -> println("member_list_err=#{e}")
-        Ok( rows) -> do
-          println("member_count=#{List.length(rows)}")
-          println("member_signature=#{join_member_rows(rows, 0, List.length(rows))}")
-        end
-      end
-    end
-  end
-end
-"##;
-        let source = render_mesh_template(
-            template,
-            &[
-                ("__ACTIVE_KEY__", mesh_string_literal(active_key)),
-                ("__REVOKED_KEY__", mesh_string_literal(revoked_key)),
-                ("__PROJECT_ID__", mesh_string_literal(&project_id)),
-                ("__ORG_ID__", mesh_string_literal(&org_id)),
-            ],
-        );
+            let issues_path = format!("/api/v1/projects/{project_id}/issues?status=unresolved");
+            let issues_json = get_json(&config, &issues_path, 200);
+            assert_eq!(issues_json["has_more"].as_bool(), Some(false));
+            let issue_items = issues_json["data"]
+                .as_array()
+                .expect("issues response should expose a data array");
+            let issue_rows = query_database_rows(
+                MESHER_DATABASE_URL,
+                "SELECT id::text AS id, title, level, status, event_count::text AS event_count, first_seen::text AS first_seen, last_seen::text AS last_seen, COALESCE(assigned_to::text, '') AS assigned_to FROM issues WHERE project_id = $1::uuid AND status = 'unresolved' ORDER BY last_seen DESC, id DESC LIMIT 25",
+                &[&project_id],
+            );
+            let expected_issue_signature = rows_signature(
+                &issue_rows,
+                &[
+                    "id",
+                    "title",
+                    "level",
+                    "status",
+                    "event_count",
+                    "first_seen",
+                    "last_seen",
+                    "assigned_to",
+                ],
+            );
+            assert_eq!(
+                json_array_signature(issue_items, &["id", "title", "level", "status", "event_count", "first_seen", "last_seen", "assigned_to"]),
+                expected_issue_signature,
+                "e2e_m033_s03_composed_reads_joined_issue_and_team_rows unresolved issue contract drifted"
+            );
 
-        let output = compile_and_run_mesher_storage_probe(&source);
-        let values = parse_output_map(&output);
-
-        let project_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT id::text AS id, org_id::text AS org_id, name, platform, created_at::text AS created_at FROM projects WHERE id = $1::uuid",
-            &[&project_id],
-        );
-        let expected_project_signature = rows_signature(&project_rows, &["id", "org_id", "name", "platform", "created_at"]);
-        assert_eq!(
-            values.get("project_signature").map(String::as_str),
-            Some(expected_project_signature.as_str()),
-            "e2e_m033_s03_composed_reads_joined_issue_and_team_rows project lookup drifted:\n{output}"
-        );
-        assert_eq!(
-            values.get("revoked_lookup_status").map(String::as_str),
-            Some("not found"),
-            "e2e_m033_s03_composed_reads_joined_issue_and_team_rows revoked api key should stay hidden:\n{output}"
-        );
-
-        let issue_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT id::text AS id, project_id::text AS project_id, fingerprint, title, level, status, event_count::text AS event_count, first_seen::text AS first_seen, last_seen::text AS last_seen, COALESCE(assigned_to::text, '') AS assigned_to FROM issues WHERE project_id = $1::uuid AND status = 'unresolved' ORDER BY last_seen DESC",
-            &[&project_id],
-        );
-        let expected_issue_signature = rows_signature(
-            &issue_rows,
-            &[
-                "id",
-                "project_id",
-                "fingerprint",
-                "title",
-                "level",
-                "status",
-                "event_count",
-                "first_seen",
-                "last_seen",
-                "assigned_to",
-            ],
-        );
-        assert_eq!(
-            values.get("issue_count").map(String::as_str),
-            Some("2"),
-            "e2e_m033_s03_composed_reads_joined_issue_and_team_rows unresolved issue count drifted:\n{output}"
-        );
-        assert_eq!(
-            values.get("issue_signature").map(String::as_str),
-            Some(expected_issue_signature.as_str()),
-            "e2e_m033_s03_composed_reads_joined_issue_and_team_rows unresolved issue row shape or ordering drifted:\n{output}"
-        );
-
-        let member_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT org_memberships.id::text AS id, org_memberships.user_id::text AS user_id, users.email, users.display_name, org_memberships.role, org_memberships.joined_at::text AS joined_at FROM org_memberships JOIN users ON users.id = org_memberships.user_id WHERE org_memberships.org_id = $1::uuid ORDER BY org_memberships.joined_at ASC",
-            &[&org_id],
-        );
-        let expected_member_signature = rows_signature(
-            &member_rows,
-            &["id", "user_id", "email", "display_name", "role", "joined_at"],
-        );
-        assert_eq!(
-            values.get("member_count").map(String::as_str),
-            Some("2"),
-            "e2e_m033_s03_composed_reads_joined_issue_and_team_rows membership count drifted:\n{output}"
-        );
-        assert_eq!(
-            values.get("member_signature").map(String::as_str),
-            Some(expected_member_signature.as_str()),
-            "e2e_m033_s03_composed_reads_joined_issue_and_team_rows member row shape or ordering drifted:\n{output}"
-        );
+            let members_json = get_json(&config, &format!("/api/v1/orgs/{org_id}/members"), 200);
+            let member_items = members_json
+                .as_array()
+                .expect("members response should be a JSON array");
+            let member_rows = query_database_rows(
+                MESHER_DATABASE_URL,
+                "SELECT org_memberships.id::text AS id, org_memberships.user_id::text AS user_id, users.email, users.display_name, org_memberships.role, org_memberships.joined_at::text AS joined_at FROM org_memberships JOIN users ON users.id = org_memberships.user_id WHERE org_memberships.org_id = $1::uuid ORDER BY org_memberships.joined_at ASC",
+                &[&org_id],
+            );
+            let expected_member_signature = rows_signature(
+                &member_rows,
+                &["id", "user_id", "email", "display_name", "role", "joined_at"],
+            );
+            assert_eq!(
+                json_array_signature(
+                    member_items,
+                    &["id", "user_id", "email", "display_name", "role", "joined_at"],
+                ),
+                expected_member_signature,
+                "e2e_m033_s03_composed_reads_joined_issue_and_team_rows team member contract drifted"
+            );
+        });
+        let logs = stop_mesher(spawned);
+        match result {
+            Ok(()) => assert_mesher_logs(&logs, &config),
+            Err(payload) => panic!(
+                "M033/S03 joined/team assertions failed: {}\nstdout:\n{}\nstderr:\n{}",
+                panic_payload_to_string(payload),
+                logs.stdout,
+                logs.stderr,
+            ),
+        }
     });
 }
 
@@ -1739,145 +2058,103 @@ fn e2e_m033_s03_composed_reads_dashboard_aggregates() {
             -10,
         );
 
-        let template = r##"
-from Storage.Queries import event_volume_hourly, error_breakdown_by_level, top_issues_by_frequency, event_breakdown_by_tag
+        let config = mesher_test_config();
+        let spawned = spawn_mesher(config);
+        let result = std::panic::catch_unwind(|| {
+            wait_for_mesher(&config);
 
-fn print_volume_rows(rows, i :: Int, total :: Int) do
-  if i < total do
-    let row = List.get(rows, i)
-    let idx = String.from(i)
-    println("volume_#{idx}_bucket=#{Map.get(row, "bucket")}")
-    println("volume_#{idx}_count=#{Map.get(row, "count")}")
-    print_volume_rows(rows, i + 1, total)
-  end
-end
+            let volume_json = get_json(
+                &config,
+                &format!("/api/v1/projects/{project_id}/dashboard/volume?bucket=hour"),
+                200,
+            );
+            let volume_items = volume_json
+                .as_array()
+                .expect("volume response should be a JSON array");
+            let volume_rows = query_database_rows(
+                MESHER_DATABASE_URL,
+                "SELECT date_trunc('hour', received_at)::text AS bucket, count(*)::text AS count FROM events WHERE project_id = $1::uuid AND received_at > now() - interval '24 hours' GROUP BY 1 ORDER BY 1 ASC",
+                &[&project_id],
+            );
+            assert_eq!(
+                json_array_signature(volume_items, &["bucket", "count"]),
+                rows_signature(&volume_rows, &["bucket", "count"]),
+                "e2e_m033_s03_composed_reads_dashboard_aggregates volume contract drifted"
+            );
 
-fn print_level_rows(rows, i :: Int, total :: Int) do
-  if i < total do
-    let row = List.get(rows, i)
-    let idx = String.from(i)
-    println("level_#{idx}_level=#{Map.get(row, "level")}")
-    println("level_#{idx}_count=#{Map.get(row, "count")}")
-    print_level_rows(rows, i + 1, total)
-  end
-end
+            let levels_json = get_json(
+                &config,
+                &format!("/api/v1/projects/{project_id}/dashboard/levels"),
+                200,
+            );
+            let level_items = levels_json
+                .as_array()
+                .expect("levels response should be a JSON array");
+            let level_rows = query_database_rows(
+                MESHER_DATABASE_URL,
+                "SELECT level, count(*)::text AS count FROM events WHERE project_id = $1::uuid AND received_at > now() - interval '24 hours' GROUP BY 1 ORDER BY count(*) DESC, level ASC",
+                &[&project_id],
+            );
+            assert_eq!(
+                json_array_signature(level_items, &["level", "count"]),
+                rows_signature(&level_rows, &["level", "count"]),
+                "e2e_m033_s03_composed_reads_dashboard_aggregates level contract drifted"
+            );
 
-fn print_tag_rows(rows, i :: Int, total :: Int) do
-  if i < total do
-    let row = List.get(rows, i)
-    let idx = String.from(i)
-    println("tag_#{idx}_value=#{Map.get(row, "tag_value")}")
-    println("tag_#{idx}_count=#{Map.get(row, "count")}")
-    print_tag_rows(rows, i + 1, total)
-  end
-end
+            let top_issues_json = get_json(
+                &config,
+                &format!("/api/v1/projects/{project_id}/dashboard/top-issues?limit=2"),
+                200,
+            );
+            let top_issue_items = top_issues_json
+                .as_array()
+                .expect("top-issues response should be a JSON array");
+            let top_issue_rows = query_database_rows(
+                MESHER_DATABASE_URL,
+                "SELECT id::text AS id, title, level, status, event_count::text AS event_count, last_seen::text AS last_seen FROM issues WHERE project_id = $1::uuid AND status = 'unresolved' ORDER BY event_count DESC, id ASC LIMIT 2",
+                &[&project_id],
+            );
+            assert_eq!(
+                json_array_signature(
+                    top_issue_items,
+                    &["id", "title", "level", "status", "event_count", "last_seen"],
+                ),
+                rows_signature(
+                    &top_issue_rows,
+                    &["id", "title", "level", "status", "event_count", "last_seen"],
+                ),
+                "e2e_m033_s03_composed_reads_dashboard_aggregates top-issues contract drifted"
+            );
 
-fn print_top_issue_rows(rows, i :: Int, total :: Int) do
-  if i < total do
-    let row = List.get(rows, i)
-    let idx = String.from(i)
-    println("top_#{idx}_id=#{Map.get(row, "id")}")
-    println("top_#{idx}_title=#{Map.get(row, "title")}")
-    println("top_#{idx}_level=#{Map.get(row, "level")}")
-    println("top_#{idx}_status=#{Map.get(row, "status")}")
-    println("top_#{idx}_event_count=#{Map.get(row, "event_count")}")
-    println("top_#{idx}_last_seen=#{Map.get(row, "last_seen")}")
-    print_top_issue_rows(rows, i + 1, total)
-  end
-end
-
-fn main() do
-  let pool_result = Pool.open("postgres://mesh:mesh@127.0.0.1:5432/mesher", 1, 1, 5000)
-  case pool_result do
-    Err( e) -> println("pool_err=#{e}")
-    Ok( pool) -> do
-      case event_volume_hourly(pool, __PROJECT_ID__, "hour") do
-        Err( e) -> println("volume_err=#{e}")
-        Ok( rows) -> do
-          println("volume_count=#{List.length(rows)}")
-          print_volume_rows(rows, 0, List.length(rows))
-        end
-      end
-      case error_breakdown_by_level(pool, __PROJECT_ID__) do
-        Err( e) -> println("level_err=#{e}")
-        Ok( rows) -> do
-          println("level_count=#{List.length(rows)}")
-          print_level_rows(rows, 0, List.length(rows))
-        end
-      end
-      case top_issues_by_frequency(pool, __PROJECT_ID__, "2") do
-        Err( e) -> println("top_issue_err=#{e}")
-        Ok( rows) -> do
-          println("top_issue_count=#{List.length(rows)}")
-          print_top_issue_rows(rows, 0, List.length(rows))
-        end
-      end
-      case event_breakdown_by_tag(pool, __PROJECT_ID__, "env") do
-        Err( e) -> println("tag_err=#{e}")
-        Ok( rows) -> do
-          println("tag_count=#{List.length(rows)}")
-          print_tag_rows(rows, 0, List.length(rows))
-        end
-      end
-    end
-  end
-end
-"##;
-        let source = render_mesh_template(template, &[("__PROJECT_ID__", mesh_string_literal(&project_id))]);
-
-        let output = compile_and_run_mesher_storage_probe(&source);
-        let values = parse_output_map(&output);
-
-        let volume_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT date_trunc('hour', received_at)::text AS bucket, count(*)::text AS count FROM events WHERE project_id = $1::uuid AND received_at > now() - interval '24 hours' GROUP BY 1 ORDER BY 1 ASC",
-            &[&project_id],
-        );
-        let expected_volume_signature = rows_signature(&volume_rows, &["bucket", "count"]);
-        assert_eq!(
-            values.get("volume_signature").map(String::as_str),
-            Some(expected_volume_signature.as_str()),
-            "e2e_m033_s03_composed_reads_dashboard_aggregates volume buckets drifted:\n{output}"
-        );
-
-        let level_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT level, count(*)::text AS count FROM events WHERE project_id = $1::uuid AND received_at > now() - interval '24 hours' GROUP BY 1 ORDER BY count(*) DESC",
-            &[&project_id],
-        );
-        let expected_level_signature = rows_signature(&level_rows, &["level", "count"]);
-        assert_eq!(
-            values.get("level_signature").map(String::as_str),
-            Some(expected_level_signature.as_str()),
-            "e2e_m033_s03_composed_reads_dashboard_aggregates level breakdown drifted:\n{output}"
-        );
-
-        let top_issue_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT id::text AS id, title, level, status, event_count::text AS event_count, last_seen::text AS last_seen FROM issues WHERE project_id = $1::uuid AND status = 'unresolved' ORDER BY event_count DESC LIMIT 2",
-            &[&project_id],
-        );
-        let expected_top_issue_signature = rows_signature(
-            &top_issue_rows,
-            &["id", "title", "level", "status", "event_count", "last_seen"],
-        );
-        assert_eq!(
-            values.get("top_issue_signature").map(String::as_str),
-            Some(expected_top_issue_signature.as_str()),
-            "e2e_m033_s03_composed_reads_dashboard_aggregates top issue ordering drifted:\n{output}"
-        );
-
-        let tag_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT jsonb_extract_path_text(tags, 'env') AS tag_value, count(*)::text AS count FROM events WHERE project_id = $1::uuid AND received_at > now() - interval '24 hours' AND jsonb_exists(tags, 'env') GROUP BY 1 ORDER BY count(*) DESC LIMIT 20",
-            &[&project_id],
-        );
-        let expected_tag_signature = rows_signature(&tag_rows, &["tag_value", "count"]);
-        assert_eq!(
-            values.get("tag_signature").map(String::as_str),
-            Some(expected_tag_signature.as_str()),
-            "e2e_m033_s03_composed_reads_dashboard_aggregates tag breakdown drifted:\n{output}"
-        );
+            let tags_json = get_json(
+                &config,
+                &format!("/api/v1/projects/{project_id}/dashboard/tags?key=env"),
+                200,
+            );
+            let tag_items = tags_json
+                .as_array()
+                .expect("tag breakdown response should be a JSON array");
+            let tag_rows = query_database_rows(
+                MESHER_DATABASE_URL,
+                "SELECT jsonb_extract_path_text(tags, 'env') AS value, count(*)::text AS count FROM events WHERE project_id = $1::uuid AND received_at > now() - interval '24 hours' AND jsonb_exists(tags, 'env') GROUP BY 1 ORDER BY count(*) DESC, value ASC LIMIT 20",
+                &[&project_id],
+            );
+            assert_eq!(
+                json_array_signature(tag_items, &["value", "count"]),
+                rows_signature(&tag_rows, &["value", "count"]),
+                "e2e_m033_s03_composed_reads_dashboard_aggregates tag contract drifted"
+            );
+        });
+        let logs = stop_mesher(spawned);
+        match result {
+            Ok(()) => assert_mesher_logs(&logs, &config),
+            Err(payload) => panic!(
+                "M033/S03 dashboard assertions failed: {}\nstdout:\n{}\nstderr:\n{}",
+                panic_payload_to_string(payload),
+                logs.stdout,
+                logs.stderr,
+            ),
+        }
     });
 }
 
@@ -1958,160 +2235,109 @@ fn e2e_m033_s03_composed_reads_detail_and_issue_event_lists() {
             -5,
         );
 
-        let template = r##"
-from Storage.Queries import get_event_detail, list_events_for_issue
+        let config = mesher_test_config();
+        let spawned = spawn_mesher(config);
+        let result = std::panic::catch_unwind(|| {
+            wait_for_mesher(&config);
 
-fn join_event_rows(rows, i :: Int, total :: Int) -> String do
-  if i < total do
-    let row = List.get(rows, i)
-    let id = Map.get(row, "id")
-    let level = Map.get(row, "level")
-    let message = Map.get(row, "message")
-    let received_at = Map.get(row, "received_at")
-    let current = "#{id}~#{level}~#{message}~#{received_at}"
-    let rest = join_event_rows(rows, i + 1, total)
-    if String.length(rest) > 0 do
-      "#{current}|#{rest}"
-    else
-      current
-    end
-  else
-    ""
-  end
-end
+            let page1_path = format!("/api/v1/issues/{issue_id}/events?limit=2");
+            let page1_json = get_json(&config, &page1_path, 200);
+            assert_eq!(page1_json["has_more"].as_bool(), Some(true));
+            let page1_items = page1_json["data"]
+                .as_array()
+                .expect("first issue-event page should expose a data array");
+            let page1_rows = query_database_rows(
+                MESHER_DATABASE_URL,
+                "SELECT id::text AS id, level, message, received_at::text AS received_at FROM events WHERE issue_id = $1::uuid ORDER BY received_at DESC, id DESC LIMIT 2",
+                &[&issue_id],
+            );
+            assert_eq!(
+                json_array_signature(page1_items, &["id", "level", "message", "received_at"]),
+                rows_signature(&page1_rows, &["id", "level", "message", "received_at"]),
+                "e2e_m033_s03_composed_reads_detail_and_issue_event_lists first page drifted"
+            );
 
-fn detail_signature(row) -> String do
-  let id = Map.get(row, "id")
-  let project_id = Map.get(row, "project_id")
-  let issue_id = Map.get(row, "issue_id")
-  let level = Map.get(row, "level")
-  let message = Map.get(row, "message")
-  let fingerprint = Map.get(row, "fingerprint")
-  let exception = Map.get(row, "exception")
-  let stacktrace = Map.get(row, "stacktrace")
-  let breadcrumbs = Map.get(row, "breadcrumbs")
-  let tags = Map.get(row, "tags")
-  let extra = Map.get(row, "extra")
-  let user_context = Map.get(row, "user_context")
-  let sdk_name = Map.get(row, "sdk_name")
-  let sdk_version = Map.get(row, "sdk_version")
-  let received_at = Map.get(row, "received_at")
-  "#{id}~#{project_id}~#{issue_id}~#{level}~#{message}~#{fingerprint}~#{exception}~#{stacktrace}~#{breadcrumbs}~#{tags}~#{extra}~#{user_context}~#{sdk_name}~#{sdk_version}~#{received_at}"
-end
+            let cursor_received_at = page1_rows[1]
+                .get("received_at")
+                .cloned()
+                .expect("missing page1 cursor received_at");
+            let cursor_id = page1_rows[1]
+                .get("id")
+                .cloned()
+                .expect("missing page1 cursor id");
+            assert_eq!(page1_json["next_cursor"].as_str(), Some(cursor_received_at.as_str()));
+            assert_eq!(page1_json["next_cursor_id"].as_str(), Some(cursor_id.as_str()));
 
-fn main() do
-  let pool_result = Pool.open("postgres://mesh:mesh@127.0.0.1:5432/mesher", 1, 1, 5000)
-  case pool_result do
-    Err( e) -> println("pool_err=#{e}")
-    Ok( pool) -> do
-      case list_events_for_issue(pool, __ISSUE_ID__, "", "", "2") do
-        Err( e) -> println("page1_err=#{e}")
-        Ok( rows) -> do
-          let page1_count = List.length(rows)
-          println("page1_count=#{page1_count}")
-          println("page1_signature=#{join_event_rows(rows, 0, page1_count)}")
-          if page1_count > 1 do
-            let cursor_row = List.get(rows, 1)
-            let cursor = Map.get(cursor_row, "received_at")
-            let cursor_id = Map.get(cursor_row, "id")
-            case list_events_for_issue(pool, __ISSUE_ID__, cursor, cursor_id, "2") do
-              Err( e) -> println("page2_err=#{e}")
-              Ok( next_rows) -> println("page2_signature=#{join_event_rows(next_rows, 0, List.length(next_rows))}")
-            end
-          else
-            println("page2_signature=missing")
-          end
-        end
-      end
-      case get_event_detail(pool, __DETAIL_EVENT_ID__) do
-        Err( e) -> println("detail_err=#{e}")
-        Ok( rows) -> do
-          let row = List.get(rows, 0)
-          println("detail_signature=#{detail_signature(row)}")
-        end
-      end
-    end
-  end
-end
-"##;
-        let source = render_mesh_template(
-            template,
-            &[
-                ("__ISSUE_ID__", mesh_string_literal(&issue_id)),
-                ("__DETAIL_EVENT_ID__", mesh_string_literal(&detail_event)),
-            ],
-        );
+            let page2_path = format!(
+                "/api/v1/issues/{issue_id}/events?limit=2&cursor={}&cursor_id={}",
+                url_encode_component(&cursor_received_at),
+                url_encode_component(&cursor_id),
+            );
+            let page2_json = get_json(&config, &page2_path, 200);
+            assert_eq!(page2_json["has_more"].as_bool(), Some(false));
+            let page2_items = page2_json["data"]
+                .as_array()
+                .expect("second issue-event page should expose a data array");
+            let page2_rows = query_database_rows(
+                MESHER_DATABASE_URL,
+                "SELECT id::text AS id, level, message, received_at::text AS received_at FROM events WHERE issue_id = $1::uuid AND (received_at, id) < ($2::timestamptz, $3::uuid) ORDER BY received_at DESC, id DESC LIMIT 2",
+                &[&issue_id, &cursor_received_at, &cursor_id],
+            );
+            assert_eq!(
+                json_array_signature(page2_items, &["id", "level", "message", "received_at"]),
+                rows_signature(&page2_rows, &["id", "level", "message", "received_at"]),
+                "e2e_m033_s03_composed_reads_detail_and_issue_event_lists second page drifted"
+            );
 
-        let output = compile_and_run_mesher_storage_probe(&source);
-        let values = parse_output_map(&output);
+            let detail_json = get_json(&config, &format!("/api/v1/events/{detail_event}"), 200);
+            let event = &detail_json["event"];
+            let detail_row = query_single_row(
+                MESHER_DATABASE_URL,
+                "SELECT id::text AS id, project_id::text AS project_id, issue_id::text AS issue_id, level, message, fingerprint, COALESCE(exception::text, 'null') AS exception, COALESCE(stacktrace::text, '[]') AS stacktrace, COALESCE(breadcrumbs::text, '[]') AS breadcrumbs, COALESCE(tags::text, '{}') AS tags, COALESCE(extra::text, '{}') AS extra, COALESCE(user_context::text, 'null') AS user_context, COALESCE(sdk_name, '') AS sdk_name, COALESCE(sdk_version, '') AS sdk_version, received_at::text AS received_at FROM events WHERE id = $1::uuid",
+                &[&detail_event],
+            );
+            assert_eq!(event["id"].as_str(), detail_row.get("id").map(String::as_str));
+            assert_eq!(
+                event["project_id"].as_str(),
+                detail_row.get("project_id").map(String::as_str)
+            );
+            assert_eq!(event["issue_id"].as_str(), detail_row.get("issue_id").map(String::as_str));
+            assert_eq!(event["level"].as_str(), detail_row.get("level").map(String::as_str));
+            assert_eq!(event["message"].as_str(), detail_row.get("message").map(String::as_str));
+            assert_eq!(
+                event["fingerprint"].as_str(),
+                detail_row.get("fingerprint").map(String::as_str)
+            );
+            assert_eq!(event["exception"], db_json(&detail_row, "exception"));
+            assert_eq!(event["stacktrace"], db_json(&detail_row, "stacktrace"));
+            assert_eq!(event["breadcrumbs"], db_json(&detail_row, "breadcrumbs"));
+            assert_eq!(event["tags"], db_json(&detail_row, "tags"));
+            assert_eq!(event["extra"], db_json(&detail_row, "extra"));
+            assert_eq!(event["user_context"], db_json(&detail_row, "user_context"));
+            assert_eq!(event["sdk_name"].as_str(), detail_row.get("sdk_name").map(String::as_str));
+            assert_eq!(
+                event["sdk_version"].as_str(),
+                detail_row.get("sdk_version").map(String::as_str)
+            );
+            assert_eq!(
+                event["received_at"].as_str(),
+                detail_row.get("received_at").map(String::as_str)
+            );
 
-        let page1_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT id::text AS id, level, message, received_at::text AS received_at FROM events WHERE issue_id = $1::uuid ORDER BY received_at DESC, id DESC LIMIT 2",
-            &[&issue_id],
-        );
-        let expected_page1_signature = rows_signature(&page1_rows, &["id", "level", "message", "received_at"]);
-        assert_eq!(
-            values.get("page1_signature").map(String::as_str),
-            Some(expected_page1_signature.as_str()),
-            "e2e_m033_s03_composed_reads_detail_and_issue_event_lists first event page drifted:\n{output}"
-        );
-
-        let cursor_received_at = page1_rows[1]
-            .get("received_at")
-            .cloned()
-            .expect("missing page1 cursor received_at");
-        let cursor_id = page1_rows[1]
-            .get("id")
-            .cloned()
-            .expect("missing page1 cursor id");
-        let page2_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT id::text AS id, level, message, received_at::text AS received_at FROM events WHERE issue_id = $1::uuid AND (received_at, id) < ($2::timestamptz, $3::uuid) ORDER BY received_at DESC, id DESC LIMIT 2",
-            &[&issue_id, &cursor_received_at, &cursor_id],
-        );
-        let expected_page2_signature = rows_signature(&page2_rows, &["id", "level", "message", "received_at"]);
-        assert_eq!(
-            values.get("page2_signature").map(String::as_str),
-            Some(expected_page2_signature.as_str()),
-            "e2e_m033_s03_composed_reads_detail_and_issue_event_lists second event page drifted:\n{output}"
-        );
-
-        let detail_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT id::text AS id, project_id::text AS project_id, issue_id::text AS issue_id, level, message, fingerprint, COALESCE(exception::text, 'null') AS exception, COALESCE(stacktrace::text, '[]') AS stacktrace, COALESCE(breadcrumbs::text, '[]') AS breadcrumbs, COALESCE(tags::text, '{}') AS tags, COALESCE(extra::text, '{}') AS extra, COALESCE(user_context::text, 'null') AS user_context, COALESCE(sdk_name, '') AS sdk_name, COALESCE(sdk_version, '') AS sdk_version, received_at::text AS received_at FROM events WHERE id = $1::uuid",
-            &[&detail_event],
-        );
-        let expected_detail_signature = rows_signature(
-            &detail_rows,
-            &[
-                "id",
-                "project_id",
-                "issue_id",
-                "level",
-                "message",
-                "fingerprint",
-                "exception",
-                "stacktrace",
-                "breadcrumbs",
-                "tags",
-                "extra",
-                "user_context",
-                "sdk_name",
-                "sdk_version",
-                "received_at",
-            ],
-        );
-        assert_eq!(
-            values.get("detail_signature").map(String::as_str),
-            Some(expected_detail_signature.as_str()),
-            "e2e_m033_s03_composed_reads_detail_and_issue_event_lists detail row shape or defaults drifted:\n{output}"
-        );
-
-        assert!(
-            output.contains(newest_event.as_str()) && output.contains(oldest_event.as_str()),
-            "e2e_m033_s03_composed_reads_detail_and_issue_event_lists should exercise newest and oldest event ids:\n{output}"
-        );
+            let navigation = &detail_json["navigation"];
+            assert_eq!(navigation["next_id"].as_str(), Some(newest_event.as_str()));
+            assert_eq!(navigation["prev_id"].as_str(), Some(oldest_event.as_str()));
+        });
+        let logs = stop_mesher(spawned);
+        match result {
+            Ok(()) => assert_mesher_logs(&logs, &config),
+            Err(payload) => panic!(
+                "M033/S03 detail/list assertions failed: {}\nstdout:\n{}\nstderr:\n{}",
+                panic_payload_to_string(payload),
+                logs.stdout,
+                logs.stderr,
+            ),
+        }
     });
 }
 
@@ -2120,39 +2346,15 @@ fn e2e_m033_s03_composed_reads_alert_lists_and_predicates() {
     with_mesher_postgres("composed-alerts", || {
         let migrate_output = run_mesher_migrations(MESHER_DATABASE_URL);
         assert_command_success(&migrate_output, "meshc migrate mesher up");
+        ensure_today_event_partition(MESHER_DATABASE_URL);
 
         let project_id = insert_org_and_project(MESHER_DATABASE_URL, "m033-s03-composed-alerts");
-
-        let new_issue_id = insert_issue(
+        let active_key = "mshr_s03_alerts_active_key_000000000000000000000001";
+        insert_api_key_row(
             MESHER_DATABASE_URL,
             &project_id,
-            "fp-s03-alerts-new",
-            "New issue",
-            "error",
-        );
-        update_issue_read_fields(
-            MESHER_DATABASE_URL,
-            &new_issue_id,
-            "unresolved",
-            1,
-            -10,
-            -10,
-            None,
-        );
-
-        let old_issue_id = insert_issue(
-            MESHER_DATABASE_URL,
-            &project_id,
-            "fp-s03-alerts-old",
-            "Old issue",
-            "warning",
-        );
-        update_issue_read_fields(
-            MESHER_DATABASE_URL,
-            &old_issue_id,
-            "unresolved",
-            4,
-            -240,
+            active_key,
+            "alerts-active",
             -5,
             None,
         );
@@ -2160,7 +2362,7 @@ fn e2e_m033_s03_composed_reads_alert_lists_and_predicates() {
         let fresh_rule = insert_alert_rule_row(
             MESHER_DATABASE_URL,
             &project_id,
-            "Fresh rule",
+            "Fresh new-issue rule",
             r#"{"condition_type":"new_issue"}"#,
             r#"{"type":"websocket"}"#,
             true,
@@ -2168,10 +2370,21 @@ fn e2e_m033_s03_composed_reads_alert_lists_and_predicates() {
             None,
             -30,
         );
-        let cooled_rule = insert_alert_rule_row(
+        let hot_rule = insert_alert_rule_row(
             MESHER_DATABASE_URL,
             &project_id,
-            "Cooled rule",
+            "Hot new-issue rule",
+            r#"{"condition_type":"new_issue"}"#,
+            r#"{"type":"email"}"#,
+            true,
+            60,
+            Some(-5),
+            -10,
+        );
+        let acknowledged_rule = insert_alert_rule_row(
+            MESHER_DATABASE_URL,
+            &project_id,
+            "Historical acknowledged rule",
             r#"{"condition_type":"threshold","threshold":"5","window_minutes":"10"}"#,
             r#"{"type":"email"}"#,
             true,
@@ -2179,32 +2392,21 @@ fn e2e_m033_s03_composed_reads_alert_lists_and_predicates() {
             Some(-120),
             -60,
         );
-        let hot_rule = insert_alert_rule_row(
+        let resolved_rule = insert_alert_rule_row(
             MESHER_DATABASE_URL,
             &project_id,
-            "Hot rule",
-            r#"{"condition_type":"threshold","threshold":"5","window_minutes":"10"}"#,
-            r#"{"type":"email"}"#,
+            "Historical resolved rule",
+            r#"{"condition_type":"threshold","threshold":"10","window_minutes":"15"}"#,
+            r#"{"type":"websocket"}"#,
             true,
             60,
-            Some(-5),
-            -10,
+            Some(-180),
+            -90,
         );
 
         insert_alert_row(
             MESHER_DATABASE_URL,
-            &fresh_rule,
-            &project_id,
-            "active",
-            "Fresh issue alert",
-            r#"{"condition_type":"new_issue"}"#,
-            -5,
-            None,
-            None,
-        );
-        insert_alert_row(
-            MESHER_DATABASE_URL,
-            &cooled_rule,
+            &acknowledged_rule,
             &project_id,
             "acknowledged",
             "Threshold alert cooled down",
@@ -2215,181 +2417,162 @@ fn e2e_m033_s03_composed_reads_alert_lists_and_predicates() {
         );
         insert_alert_row(
             MESHER_DATABASE_URL,
-            &hot_rule,
+            &resolved_rule,
             &project_id,
             "resolved",
-            "Threshold alert still hot",
+            "Threshold alert resolved",
             r#"{"condition_type":"threshold"}"#,
             -40,
             Some(-35),
             Some(-30),
         );
 
-        let template = r##"
-from Storage.Queries import list_alerts, check_new_issue, should_fire_by_cooldown
+        let config = mesher_test_config();
+        let spawned = spawn_mesher(config);
+        let result = std::panic::catch_unwind(|| {
+            wait_for_mesher(&config);
 
-fn bool_text(value :: Bool) -> String do
-  if value do
-    "true"
-  else
-    "false"
-  end
-end
+            let first_event = post_json_with_headers(
+                &config,
+                "/api/v1/events",
+                r#"{"message":"S03 new issue alert","level":"error"}"#,
+                &[("x-sentry-auth", active_key)],
+                202,
+            );
+            assert_eq!(first_event["status"].as_str(), Some("accepted"));
+            wait_for_query_value(
+                MESHER_DATABASE_URL,
+                "SELECT count(*)::text AS cnt FROM events WHERE project_id = $1::uuid",
+                &[&project_id],
+                "cnt",
+                "1",
+                "first alert-triggering event",
+            );
+            wait_for_query_value(
+                MESHER_DATABASE_URL,
+                "SELECT count(*)::text AS cnt FROM alerts WHERE project_id = $1::uuid",
+                &[&project_id],
+                "cnt",
+                "3",
+                "fresh-rule alert insert",
+            );
 
-fn join_alert_rows(rows, i :: Int, total :: Int) -> String do
-  if i < total do
-    let row = List.get(rows, i)
-    let id = Map.get(row, "id")
-    let rule_id = Map.get(row, "rule_id")
-    let project_id = Map.get(row, "project_id")
-    let status = Map.get(row, "status")
-    let message = Map.get(row, "message")
-    let condition_snapshot = Map.get(row, "condition_snapshot")
-    let rule_name = Map.get(row, "rule_name")
-    let acknowledged_at = Map.get(row, "acknowledged_at")
-    let resolved_at = Map.get(row, "resolved_at")
-    let current = "#{id}~#{rule_id}~#{project_id}~#{status}~#{message}~#{condition_snapshot}~#{rule_name}~#{acknowledged_at}~#{resolved_at}"
-    let rest = join_alert_rows(rows, i + 1, total)
-    if String.length(rest) > 0 do
-      "#{current}|#{rest}"
-    else
-      current
-    end
-  else
-    ""
-  end
-end
+            let second_event = post_json_with_headers(
+                &config,
+                "/api/v1/events",
+                r#"{"message":"S03 new issue alert","level":"error"}"#,
+                &[("x-sentry-auth", active_key)],
+                202,
+            );
+            assert_eq!(second_event["status"].as_str(), Some("accepted"));
+            wait_for_query_value(
+                MESHER_DATABASE_URL,
+                "SELECT count(*)::text AS cnt FROM events WHERE project_id = $1::uuid",
+                &[&project_id],
+                "cnt",
+                "2",
+                "second event on existing issue",
+            );
 
-fn main() do
-  let pool_result = Pool.open("postgres://mesh:mesh@127.0.0.1:5432/mesher", 1, 1, 5000)
-  case pool_result do
-    Err( e) -> println("pool_err=#{e}")
-    Ok( pool) -> do
-      case list_alerts(pool, __PROJECT_ID__, "") do
-        Err( e) -> println("alerts_err=#{e}")
-        Ok( rows) -> println("alert_signature=#{join_alert_rows(rows, 0, List.length(rows))}")
-      end
-      case list_alerts(pool, __PROJECT_ID__, "active") do
-        Err( e) -> println("active_alerts_err=#{e}")
-        Ok( rows) -> println("active_alert_signature=#{join_alert_rows(rows, 0, List.length(rows))}")
-      end
-      case check_new_issue(pool, __NEW_ISSUE_ID__) do
-        Err( e) -> println("new_issue_err=#{e}")
-        Ok( true) -> println("new_issue=true")
-        Ok( false) -> println("new_issue=false")
-      end
-      case check_new_issue(pool, __OLD_ISSUE_ID__) do
-        Err( e) -> println("old_issue_err=#{e}")
-        Ok( true) -> println("old_issue=true")
-        Ok( false) -> println("old_issue=false")
-      end
-      case should_fire_by_cooldown(pool, __FRESH_RULE_ID__, "60") do
-        Err( e) -> println("fresh_rule_err=#{e}")
-        Ok( true) -> println("fresh_rule=true")
-        Ok( false) -> println("fresh_rule=false")
-      end
-      case should_fire_by_cooldown(pool, __COOLED_RULE_ID__, "60") do
-        Err( e) -> println("cooled_rule_err=#{e}")
-        Ok( true) -> println("cooled_rule=true")
-        Ok( false) -> println("cooled_rule=false")
-      end
-      case should_fire_by_cooldown(pool, __HOT_RULE_ID__, "60") do
-        Err( e) -> println("hot_rule_err=#{e}")
-        Ok( true) -> println("hot_rule=true")
-        Ok( false) -> println("hot_rule=false")
-      end
-    end
-  end
-end
-"##;
-        let source = render_mesh_template(
-            template,
-            &[
-                ("__PROJECT_ID__", mesh_string_literal(&project_id)),
-                ("__NEW_ISSUE_ID__", mesh_string_literal(&new_issue_id)),
-                ("__OLD_ISSUE_ID__", mesh_string_literal(&old_issue_id)),
-                ("__FRESH_RULE_ID__", mesh_string_literal(&fresh_rule)),
-                ("__COOLED_RULE_ID__", mesh_string_literal(&cooled_rule)),
-                ("__HOT_RULE_ID__", mesh_string_literal(&hot_rule)),
-            ],
-        );
+            let created_issue = query_single_row(
+                MESHER_DATABASE_URL,
+                "SELECT event_count::text AS event_count, (first_seen = last_seen)::text AS is_new FROM issues WHERE project_id = $1::uuid AND title = $2",
+                &[&project_id, "S03 new issue alert"],
+            );
+            assert_eq!(
+                created_issue.get("event_count").map(String::as_str),
+                Some("2"),
+                "issue event_count drifted after repeated ingest"
+            );
+            assert_eq!(
+                created_issue.get("is_new").map(String::as_str),
+                Some("false"),
+                "issue should no longer satisfy the new-issue predicate after the second event"
+            );
 
-        let output = compile_and_run_mesher_storage_probe(&source);
-        let values = parse_output_map(&output);
+            let all_alerts_json = get_json(&config, &format!("/api/v1/projects/{project_id}/alerts"), 200);
+            let all_alert_items = all_alerts_json
+                .as_array()
+                .expect("alerts response should be a JSON array");
+            let alert_rows = query_database_rows(
+                MESHER_DATABASE_URL,
+                "SELECT alerts.id::text AS id, alerts.rule_id::text AS rule_id, alerts.project_id::text AS project_id, alerts.status, alerts.message, alerts.condition_snapshot::text AS condition_snapshot, alerts.triggered_at::text AS triggered_at, COALESCE(alerts.acknowledged_at::text, '') AS acknowledged_at, COALESCE(alerts.resolved_at::text, '') AS resolved_at, alert_rules.name AS rule_name FROM alerts JOIN alert_rules ON alert_rules.id = alerts.rule_id WHERE alerts.project_id = $1::uuid ORDER BY alerts.triggered_at DESC LIMIT 50",
+                &[&project_id],
+            );
+            assert_eq!(all_alert_items.len(), alert_rows.len());
+            for (item, row) in all_alert_items.iter().zip(alert_rows.iter()) {
+                assert_eq!(item["id"].as_str(), row.get("id").map(String::as_str));
+                assert_eq!(item["rule_id"].as_str(), row.get("rule_id").map(String::as_str));
+                assert_eq!(
+                    item["project_id"].as_str(),
+                    row.get("project_id").map(String::as_str)
+                );
+                assert_eq!(item["status"].as_str(), row.get("status").map(String::as_str));
+                assert_eq!(item["message"].as_str(), row.get("message").map(String::as_str));
+                assert_eq!(
+                    item["rule_name"].as_str(),
+                    row.get("rule_name").map(String::as_str)
+                );
+                assert_eq!(item["condition_snapshot"], db_json(row, "condition_snapshot"));
+                assert_eq!(
+                    item["triggered_at"].as_str(),
+                    row.get("triggered_at").map(String::as_str)
+                );
+                assert_nullable_timestamp(
+                    &item["acknowledged_at"],
+                    row.get("acknowledged_at").map(String::as_str).unwrap_or(""),
+                    "acknowledged_at",
+                );
+                assert_nullable_timestamp(
+                    &item["resolved_at"],
+                    row.get("resolved_at").map(String::as_str).unwrap_or(""),
+                    "resolved_at",
+                );
+            }
 
-        let alert_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT alerts.id::text AS id, alerts.rule_id::text AS rule_id, alerts.project_id::text AS project_id, alerts.status, alerts.message, alerts.condition_snapshot::text AS condition_snapshot, alert_rules.name AS rule_name, COALESCE(alerts.acknowledged_at::text, '') AS acknowledged_at, COALESCE(alerts.resolved_at::text, '') AS resolved_at FROM alerts JOIN alert_rules ON alert_rules.id = alerts.rule_id WHERE alerts.project_id = $1::uuid ORDER BY alerts.triggered_at DESC LIMIT 50",
-            &[&project_id],
-        );
-        let expected_alert_signature = rows_signature(
-            &alert_rows,
-            &[
-                "id",
-                "rule_id",
-                "project_id",
-                "status",
-                "message",
-                "condition_snapshot",
-                "rule_name",
-                "acknowledged_at",
-                "resolved_at",
-            ],
-        );
-        assert_eq!(
-            values.get("alert_signature").map(String::as_str),
-            Some(expected_alert_signature.as_str()),
-            "e2e_m033_s03_composed_reads_alert_lists_and_predicates alert list drifted:\n{output}"
-        );
+            let active_alerts_json = get_json(
+                &config,
+                &format!("/api/v1/projects/{project_id}/alerts?status=active"),
+                200,
+            );
+            let active_alert_items = active_alerts_json
+                .as_array()
+                .expect("active-alerts response should be a JSON array");
+            let active_rows = query_database_rows(
+                MESHER_DATABASE_URL,
+                "SELECT alerts.id::text AS id, alerts.rule_id::text AS rule_id, alerts.project_id::text AS project_id, alerts.status, alerts.message, alerts.condition_snapshot::text AS condition_snapshot, alerts.triggered_at::text AS triggered_at, COALESCE(alerts.acknowledged_at::text, '') AS acknowledged_at, COALESCE(alerts.resolved_at::text, '') AS resolved_at, alert_rules.name AS rule_name FROM alerts JOIN alert_rules ON alert_rules.id = alerts.rule_id WHERE alerts.project_id = $1::uuid AND alerts.status = 'active' ORDER BY alerts.triggered_at DESC LIMIT 50",
+                &[&project_id],
+            );
+            assert_eq!(active_alert_items.len(), active_rows.len());
+            assert_eq!(active_alert_items.len(), 1, "only the fresh rule should fire");
+            assert_eq!(
+                active_alert_items[0]["rule_name"].as_str(),
+                Some("Fresh new-issue rule")
+            );
+            assert_eq!(active_rows[0].get("rule_id").map(String::as_str), Some(fresh_rule.as_str()));
 
-        let active_alert_rows = query_database_rows(
-            MESHER_DATABASE_URL,
-            "SELECT alerts.id::text AS id, alerts.rule_id::text AS rule_id, alerts.project_id::text AS project_id, alerts.status, alerts.message, alerts.condition_snapshot::text AS condition_snapshot, alert_rules.name AS rule_name, COALESCE(alerts.acknowledged_at::text, '') AS acknowledged_at, COALESCE(alerts.resolved_at::text, '') AS resolved_at FROM alerts JOIN alert_rules ON alert_rules.id = alerts.rule_id WHERE alerts.project_id = $1::uuid AND alerts.status = 'active' ORDER BY alerts.triggered_at DESC LIMIT 50",
-            &[&project_id],
-        );
-        let expected_active_alert_signature = rows_signature(
-            &active_alert_rows,
-            &[
-                "id",
-                "rule_id",
-                "project_id",
-                "status",
-                "message",
-                "condition_snapshot",
-                "rule_name",
-                "acknowledged_at",
-                "resolved_at",
-            ],
-        );
-        assert_eq!(
-            values.get("active_alert_signature").map(String::as_str),
-            Some(expected_active_alert_signature.as_str()),
-            "e2e_m033_s03_composed_reads_alert_lists_and_predicates active alert filter drifted:\n{output}"
-        );
-        assert_eq!(
-            values.get("new_issue").map(String::as_str),
-            Some("true"),
-            "e2e_m033_s03_composed_reads_alert_lists_and_predicates new-issue predicate drifted:\n{output}"
-        );
-        assert_eq!(
-            values.get("old_issue").map(String::as_str),
-            Some("false"),
-            "e2e_m033_s03_composed_reads_alert_lists_and_predicates old issue predicate drifted:\n{output}"
-        );
-        assert_eq!(
-            values.get("fresh_rule").map(String::as_str),
-            Some("true"),
-            "e2e_m033_s03_composed_reads_alert_lists_and_predicates unfired cooldown predicate drifted:\n{output}"
-        );
-        assert_eq!(
-            values.get("cooled_rule").map(String::as_str),
-            Some("true"),
-            "e2e_m033_s03_composed_reads_alert_lists_and_predicates cooled-down rule predicate drifted:\n{output}"
-        );
-        assert_eq!(
-            values.get("hot_rule").map(String::as_str),
-            Some("false"),
-            "e2e_m033_s03_composed_reads_alert_lists_and_predicates hot rule predicate drifted:\n{output}"
-        );
+            let fresh_alert_count = query_single_row(
+                MESHER_DATABASE_URL,
+                "SELECT count(*)::text AS cnt FROM alerts WHERE rule_id = $1::uuid",
+                &[&fresh_rule],
+            );
+            assert_eq!(fresh_alert_count.get("cnt").map(String::as_str), Some("1"));
+            let hot_alert_count = query_single_row(
+                MESHER_DATABASE_URL,
+                "SELECT count(*)::text AS cnt FROM alerts WHERE rule_id = $1::uuid",
+                &[&hot_rule],
+            );
+            assert_eq!(hot_alert_count.get("cnt").map(String::as_str), Some("0"));
+        });
+        let logs = stop_mesher(spawned);
+        match result {
+            Ok(()) => assert_mesher_logs(&logs, &config),
+            Err(payload) => panic!(
+                "M033/S03 alert assertions failed: {}\nstdout:\n{}\nstderr:\n{}",
+                panic_payload_to_string(payload),
+                logs.stdout,
+                logs.stderr,
+            ),
+        }
     });
 }

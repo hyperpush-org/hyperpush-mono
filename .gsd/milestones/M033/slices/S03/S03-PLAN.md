@@ -68,7 +68,7 @@
   - Verify: - `cargo test -p meshc --test e2e_m033_s03 composed_reads -- --nocapture`
 - `cargo run -q -p meshc -- build mesher`
 
-- [ ] **T03: Replace the failing storage-probe proof surface with a Mesher-backed composed-read harness** `est:3h`
+- [x] **T03: Replace the failing storage-probe proof surface with a Mesher-backed composed-read harness** `est:3h`
   Why: T02 showed the copied storage-only probe cannot safely consume the remaining struct-list and aggregate read shapes, so S03 needs a higher-level proof boundary before more read-side work is credible.
 
 Do: Keep the passing `basic_reads` family, then move the partial `composed_reads` coverage off the direct storage-probe staging path and onto a Mesher-backed surface that exercises the same `search` / `dashboard` / `detail` / `alerts` / `team` caller contracts. Prove the already-rewritten joined, list, aggregate, and boolean helper families there (`get_project_by_api_key`, `list_issues_by_status`, `event_volume_hourly`, `error_breakdown_by_level`, `top_issues_by_frequency`, `event_breakdown_by_tag`, `get_event_detail`, `get_members_with_users`, `list_events_for_issue`, `list_alerts`, `check_new_issue`, `should_fire_by_cooldown`). If the new proof surface still trips the same staging bug, limit any compiler/runtime-side changes to the smallest test-enabler needed for honest read assertions rather than widening Mesh product scope.
