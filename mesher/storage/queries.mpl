@@ -13,23 +13,24 @@ from Types.Retention import RetentionSettings
 # --- Issue helpers for non-storage modules ---
 # Count unresolved issues for a project. Returns rows with "cnt" key.
 # Used by ingestion/routes.mpl for WebSocket issue count broadcasting.
-# Uses ORM Query.where_raw + Query.select_raw + Repo.all instead of Repo.query_raw.
+# Uses Query.where_expr + Query.select_expr instead of raw projection strings.
 
 pub fn count_unresolved_issues(pool :: PoolHandle, project_id :: String) -> List < Map < String, String > > ! String do
   let q = Query.from(Issue.__table__())
-    |> Query.where_raw("project_id = ?::uuid AND status = 'unresolved'", [project_id])
-    |> Query.select_raw(["count(*)::text AS cnt"])
+    |> Query.where_expr(Expr.eq(Expr.column("project_id"), Pg.uuid(Expr.value(project_id))))
+    |> Query.where_expr(Expr.eq(Expr.column("status"), Expr.value("unresolved")))
+    |> Query.select_expr(Expr.label(Pg.text(Expr.fn_call("count", [Expr.column("*")])), "cnt"))
   Repo.all(pool, q)
 end
 
 # Look up the project_id for an issue by issue_id. Returns rows with "project_id" key.
 # Used by ingestion/routes.mpl for broadcasting issue state change notifications.
-# Uses ORM Query.where_raw + Query.select_raw + Repo.all instead of Repo.query_raw.
+# Uses Query.where_expr + Query.select_expr instead of raw projection strings.
 
 pub fn get_issue_project_id(pool :: PoolHandle, issue_id :: String) -> List < Map < String, String > > ! String do
   let q = Query.from(Issue.__table__())
-    |> Query.where_raw("id = ?::uuid", [issue_id])
-    |> Query.select_raw(["project_id::text"])
+    |> Query.where_expr(Expr.eq(Expr.column("id"), Pg.uuid(Expr.value(issue_id))))
+    |> Query.select_expr(Expr.label(Pg.text(Expr.column("project_id")), "project_id"))
   Repo.all(pool, q)
 end
 
@@ -232,13 +233,18 @@ pub fn create_session(pool :: PoolHandle, user_id :: String) -> String ! String 
 end
 
 # Validate a session token. Returns the Session if valid and not expired.
-# Uses ORM Query.where + Query.where_raw for expiry check.
+# Uses Query.where_expr + Query.select_exprs for the token, expiry, and casted projection.
 
 pub fn validate_session(pool :: PoolHandle, token :: String) -> Session ! String do
   let q = Query.from(Session.__table__())
-    |> Query.where(:token, token)
-    |> Query.where_raw("expires_at > now()", [])
-    |> Query.select_raw(["token", "user_id::text", "created_at::text", "expires_at::text"])
+    |> Query.where_expr(Expr.eq(Expr.column("token"), Expr.value(token)))
+    |> Query.where_expr(Expr.gt(Expr.column("expires_at"), Pg.timestamptz(Expr.fn_call("now", []))))
+    |> Query.select_exprs([
+      Expr.label(Expr.column("token"), "token"),
+      Expr.label(Pg.text(Expr.column("user_id")), "user_id"),
+      Expr.label(Pg.text(Expr.column("created_at")), "created_at"),
+      Expr.label(Pg.text(Expr.column("expires_at")), "expires_at")
+    ])
   let rows = Repo.all(pool, q) ?
   if List.length(rows) > 0 do
     let row = List.head(rows)
@@ -752,12 +758,19 @@ end
 # --- API token management queries (Phase 91 Plan 03 -- ORG-05) ---
 # List all API keys for a project with full details.
 # Returns raw Map rows. revoked_at is empty string if not revoked.
-# Uses ORM Query.where_raw + Query.select_raw + Query.order_by + Repo.all.
+# Uses Query.where_expr + Query.select_exprs + Query.order_by.
 
 pub fn list_api_keys(pool :: PoolHandle, project_id :: String) -> List < Map < String, String > > ! String do
   let q = Query.from(ApiKey.__table__())
-    |> Query.where_raw("project_id = ?::uuid", [project_id])
-    |> Query.select_raw(["id::text", "project_id::text", "key_value", "label", "created_at::text", "COALESCE(revoked_at::text, '') AS revoked_at"])
+    |> Query.where_expr(Expr.eq(Expr.column("project_id"), Pg.uuid(Expr.value(project_id))))
+    |> Query.select_exprs([
+      Expr.label(Pg.text(Expr.column("id")), "id"),
+      Expr.label(Pg.text(Expr.column("project_id")), "project_id"),
+      Expr.label(Expr.column("key_value"), "key_value"),
+      Expr.label(Expr.column("label"), "label"),
+      Expr.label(Pg.text(Expr.column("created_at")), "created_at"),
+      Expr.label(Expr.coalesce([Pg.text(Expr.column("revoked_at")), Expr.value("")]), "revoked_at")
+    ])
     |> Query.order_by(:created_at, :desc)
   Repo.all(pool, q)
 end
@@ -779,12 +792,22 @@ pub fn create_alert_rule(pool :: PoolHandle, project_id :: String, body :: Strin
 end
 
 # ALERT-01: List all alert rules for a project.
-# Uses ORM Query.where_raw + Query.select_raw + Query.order_by + Repo.all instead of Repo.query_raw.
+# Uses Query.where_expr + Query.select_exprs + Query.order_by instead of raw projection strings.
 
 pub fn list_alert_rules(pool :: PoolHandle, project_id :: String) -> List < Map < String, String > > ! String do
   let q = Query.from(AlertRule.__table__())
-    |> Query.where_raw("project_id = ?::uuid", [project_id])
-    |> Query.select_raw(["id::text", "project_id::text", "name", "condition_json::text", "action_json::text", "enabled::text", "cooldown_minutes::text", "COALESCE(last_fired_at::text, '') AS last_fired_at", "created_at::text"])
+    |> Query.where_expr(Expr.eq(Expr.column("project_id"), Pg.uuid(Expr.value(project_id))))
+    |> Query.select_exprs([
+      Expr.label(Pg.text(Expr.column("id")), "id"),
+      Expr.label(Pg.text(Expr.column("project_id")), "project_id"),
+      Expr.label(Expr.column("name"), "name"),
+      Expr.label(Pg.text(Expr.column("condition_json")), "condition_json"),
+      Expr.label(Pg.text(Expr.column("action_json")), "action_json"),
+      Expr.label(Pg.text(Expr.column("enabled")), "enabled"),
+      Expr.label(Pg.text(Expr.column("cooldown_minutes")), "cooldown_minutes"),
+      Expr.label(Expr.coalesce([Pg.text(Expr.column("last_fired_at")), Expr.value("")]), "last_fired_at"),
+      Expr.label(Pg.text(Expr.column("created_at")), "created_at")
+    ])
     |> Query.order_by(:created_at, :desc)
   Repo.all(pool, q)
 end
@@ -973,22 +996,30 @@ pub fn drop_partition(pool :: PoolHandle, partition_name :: String) -> Int ! Str
 end
 
 # Get all projects with their retention settings for the cleanup loop.
-# Uses ORM Query.from + Query.select_raw + Repo.all instead of Repo.query_raw.
+# Uses Query.select_exprs so the cleanup row shape is explicit and stable.
 
 pub fn get_all_project_retention(pool :: PoolHandle) -> List < Map < String, String > > ! String do
   let q = Query.from(Project.__table__())
-    |> Query.select_raw(["id::text", "retention_days::text"])
+    |> Query.select_exprs([
+      Expr.label(Pg.text(Expr.column("id")), "id"),
+      Expr.label(Pg.text(Expr.column("retention_days")), "retention_days")
+    ])
   Repo.all(pool, q)
 end
 
 # Estimate storage usage for a project (event count and estimated bytes).
 # Uses 1024 byte average row estimate.
-# Uses ORM Query.from + Query.where_raw + Query.select_raw + Repo.all instead of Repo.query_raw.
+# Uses Query.where_expr + Query.select_exprs instead of raw projection strings.
 
 pub fn get_project_storage(pool :: PoolHandle, project_id :: String) -> List < Map < String, String > > ! String do
+  let event_count = Expr.fn_call("count", [Expr.column("*")])
+  let estimated_bytes = Expr.mul(event_count, Pg.cast(Expr.value("1024"), "bigint"))
   let q = Query.from(Event.__table__())
-    |> Query.where_raw("project_id = ?::uuid", [project_id])
-    |> Query.select_raw(["count(*)::text AS event_count", "(count(*) * 1024)::text AS estimated_bytes"])
+    |> Query.where_expr(Expr.eq(Expr.column("project_id"), Pg.uuid(Expr.value(project_id))))
+    |> Query.select_exprs([
+      Expr.label(Pg.text(event_count), "event_count"),
+      Expr.label(Pg.text(estimated_bytes), "estimated_bytes")
+    ])
   Repo.all(pool, q)
 end
 
@@ -1029,12 +1060,15 @@ pub fn update_project_settings(pool :: PoolHandle, project_id :: String, body ::
 end
 
 # Get retention and sampling settings for a project.
-# Uses ORM Query.from + Query.where_raw + Query.select_raw + Repo.all instead of Repo.query_raw.
+# Uses Query.where_expr + Query.select_exprs so the API row keys stay explicit.
 
 pub fn get_project_settings(pool :: PoolHandle, project_id :: String) -> List < Map < String, String > > ! String do
   let q = Query.from(Project.__table__())
-    |> Query.where_raw("id = ?::uuid", [project_id])
-    |> Query.select_raw(["retention_days::text", "sample_rate::text"])
+    |> Query.where_expr(Expr.eq(Expr.column("id"), Pg.uuid(Expr.value(project_id))))
+    |> Query.select_exprs([
+      Expr.label(Pg.text(Expr.column("retention_days")), "retention_days"),
+      Expr.label(Pg.text(Expr.column("sample_rate")), "sample_rate")
+    ])
   Repo.all(pool, q)
 end
 

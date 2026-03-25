@@ -37,7 +37,7 @@
 
 ## Tasks
 
-- [ ] **T01: Seed the S03 harness and replace basic read projection helpers** `est:2h`
+- [x] **T01: Seed the S03 harness and replace basic read projection helpers** `est:2h`
   - Why: This is the lowest-risk R038 progress and it also creates the permanent S03 proof target that later tasks will extend instead of inventing their own one-off checks.
   - Files: `compiler/meshc/tests/e2e_m033_s03.rs`, `mesher/storage/queries.mpl`, `mesher/ingestion/routes.mpl`, `mesher/api/dashboard.mpl`, `mesher/api/settings.mpl`, `mesher/api/alerts.mpl`
   - Do: Copy the S02 live-Postgres harness pattern into `e2e_m033_s03.rs`, add named `basic_reads` proofs, and rewrite the simple projection/count/cast helper families (`count_unresolved_issues`, `get_issue_project_id`, `validate_session`, `list_api_keys`, `list_alert_rules`, `get_all_project_retention`, `get_project_storage`, `get_project_settings`) onto `Query.select_expr{s}`, `Query.where_expr`, `Expr.label`, `Expr.coalesce`, and explicit `Pg.*` casts. Preserve every caller-visible row key.
