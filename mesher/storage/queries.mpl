@@ -954,7 +954,9 @@ pub fn check_new_issue(pool :: PoolHandle, issue_id :: String) -> Bool ! String 
   let q = Query.from(Issue.__table__())
     |> Query.where_expr(Expr.eq(Expr.column("id"), Pg.uuid(Expr.value(issue_id))))
     |> Query.where_expr(Expr.eq(Expr.column("first_seen"), Expr.column("last_seen")))
-  Repo.exists(pool, q)
+    |> Query.select(["id"])
+  let rows = Repo.all(pool, q) ?
+  Ok(List.length(rows) > 0)
 end
 
 # ALERT-03: Get enabled alert rules for event-based conditions for a project.
@@ -979,7 +981,9 @@ pub fn should_fire_by_cooldown(pool :: PoolHandle, rule_id :: String, cooldown_s
     |> Query.where_expr(Expr.eq(Expr.column("id"), Pg.uuid(Expr.value(rule_id))))
     |> Query.where_raw("(last_fired_at IS NULL OR last_fired_at < now() - interval '1 minute' * ?::int)",
     [cooldown_str])
-  Repo.exists(pool, q)
+    |> Query.select(["id"])
+  let rows = Repo.all(pool, q) ?
+  Ok(List.length(rows) > 0)
 end
 
 # ALERT-06: Transition alert to acknowledged.
