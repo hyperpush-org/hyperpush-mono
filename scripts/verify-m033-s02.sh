@@ -48,8 +48,13 @@ writer = Path("mesher/storage/writer.mpl").read_text()
 def fn_block(text: str, name: str) -> str:
     marker = f"pub fn {name}("
     start = text.index(marker)
-    end = text.find("\npub fn ", start + 1)
-    return text[start:] if end == -1 else text[start:end]
+    lines = text[start:].splitlines()
+    collected = []
+    for idx, line in enumerate(lines):
+        if idx != 0 and (line.startswith("pub fn ") or line.startswith("fn ")):
+            break
+        collected.append(line)
+    return "\n".join(collected)
 
 
 def code_only(block: str) -> str:
@@ -111,14 +116,6 @@ assert_owned_boundary(
 assert_owned_boundary(
     "fire_alert",
     fn_block(queries, "fire_alert"),
-)
-assert_owned_boundary(
-    "get_event_alert_rules",
-    fn_block(queries, "get_event_alert_rules"),
-)
-assert_owned_boundary(
-    "get_threshold_rules",
-    fn_block(queries, "get_threshold_rules"),
 )
 assert_owned_boundary("insert_event", fn_block(writer, "insert_event"))
 

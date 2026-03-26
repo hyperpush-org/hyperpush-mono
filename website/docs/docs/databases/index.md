@@ -33,7 +33,10 @@ bash scripts/verify-m033-s02.sh
 bash scripts/verify-m033-s03.sh
 bash scripts/verify-m033-s04.sh
 npm --prefix website run build
+bash scripts/verify-m033-s05.sh
 ```
+
+For the assembled docs + live-Postgres acceptance replay, run `bash scripts/verify-m033-s05.sh`.
 
 All of the runtime proofs above target live PostgreSQL. SQLite-specific extras are later work and are **not** the proof target for this page.
 
@@ -268,6 +271,7 @@ If this surface drifts, rerun the proof that matches the boundary you touched:
 | composed reads and named raw keep-sites | `bash scripts/verify-m033-s03.sh` | `mesher/storage/queries.mpl` |
 | migration + schema helpers | `bash scripts/verify-m033-s04.sh` | `mesher/migrations/20260216120000_create_initial_schema.mpl`, `mesher/storage/schema.mpl`, `compiler/meshc/src/migrate.rs` |
 | docs page rendering | `npm --prefix website run build` | `website/docs/docs/databases/index.md` |
+| assembled docs + live-Postgres proof replay | `bash scripts/verify-m033-s05.sh` | `website/docs/docs/databases/index.md`, `scripts/verify-m033-s02.sh`, `scripts/verify-m033-s03.sh`, `scripts/verify-m033-s04.sh` |
 
 ## What's next?
 

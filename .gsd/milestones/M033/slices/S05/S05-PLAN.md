@@ -48,7 +48,7 @@ Must-Haves:
   - Verify: npm --prefix website run build
   - Done when: `website/docs/docs/databases/index.md` teaches the shipped neutral APIs, marks PG extras as explicit `Pg.*` behavior, tells an honest raw-leftover / SQLite-later story, and the VitePress build passes.
 
-- [ ] **T02: Add the canonical S05 verifier and final acceptance replay** `est:2h`
+- [x] **T02: Add the canonical S05 verifier and final acceptance replay** `est:2h`
   Why: R038 only closes once one public command replays the assembled proof stack and mechanically fails when docs drift away from the real boundary.
 
 Do:
