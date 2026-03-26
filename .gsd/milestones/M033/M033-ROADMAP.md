@@ -24,7 +24,7 @@
 - [x] **S04: Schema extras and live partition lifecycle proof** `risk:medium` `depends:[S01,S02]`
   > After this: After this: Mesher migrations and runtime retention/schema flows create, list, and drop partitions plus related PG schema extras through first-class helpers on a live Postgres database.
 
-- [ ] **S05: Public docs and integrated Mesher acceptance** `risk:low` `depends:[S02,S03,S04]`
+- [x] **S05: Public docs and integrated Mesher acceptance** `risk:low` `depends:[S02,S03,S04]`
   > After this: After this: the public Mesh database docs explain the shipped neutral DSL and PG extras through a Mesher-backed path, and the assembled Mesher data-layer behavior is re-proven end-to-end on live Postgres.
 
 ## Boundary Map
