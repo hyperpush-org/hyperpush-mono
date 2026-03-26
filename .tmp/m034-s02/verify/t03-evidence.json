@@ -1,0 +1,79 @@
+[
+  {
+    "command": "bash -n scripts/verify-m034-s02-workflows.sh",
+    "exitCode": 0,
+    "durationMs": 16,
+    "stdout": "",
+    "stderr": "/Users/sn0w/.profile: line 1: /Users/sn0w/.cargo/env: No such file or directory"
+  },
+  {
+    "command": "bash scripts/verify-m034-s02-workflows.sh reusable",
+    "exitCode": 0,
+    "durationMs": 125,
+    "stdout": "==> [reusable] ruby reusable workflow contract sweep .github/workflows/authoritative-live-proof.yml\nverify-m034-s02-workflows: ok (reusable)",
+    "stderr": "/Users/sn0w/.profile: line 1: /Users/sn0w/.cargo/env: No such file or directory"
+  },
+  {
+    "command": "bash scripts/verify-m034-s02-workflows.sh caller",
+    "exitCode": 0,
+    "durationMs": 109,
+    "stdout": "==> [caller] ruby caller workflow contract sweep .github/workflows/authoritative-verification.yml\nverify-m034-s02-workflows: ok (caller)",
+    "stderr": "/Users/sn0w/.profile: line 1: /Users/sn0w/.cargo/env: No such file or directory"
+  },
+  {
+    "command": "bash scripts/verify-m034-s02-workflows.sh release",
+    "exitCode": 0,
+    "durationMs": 114,
+    "stdout": "==> [release] ruby release workflow contract sweep .github/workflows/release.yml\nverify-m034-s02-workflows: ok (release)",
+    "stderr": "/Users/sn0w/.profile: line 1: /Users/sn0w/.cargo/env: No such file or directory"
+  },
+  {
+    "command": "bash scripts/verify-m034-s02-workflows.sh",
+    "exitCode": 0,
+    "durationMs": 297,
+    "stdout": "==> [full-contract] full slice contract sweep\nverify-m034-s02-workflows: ok (all)",
+    "stderr": "/Users/sn0w/.profile: line 1: /Users/sn0w/.cargo/env: No such file or directory"
+  },
+  {
+    "command": "ruby -e 'require \"yaml\"; YAML.load_file(\".github/workflows/authoritative-live-proof.yml\")'",
+    "exitCode": 0,
+    "durationMs": 96,
+    "stdout": "",
+    "stderr": "/Users/sn0w/.profile: line 1: /Users/sn0w/.cargo/env: No such file or directory"
+  },
+  {
+    "command": "ruby -e 'require \"yaml\"; YAML.load_file(\".github/workflows/authoritative-verification.yml\")'",
+    "exitCode": 0,
+    "durationMs": 98,
+    "stdout": "",
+    "stderr": "/Users/sn0w/.profile: line 1: /Users/sn0w/.cargo/env: No such file or directory"
+  },
+  {
+    "command": "ruby -e 'require \"yaml\"; YAML.load_file(\".github/workflows/release.yml\")'",
+    "exitCode": 0,
+    "durationMs": 98,
+    "stdout": "",
+    "stderr": "/Users/sn0w/.profile: line 1: /Users/sn0w/.cargo/env: No such file or directory"
+  },
+  {
+    "command": "ruby -e 'require \"yaml\"; %w[.github/workflows/authoritative-live-proof.yml .github/workflows/authoritative-verification.yml .github/workflows/release.yml].each { |f| YAML.load_file(f) }'",
+    "exitCode": 0,
+    "durationMs": 98,
+    "stdout": "",
+    "stderr": "/Users/sn0w/.profile: line 1: /Users/sn0w/.cargo/env: No such file or directory"
+  },
+  {
+    "command": "gh run list --workflow authoritative-verification.yml --limit 1",
+    "exitCode": 1,
+    "durationMs": 415,
+    "stdout": "",
+    "stderr": "/Users/sn0w/.profile: line 1: /Users/sn0w/.cargo/env: No such file or directory\nHTTP 404: workflow authoritative-verification.yml not found on the default branch (https://api.github.com/repos/snowdamiz/mesh-lang/actions/workflows/authoritative-verification.yml)"
+  },
+  {
+    "command": "gh run view 22562324587 --json jobs,workflowName,displayTitle,event,headBranch,conclusion,status,url | jq -r '.workflowName + \"\t\" + .event + \"\t\" + .headBranch + \"\t\" + (.jobs | map(.name) | join(\", \"))'",
+    "exitCode": 0,
+    "durationMs": 1323,
+    "stdout": "Release\tpush\tv14.3\tBuild (x86_64-unknown-linux-gnu), Build (x86_64-pc-windows-msvc), Build (aarch64-unknown-linux-gnu), Build meshpkg (x86_64-apple-darwin), Build (aarch64-apple-darwin), Build meshpkg (aarch64-apple-darwin), Build meshpkg (aarch64-unknown-linux-gnu), Build (x86_64-unknown-linux-musl), Build (x86_64-apple-darwin), Build meshpkg (x86_64-unknown-linux-gnu), Create Release",
+    "stderr": "/Users/sn0w/.profile: line 1: /Users/sn0w/.cargo/env: No such file or directory"
+  }
+]

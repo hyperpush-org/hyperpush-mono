@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 ARTIFACT_DIR=".tmp/m034-s02/verify"
 REUSABLE_WORKFLOW_PATH=".github/workflows/authoritative-live-proof.yml"
 CALLER_WORKFLOW_PATH=".github/workflows/authoritative-verification.yml"
+RELEASE_WORKFLOW_PATH=".github/workflows/release.yml"
 mkdir -p "$ARTIFACT_DIR"
 
 fail_with_log() {
@@ -399,19 +400,195 @@ RUBY
   fi
 }
 
-run_full_contract_placeholder() {
+run_release_contract_check() {
+  local phase_name="release"
+  local command_text="ruby release workflow contract sweep ${RELEASE_WORKFLOW_PATH}"
+  local log_path="$ARTIFACT_DIR/release.log"
+
+  echo "==> [${phase_name}] ${command_text}"
+  if ! ruby - "$RELEASE_WORKFLOW_PATH" >"$log_path" 2>&1 <<'RUBY'
+require "yaml"
+
+workflow_path = ARGV.fetch(0)
+workflow = YAML.load_file(workflow_path)
+raw = File.read(workflow_path)
+
+errors = []
+
+errors << "release workflow file is missing" unless File.file?(workflow_path)
+
+on_key = if workflow.key?("on")
+  "on"
+elsif workflow.key?(true)
+  true
+else
+  "on"
+end
+on_block = workflow[on_key]
+
+errors << "workflow name must stay 'Release'" unless workflow["name"] == "Release"
+
+unless on_block.is_a?(Hash)
+  errors << "release workflow must define an on block"
+  on_block = {}
+end
+
+unless on_block.keys == ["push", "pull_request"]
+  errors << "release workflow triggers must stay push and pull_request"
+end
+
+push_block = on_block["push"]
+unless push_block.is_a?(Hash) && push_block["branches"] == ["main"] && push_block["tags"] == ["v*"]
+  errors << "release workflow push trigger must keep main branches and v* tags"
+end
+
+pull_request_block = on_block["pull_request"]
+unless pull_request_block.nil? || pull_request_block.is_a?(Hash)
+  errors << "release workflow pull_request trigger must stay unfiltered or use a mapping"
+end
+
+permissions = workflow["permissions"]
+unless permissions.is_a?(Hash) && permissions == { "contents" => "read" }
+  errors << "release workflow permissions must stay read-only outside the publish job"
+end
+
+jobs = workflow["jobs"]
+unless jobs.is_a?(Hash) && jobs.keys == ["build", "build-meshpkg", "authoritative-live-proof", "release"]
+  errors << "release workflow must define build, build-meshpkg, authoritative-live-proof, and release jobs"
+end
+
+build = jobs.is_a?(Hash) ? jobs["build"] : nil
+if build.is_a?(Hash)
+  build_permissions = build["permissions"]
+  if build_permissions.is_a?(Hash) && build_permissions["contents"] == "write"
+    errors << "build job must not request contents: write"
+  end
+else
+  errors << "release workflow must keep the build job"
+end
+
+build_meshpkg = jobs.is_a?(Hash) ? jobs["build-meshpkg"] : nil
+if build_meshpkg.is_a?(Hash)
+  build_meshpkg_permissions = build_meshpkg["permissions"]
+  if build_meshpkg_permissions.is_a?(Hash) && build_meshpkg_permissions["contents"] == "write"
+    errors << "build-meshpkg job must not request contents: write"
+  end
+else
+  errors << "release workflow must keep the build-meshpkg job"
+end
+
+proof = jobs.is_a?(Hash) ? jobs["authoritative-live-proof"] : nil
+if proof.is_a?(Hash)
+  errors << "release proof job name must stay 'Authoritative live proof'" unless proof["name"] == "Authoritative live proof"
+  unless proof["if"].to_s.include?("startsWith(github.ref, 'refs/tags/v')")
+    errors << "release proof job must stay tag-only"
+  end
+  unless proof["uses"] == "./.github/workflows/authoritative-live-proof.yml"
+    errors << "release proof job must invoke the reusable workflow at ./.github/workflows/authoritative-live-proof.yml"
+  end
+
+  proof_permissions = proof["permissions"]
+  if proof_permissions.is_a?(Hash) && proof_permissions["contents"] == "write"
+    errors << "release proof job must not request contents: write"
+  end
+
+  proof_secrets = proof["secrets"]
+  unless proof_secrets.is_a?(Hash) && proof_secrets["MESH_PUBLISH_OWNER"] == "${{ secrets.MESH_PUBLISH_OWNER }}"
+    errors << "release proof job must map MESH_PUBLISH_OWNER explicitly into the reusable workflow"
+  end
+  unless proof_secrets.is_a?(Hash) && proof_secrets["MESH_PUBLISH_TOKEN"] == "${{ secrets.MESH_PUBLISH_TOKEN }}"
+    errors << "release proof job must map MESH_PUBLISH_TOKEN explicitly into the reusable workflow"
+  end
+else
+  errors << "release workflow must define the authoritative-live-proof job"
+end
+
+release = jobs.is_a?(Hash) ? jobs["release"] : nil
+if release.is_a?(Hash)
+  errors << "release job name must stay 'Create Release'" unless release["name"] == "Create Release"
+  unless release["if"].to_s.include?("startsWith(github.ref, 'refs/tags/v')")
+    errors << "release job must stay tag-only"
+  end
+  errors << "release job must stay on ubuntu-latest" unless release["runs-on"] == "ubuntu-latest"
+
+  release_needs = release["needs"]
+  expected_release_needs = %w[authoritative-live-proof build build-meshpkg]
+  unless release_needs.is_a?(Array) && release_needs.sort == expected_release_needs.sort
+    errors << "release job must depend on build, build-meshpkg, and authoritative-live-proof"
+  end
+
+  release_permissions = release["permissions"]
+  unless release_permissions.is_a?(Hash) && release_permissions == { "contents" => "write" }
+    errors << "release job must be the only job that requests contents: write"
+  end
+
+  steps = release["steps"]
+  unless steps.is_a?(Array)
+    errors << "release job must define steps"
+    steps = []
+  end
+
+  find_step = lambda do |name|
+    steps.find { |step| step.is_a?(Hash) && step["name"] == name }
+  end
+
+  download = find_step.call("Download all artifacts")
+  unless download.is_a?(Hash) && download["uses"] == "actions/download-artifact@v4"
+    errors << "release job must keep the artifact download step"
+  end
+
+  checksum = find_step.call("Generate SHA256SUMS")
+  unless checksum.is_a?(Hash) && checksum["run"].to_s.include?("sha256sum *.tar.gz *.zip > SHA256SUMS")
+    errors << "release job must keep SHA256SUMS generation"
+  end
+
+  publish = find_step.call("Create GitHub Release")
+  if publish.is_a?(Hash)
+    unless publish["uses"] == "softprops/action-gh-release@v2"
+      errors << "release job must keep softprops/action-gh-release@v2"
+    end
+    publish_with = publish["with"]
+    unless publish_with.is_a?(Hash) && publish_with["files"] == "artifacts/*"
+      errors << "release job must keep publishing artifacts/*"
+    end
+  else
+    errors << "release job must keep the Create GitHub Release step"
+  end
+else
+  errors << "release workflow must keep the release job"
+end
+
+if raw.include?("bash scripts/verify-m034-s01.sh")
+  errors << "release workflow must not inline the live proof script"
+end
+
+if raw.scan("./.github/workflows/authoritative-live-proof.yml").length != 1
+  errors << "release workflow must reference the reusable workflow exactly once"
+end
+
+if errors.empty?
+  puts "release workflow contract ok"
+else
+  raise errors.join("\n")
+end
+RUBY
+  then
+    fail_with_log "$phase_name" "$command_text" "release workflow contract drifted" "$log_path"
+  fi
+}
+
+run_full_contract_check() {
   local phase_name="full-contract"
-  local command_text="full slice contract preflight"
+  local command_text="full slice contract sweep"
   local log_path="$ARTIFACT_DIR/full-contract.log"
 
   echo "==> [${phase_name}] ${command_text}"
   if ! (
     run_reusable_contract_check
     run_caller_contract_check
-    echo "release gating checks stay intentionally red until T03 wires .github/workflows/release.yml to the reusable proof"
-    exit 1
+    run_release_contract_check
   ) >"$log_path" 2>&1; then
-    fail_with_log "$phase_name" "$command_text" "slice-level workflow contract is not complete yet" "$log_path"
+    fail_with_log "$phase_name" "$command_text" "slice-level workflow contract drifted" "$log_path"
   fi
 }
 
@@ -423,12 +600,15 @@ case "$mode" in
   caller)
     run_caller_contract_check
     ;;
+  release)
+    run_release_contract_check
+    ;;
   all)
-    run_full_contract_placeholder
+    run_full_contract_check
     ;;
   *)
     echo "unknown mode: $mode" >&2
-    echo "usage: bash scripts/verify-m034-s02-workflows.sh [reusable|caller|all]" >&2
+    echo "usage: bash scripts/verify-m034-s02-workflows.sh [reusable|caller|release|all]" >&2
     exit 1
     ;;
 esac

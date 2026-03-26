@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-03-26T22:31:35.223Z",
+  "exported_at": "2026-03-26T22:43:14.292Z",
   "milestones": [
     {
       "id": "M001",
@@ -2242,19 +2242,26 @@
       "milestone_id": "M034",
       "slice_id": "S02",
       "id": "T03",
-      "title": "Gate tag releases on the shared proof and harden workflow permissions",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Gated tag releases on the reusable authoritative live proof, scoped release write permissions to the publish job, and finished the cross-workflow verifier.",
+      "status": "complete",
+      "one_liner": "Gated tag releases on the reusable authoritative live proof, scoped release write permissions to the publish job, and finished the cross-workflow verifier.",
+      "narrative": "Updated `.github/workflows/release.yml` so tag releases call the reusable authoritative live-proof workflow, the workflow defaults to read-only permissions, and `Create Release` now depends on `build`, `build-meshpkg`, and the tag-only proof job before publishing assets. Rewrote `scripts/verify-m034-s02-workflows.sh` to replace the old T03 placeholder with a real `release` contract check plus a green `all` mode that enforces release trigger shape, proof reuse, explicit secret mapping, permission hardening, and release dependency wiring across all three workflow files. Also recorded the CI/security decision in `.gsd/DECISIONS.md` and added the GitHub CLI workflow-discovery gotcha to `.gsd/KNOWLEDGE.md` so future agents understand why remote acceptance evidence is unavailable until the workflows are pushed.",
+      "verification_result": "Local verification passed: `bash -n scripts/verify-m034-s02-workflows.sh`, `bash scripts/verify-m034-s02-workflows.sh reusable`, `bash scripts/verify-m034-s02-workflows.sh caller`, `bash scripts/verify-m034-s02-workflows.sh release`, `bash scripts/verify-m034-s02-workflows.sh`, and Ruby YAML parses for all three workflow files all exited 0. GitHub-side acceptance evidence remains pending rollout: `gh run list --workflow authoritative-verification.yml --limit 1` returned 404 because the workflow is not yet on the remote default branch, and historical tag run `22562324587` still shows the legacy release graph without an authoritative proof job.",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-03-26T22:43:14.258Z",
       "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "deviations": "Could not complete the task-plan’s GitHub-side acceptance capture from the working tree alone because the authoritative workflow files are not yet present on the remote default branch GitHub is querying. Verified that with `gh` instead of inventing acceptance evidence.",
+      "known_issues": "Remote acceptance evidence is still pending the next push of this task’s workflow changes. Until the updated workflow files exist on GitHub, `gh run list --workflow authoritative-verification.yml` returns 404 and historical `Release` tag runs still show the pre-T03 graph with no proof-gating job.",
+      "key_files": [
+        ".github/workflows/release.yml",
+        "scripts/verify-m034-s02-workflows.sh",
+        ".gsd/DECISIONS.md",
+        ".gsd/KNOWLEDGE.md"
+      ],
+      "key_decisions": [
+        "Keep `release.yml` workflow-wide permissions read-only, grant `contents: write` only to `Create Release`, and require a tag-only reusable authoritative-proof job before publication."
+      ],
+      "full_summary_md": "---\nid: T03\nparent: S02\nmilestone: M034\nkey_files:\n  - .github/workflows/release.yml\n  - scripts/verify-m034-s02-workflows.sh\n  - .gsd/DECISIONS.md\n  - .gsd/KNOWLEDGE.md\nkey_decisions:\n  - Keep `release.yml` workflow-wide permissions read-only, grant `contents: write` only to `Create Release`, and require a tag-only reusable authoritative-proof job before publication.\nduration: \"\"\nverification_result: mixed\ncompleted_at: 2026-03-26T22:43:14.259Z\nblocker_discovered: false\n---\n\n# T03: Gated tag releases on the reusable authoritative live proof, scoped release write permissions to the publish job, and finished the cross-workflow verifier.\n\n**Gated tag releases on the reusable authoritative live proof, scoped release write permissions to the publish job, and finished the cross-workflow verifier.**\n\n## What Happened\n\nUpdated `.github/workflows/release.yml` so tag releases call the reusable authoritative live-proof workflow, the workflow defaults to read-only permissions, and `Create Release` now depends on `build`, `build-meshpkg`, and the tag-only proof job before publishing assets. Rewrote `scripts/verify-m034-s02-workflows.sh` to replace the old T03 placeholder with a real `release` contract check plus a green `all` mode that enforces release trigger shape, proof reuse, explicit secret mapping, permission hardening, and release dependency wiring across all three workflow files. Also recorded the CI/security decision in `.gsd/DECISIONS.md` and added the GitHub CLI workflow-discovery gotcha to `.gsd/KNOWLEDGE.md` so future agents understand why remote acceptance evidence is unavailable until the workflows are pushed.\n\n## Verification\n\nLocal verification passed: `bash -n scripts/verify-m034-s02-workflows.sh`, `bash scripts/verify-m034-s02-workflows.sh reusable`, `bash scripts/verify-m034-s02-workflows.sh caller`, `bash scripts/verify-m034-s02-workflows.sh release`, `bash scripts/verify-m034-s02-workflows.sh`, and Ruby YAML parses for all three workflow files all exited 0. GitHub-side acceptance evidence remains pending rollout: `gh run list --workflow authoritative-verification.yml --limit 1` returned 404 because the workflow is not yet on the remote default branch, and historical tag run `22562324587` still shows the legacy release graph without an authoritative proof job.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `bash -n scripts/verify-m034-s02-workflows.sh` | 0 | ✅ pass | 16ms |\n| 2 | `bash scripts/verify-m034-s02-workflows.sh reusable` | 0 | ✅ pass | 125ms |\n| 3 | `bash scripts/verify-m034-s02-workflows.sh caller` | 0 | ✅ pass | 109ms |\n| 4 | `bash scripts/verify-m034-s02-workflows.sh release` | 0 | ✅ pass | 114ms |\n| 5 | `bash scripts/verify-m034-s02-workflows.sh` | 0 | ✅ pass | 297ms |\n| 6 | `ruby -e 'require \"yaml\"; YAML.load_file(\".github/workflows/authoritative-live-proof.yml\")'` | 0 | ✅ pass | 96ms |\n| 7 | `ruby -e 'require \"yaml\"; YAML.load_file(\".github/workflows/authoritative-verification.yml\")'` | 0 | ✅ pass | 98ms |\n| 8 | `ruby -e 'require \"yaml\"; YAML.load_file(\".github/workflows/release.yml\")'` | 0 | ✅ pass | 98ms |\n| 9 | `ruby -e 'require \"yaml\"; %w[.github/workflows/authoritative-live-proof.yml .github/workflows/authoritative-verification.yml .github/workflows/release.yml].each { |f| YAML.load_file(f) }'` | 0 | ✅ pass | 98ms |\n| 10 | `gh run list --workflow authoritative-verification.yml --limit 1` | 1 | ❌ fail | 415ms |\n| 11 | `gh run view 22562324587 --json jobs,workflowName,displayTitle,event,headBranch,conclusion,status,url | jq -r '.workflowName + \"\\t\" + .event + \"\\t\" + .headBranch + \"\\t\" + (.jobs | map(.name) | join(\", \"))'` | 0 | ✅ pass | 1323ms |\n\n\n## Deviations\n\nCould not complete the task-plan’s GitHub-side acceptance capture from the working tree alone because the authoritative workflow files are not yet present on the remote default branch GitHub is querying. Verified that with `gh` instead of inventing acceptance evidence.\n\n## Known Issues\n\nRemote acceptance evidence is still pending the next push of this task’s workflow changes. Until the updated workflow files exist on GitHub, `gh run list --workflow authoritative-verification.yml` returns 404 and historical `Release` tag runs still show the pre-T03 graph with no proof-gating job.\n\n## Files Created/Modified\n\n- `.github/workflows/release.yml`\n- `scripts/verify-m034-s02-workflows.sh`\n- `.gsd/DECISIONS.md`\n- `.gsd/KNOWLEDGE.md`\n",
       "description": "The slice is only authoritative once tag releases cannot bypass the same live proof surface and the release workflow stops carrying broad write permission during ordinary builds. Rewire `release.yml` so tag releases depend on the reusable proof job, scope `contents: write` down to the actual release job, and extend the local verifier to assert the shared dependency chain. The final validation for this task is not just YAML syntax: a trusted Actions run must show `bash scripts/verify-m034-s01.sh` reaching `verify-m034-s01: ok`, and a tag release must stay blocked until that proof succeeds.\n\n## Failure Modes\n\n| Dependency | On error | On timeout | On malformed response |\n|------------|----------|-----------|----------------------|\n| Reusable proof job in tag releases | Block `Create Release` entirely when the live proof fails instead of falling back to green artifact packaging. | Keep the release blocked until the proof job resolves or times out visibly. | Treat missing `needs:` wiring or a missing reusable-workflow reference as local-verifier failure. |\n| Release workflow permissions | Fail closed by keeping non-release jobs read-only; do not leave workflow-wide write access in place for convenience. | N/A | Treat workflow-wide `contents: write` as permission drift that the local verifier must reject. |\n| Existing build matrices and artifacts | Preserve current artifact builds for PR/main/tag paths while inserting the proof dependency only where release truth requires it. | Let upstream build jobs fail normally without masking proof failures. | Treat missing build prerequisites in the release graph as drift in the tag-gating contract. |\n\n## Load Profile\n\n- **Shared resources**: tag pushes, release artifacts, the reusable proof job, publish secrets, and the existing cross-platform build matrices.\n- **Per-operation cost**: current meshc/meshpkg build matrices plus one authoritative proof run per tag release.\n- **10x breakpoint**: release tags queued behind live proof or duplicated tag reruns would bottleneck first, so the dependency chain must stay linear and explicit.\n\n## Negative Tests\n\n- **Malformed inputs**: tag runs without secret mapping, workflow-wide write permissions, or a `release` job that no longer depends on the authoritative proof.\n- **Error paths**: failed proof jobs must prevent release creation, and failed local verifier assertions must catch missing `needs:` or permission drift before push.\n- **Boundary conditions**: non-tag pushes keep existing build behavior, while `v*` tags gain the extra authoritative proof requirement before publishing assets.\n\n## Steps\n\n1. Update `.github/workflows/release.yml` so tag runs call `.github/workflows/authoritative-live-proof.yml` and `Create Release` depends on that proof plus the existing build matrices, without regressing current build/package jobs on non-tag events.\n2. Move `contents: write` from workflow scope to the release job so build/proof jobs stay read-only.\n3. Extend `scripts/verify-m034-s02-workflows.sh` with the full-slice assertions for shared reusable-workflow references, tag gating, and permission hardening across all three workflow files.\n4. Validate the lane end to end: run the local verifier, then use a trusted `workflow_dispatch`/same-repo push and a `v*` tag run to confirm the logs show `verify-m034-s01: ok` and that `Create Release` remains downstream of the authoritative proof job.\n\n## Must-Haves\n\n- [ ] `release.yml` cannot create a GitHub Release for `v*` tags unless the authoritative proof has already passed.\n- [ ] Workflow-wide write permissions are removed; only the actual release job keeps `contents: write`.\n- [ ] The final local verifier script asserts the reusable proof, trusted-event lane, and tag-release gating as one coherent CI contract.\n- [ ] Final acceptance captures real GitHub Actions evidence that the live proof runs to `verify-m034-s01: ok` on a trusted event.\n\n## Verification\n\n- `bash scripts/verify-m034-s02-workflows.sh`\n- `ruby -e 'require \"yaml\"; %w[.github/workflows/authoritative-live-proof.yml .github/workflows/authoritative-verification.yml .github/workflows/release.yml].each { |f| YAML.load_file(f) }'`\n- Trusted GitHub Actions evidence: a `workflow_dispatch` or same-repo `push` run shows `verify-m034-s01: ok`, and a `v*` run shows `Create Release` waiting on the authoritative proof job.",
       "estimate": "1.5h",
       "files": [
@@ -3236,6 +3243,18 @@
       "decision": "How the authoritative Mesh package-manager proof should be wired into CI and release flows",
       "choice": "Use one reusable GitHub Actions workflow that shells out to `bash scripts/verify-m034-s01.sh`, call it from a trusted-event verification lane (same-repo PRs, `main` pushes, `workflow_dispatch`, and a bounded schedule), and make `release.yml` gate tag releases on that same reusable proof while skipping fork-PR live-proof runs and avoiding `pull_request_target`.",
       "rationale": "This preserves the S01 verifier as the single proof surface, prevents YAML copies of publish/install logic from drifting, keeps publish secrets out of untrusted fork PR execution paths, and gives later release-hardening slices a reusable pattern built around real proof rather than packaging success.",
+      "revisable": "Yes",
+      "made_by": "agent",
+      "superseded_by": null
+    },
+    {
+      "seq": 3390,
+      "id": "D081",
+      "when_context": "M034/S02/T03",
+      "scope": "ci/security",
+      "decision": "How tag-release gating and permissions should be structured for the authoritative live-proof lane.",
+      "choice": "Keep `release.yml` workflow-wide permissions read-only, grant `contents: write` only to the `Create Release` job, and require a tag-only reusable authoritative-proof job before release publication.",
+      "rationale": "This keeps ordinary build and proof jobs fail-closed on token scope while making tag publication depend on the same reusable live proof used elsewhere, so releases cannot bypass the real package-manager verification path.",
       "revisable": "Yes",
       "made_by": "agent",
       "superseded_by": null
@@ -4253,6 +4272,127 @@
       "verdict": "❌ fail",
       "duration_ms": 213,
       "created_at": "2026-03-26T22:31:35.192Z"
+    },
+    {
+      "id": 93,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M034",
+      "command": "bash -n scripts/verify-m034-s02-workflows.sh",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 16,
+      "created_at": "2026-03-26T22:43:14.258Z"
+    },
+    {
+      "id": 94,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M034",
+      "command": "bash scripts/verify-m034-s02-workflows.sh reusable",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 125,
+      "created_at": "2026-03-26T22:43:14.259Z"
+    },
+    {
+      "id": 95,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M034",
+      "command": "bash scripts/verify-m034-s02-workflows.sh caller",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 109,
+      "created_at": "2026-03-26T22:43:14.259Z"
+    },
+    {
+      "id": 96,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M034",
+      "command": "bash scripts/verify-m034-s02-workflows.sh release",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 114,
+      "created_at": "2026-03-26T22:43:14.259Z"
+    },
+    {
+      "id": 97,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M034",
+      "command": "bash scripts/verify-m034-s02-workflows.sh",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 297,
+      "created_at": "2026-03-26T22:43:14.259Z"
+    },
+    {
+      "id": 98,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M034",
+      "command": "ruby -e 'require \"yaml\"; YAML.load_file(\".github/workflows/authoritative-live-proof.yml\")'",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 96,
+      "created_at": "2026-03-26T22:43:14.259Z"
+    },
+    {
+      "id": 99,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M034",
+      "command": "ruby -e 'require \"yaml\"; YAML.load_file(\".github/workflows/authoritative-verification.yml\")'",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 98,
+      "created_at": "2026-03-26T22:43:14.259Z"
+    },
+    {
+      "id": 100,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M034",
+      "command": "ruby -e 'require \"yaml\"; YAML.load_file(\".github/workflows/release.yml\")'",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 98,
+      "created_at": "2026-03-26T22:43:14.259Z"
+    },
+    {
+      "id": 101,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M034",
+      "command": "ruby -e 'require \"yaml\"; %w[.github/workflows/authoritative-live-proof.yml .github/workflows/authoritative-verification.yml .github/workflows/release.yml].each { |f| YAML.load_file(f) }'",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 98,
+      "created_at": "2026-03-26T22:43:14.259Z"
+    },
+    {
+      "id": 102,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M034",
+      "command": "gh run list --workflow authoritative-verification.yml --limit 1",
+      "exit_code": 1,
+      "verdict": "❌ fail",
+      "duration_ms": 415,
+      "created_at": "2026-03-26T22:43:14.259Z"
+    },
+    {
+      "id": 103,
+      "task_id": "T03",
+      "slice_id": "S02",
+      "milestone_id": "M034",
+      "command": "gh run view 22562324587 --json jobs,workflowName,displayTitle,event,headBranch,conclusion,status,url | jq -r '.workflowName + \"\\t\" + .event + \"\\t\" + .headBranch + \"\\t\" + (.jobs | map(.name) | join(\", \"))'",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 1323,
+      "created_at": "2026-03-26T22:43:14.259Z"
     }
   ]
 }
