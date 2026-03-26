@@ -6,7 +6,7 @@ Harden CI/CD and ensure everything important is included in it, test the package
 ## Slice Overview
 | ID | Slice | Risk | Depends | Done | After this |
 |----|-------|------|---------|------|------------|
-| S01 | Real registry publish/install proof | high | — | ⬜ | A release-scoped package can be published to the real registry path and installed with `meshpkg`, with checksum, metadata, download, and lockfile truth rechecked. |
+| S01 | Real registry publish/install proof | high | — | ✅ | A release-scoped package can be published to the real registry path and installed with `meshpkg`, with checksum, metadata, download, and lockfile truth rechecked. |
 | S02 | Authoritative CI verification lane | high | S01 | ⬜ | PR and release verification rerun the real Mesh proof surfaces, including the package-manager path, instead of stopping at artifact builds. |
 | S03 | Release assets and installer truth | medium | S01, S02 | ⬜ | Released `meshc` and `meshpkg` artifacts are proven installable and runnable through the documented installer path instead of only being uploaded. |
 | S04 | Extension release path hardening | medium | S02 | ⬜ | The VS Code extension publish lane validates the packaged extension and release prerequisites before public publication. |

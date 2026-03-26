@@ -1,0 +1,1 @@
+255:"your-login/your-package" = "1.0.0"                         # registry: exact version (quoted because scoped names contain '/')

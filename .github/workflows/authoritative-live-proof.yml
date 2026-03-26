@@ -1,0 +1,79 @@
+name: Authoritative live proof
+
+on:
+  workflow_call:
+    secrets:
+      MESH_PUBLISH_OWNER:
+        required: true
+      MESH_PUBLISH_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  live-proof:
+    name: Authoritative live proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify live-proof entrypoint
+        shell: bash
+        run: test -f scripts/verify-m034-s01.sh
+
+      - name: Cache LLVM
+        uses: actions/cache@v4
+        id: cache-llvm
+        with:
+          path: ~/llvm
+          key: llvm-21.1.8-v3-x86_64-unknown-linux-gnu
+
+      - name: Install LLVM 21 (Linux x86_64)
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        timeout-minutes: 10
+        run: |
+          LLVM_VERSION="21.1.8"
+          LLVM_ARCHIVE="LLVM-${LLVM_VERSION}-Linux-X64.tar.xz"
+          LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${LLVM_ARCHIVE}"
+          curl -sSfL "$LLVM_URL" -o llvm.tar.xz
+          mkdir -p "$HOME/llvm"
+          tar xf llvm.tar.xz --strip-components=1 -C "$HOME/llvm"
+          rm llvm.tar.xz
+
+      - name: Set LLVM prefix (Linux tarball)
+        shell: bash
+        run: echo "LLVM_SYS_211_PREFIX=$HOME/llvm" >> "$GITHUB_ENV"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        timeout-minutes: 10
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Cargo cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: authoritative-live-proof-x86_64-unknown-linux-gnu
+
+      - name: Run authoritative live proof
+        id: proof
+        shell: bash
+        timeout-minutes: 35
+        env:
+          MESH_PUBLISH_OWNER: ${{ secrets.MESH_PUBLISH_OWNER }}
+          MESH_PUBLISH_TOKEN: ${{ secrets.MESH_PUBLISH_TOKEN }}
+        run: bash scripts/verify-m034-s01.sh
+
+      - name: Upload live proof diagnostics
+        if: ${{ failure() && steps.proof.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        timeout-minutes: 5
+        with:
+          name: authoritative-live-proof-diagnostics
+          path: .tmp/m034-s01/verify/**
+          if-no-files-found: error
+          retention-days: 7

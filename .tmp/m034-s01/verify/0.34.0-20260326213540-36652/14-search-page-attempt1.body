@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="./favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mesh Packages</title>
+    <script>
+      (function() {
+        var stored = localStorage.getItem('theme');
+        if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    
+		<link href="./_app/immutable/assets/0.msoIEt24.css" rel="stylesheet">
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents"><!--[--><!--[--><!--[--><header class="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl"><div class="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 lg:px-6"><a href="/" class="flex items-center gap-2 shrink-0 no-underline"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="lucide-icon lucide lucide-package size-5 text-foreground"><!--[--><!----><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"><!----></path><!----><!----><path d="M12 22V12"><!----></path><!----><!----><polyline points="3.29 7 12 12 20.71 7"><!----></polyline><!----><!----><path d="m7.5 4.27 9 5.15"><!----></path><!----><!--]--><!--[--><!--[--><!--]--><!--]--></svg><!----> <span class="text-sm font-semibold text-foreground">Mesh Packages</span></a> <form action="/search" method="GET" class="flex items-center ml-auto gap-3"><div class="relative hidden sm:block"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="lucide-icon lucide lucide-search absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none"><!--[--><!----><path d="m21 21-4.34-4.34"><!----></path><!----><!----><circle cx="11" cy="11" r="8"><!----></circle><!----><!--]--><!--[--><!--[--><!--]--><!--]--></svg><!----> <input name="q" placeholder="Search packages..." class="h-9 w-48 rounded-md border border-border bg-muted pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground/30 md:w-64 transition-colors"/></div> <button type="button" class="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground transition-colors hover:bg-card hover:text-foreground" aria-label="Toggle dark mode"><!--[!--><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="lucide-icon lucide lucide-moon size-4"><!--[--><!----><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"><!----></path><!----><!--]--><!--[--><!--[--><!--]--><!--]--></svg><!--]--></button> <a href="https://meshlang.dev" target="_blank" class="hidden text-sm text-muted-foreground transition-colors hover:text-foreground md:block no-underline">Docs</a> <a href="/publish" class="hidden text-sm font-medium text-foreground transition-colors hover:text-muted-foreground md:block no-underline">Publish</a></form></div></header> <main class="min-h-screen bg-background"><!--[--><!--[--><section class="border-b border-border bg-background py-10"><div class="mx-auto max-w-6xl px-4"><div class="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-1">Search</div> <h1 class="text-2xl font-bold tracking-tight text-foreground"><!--[-->Results for "snowdamiz/mesh-registry-proof"<!--]--></h1> <!--[--><p class="mt-1 text-sm text-muted-foreground">1 result</p><!--]--></div></section> <section class="py-10"><div class="mx-auto max-w-6xl px-4"><!--[!--><div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"><!--[--><a href="/packages/snowdamiz/mesh-registry-proof" class="block rounded-xl border border-foreground/10 bg-card p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-foreground/30 hover:shadow-lg no-underline"><div class="flex items-start justify-between gap-2"><span class="text-base font-bold text-foreground leading-tight">snowdamiz/mesh-registry-proof</span> <span class="shrink-0 rounded-md bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground whitespace-nowrap">v0.34.0-20260326213540-36652</span></div> <p class="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-2">Real registry publish/install proof fixture for M034 S01</p></a><!--]--></div><!--]--></div></section><!--]--><!--]--></main> <footer class="border-t border-border py-10"><div class="mx-auto max-w-6xl px-4 text-center text-sm text-muted-foreground"><p><a href="https://meshlang.dev" class="transition-colors hover:text-foreground">meshlang.dev</a>  ·  <a href="https://github.com/snowdamiz/mesh-lang" class="transition-colors hover:text-foreground">GitHub</a>  ·  <a href="https://meshlang.dev/docs/tooling" class="transition-colors hover:text-foreground">meshpkg docs</a></p> <p class="mt-2 text-xs">The Mesh package registry. Publish with <code class="font-mono">meshpkg publish</code>.</p></div></footer><!--]--><!--]--> <!--[!--><!--]--><!--]-->
+			
+			<script>
+				{
+					__sveltekit_zh6t6d = {
+						base: new URL(".", location).pathname.slice(0, -1)
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("./_app/immutable/entry/start.B3qab0JT.js"),
+						import("./_app/immutable/entry/app.BprAMHsh.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 6],
+							data: [null,{type:"data",data:{packages:[{name:"snowdamiz/mesh-registry-proof",version:"0.34.0-20260326213540-36652",description:"Real registry publish/install proof fixture for M034 S01"}],query:"snowdamiz/mesh-registry-proof"},uses:{search_params:["q"]}}],
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+  </body>
+</html>

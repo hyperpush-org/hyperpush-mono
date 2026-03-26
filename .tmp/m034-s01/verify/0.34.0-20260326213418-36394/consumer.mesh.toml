@@ -1,0 +1,8 @@
+[package]
+name = "m034-s01-consumer"
+version = "0.1.0"
+description = "Consumes the real registry proof package for M034 S01"
+license = "MIT"
+
+[dependencies]
+"snowdamiz/mesh-registry-proof" = "0.34.0-20260326213418-36394"

@@ -1,0 +1,4 @@
+compiler/meshpkg/src/install.rs:19:        "Named install does not edit mesh.toml; add {} if you want to declare this dependency.",
+compiler/meshpkg/src/install.rs:159:/// Named install does not edit mesh.toml; it only downloads the package and updates mesh.lock.
+compiler/meshpkg/src/install.rs:342:        assert!(follow_up.contains("does not edit mesh.toml"));
+website/docs/docs/tooling/index.md:231:This fetches the latest published release, verifies its SHA-256 checksum, extracts it into the project's dependency directory, and updates mesh.lock to pin the exact version. Named install does not edit mesh.toml; add the dependency yourself when you want it declared in the manifest.

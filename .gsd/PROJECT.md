@@ -23,8 +23,9 @@ Recent milestone state:
 - M031 fixed several real DX/compiler rough edges found through dogfooding and expanded the regression suite
 - M032 retired stale Mesher limitation folklore, fixed real blockers in Mesh, and dogfooded those repairs back into `mesher/`
 - M033 strengthened the neutral ORM/migration core, added explicit PostgreSQL extras, and left a clean path for later SQLite-specific work
+- M034/S01 now proves the real registry publish/install path end to end: scoped installed packages resolve from their natural cache layout, `scripts/verify-m034-s01.sh` publishes and installs a real scoped package through the live registry path, and the publish/download/named-install/docs contracts are now mechanically checked instead of assumed.
 
-The remaining near-term trust gap is no longer the backend core. It is delivery truth and maturity around CI/CD, the public release path, the package manager, editor support, and the day-to-day testing story.
+The remaining near-term trust gap is no longer the backend core or the basic real-registry package path. It is wiring that truth into CI/release assembly, hardening installer and extension release lanes, and continuing the planned test-framework and editor-support maturation work.
 
 ## Architecture / Key Patterns
 

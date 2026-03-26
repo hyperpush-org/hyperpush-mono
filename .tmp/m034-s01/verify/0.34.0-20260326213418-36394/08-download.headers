@@ -1,0 +1,11 @@
+HTTP/2 200 
+content-type: application/octet-stream
+content-disposition: attachment; filename="snowdamiz-mesh-registry-proof-0.34.0-20260326213418-36394.tar.gz"
+vary: origin, access-control-request-method, access-control-request-headers
+access-control-allow-origin: *
+access-control-expose-headers: *
+fly-request-id: 01KMP13RYWZ89GKQ0921SEPWCA-ord
+date: Thu, 26 Mar 2026 21:34:23 GMT
+server: Fly/a81aa9ce4f (2026-03-26)
+via: 2 fly.io, 2 fly.io
+

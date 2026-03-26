@@ -272,45 +272,20 @@ post_duplicate_publish() {
   local stderr_path="$RUN_DIR/${label}.stderr"
   local log_path="$RUN_DIR/${label}.log"
 
-  if python3 - "$url" "$tarball_path" "$sha256" "$body_path" "$headers_path" "$status_path" >"$stderr_path" 2>&1 <<'PY'
-from pathlib import Path
-import json
-import os
-import sys
-import urllib.error
-import urllib.request
-
-url, tarball_path, sha256_value, body_out, headers_out, status_out = sys.argv[1:7]
-body = Path(tarball_path).read_bytes()
-request = urllib.request.Request(
-    url,
-    data=body,
-    method="POST",
-    headers={
-        "Authorization": f"Bearer {os.environ['MESH_PUBLISH_TOKEN']}",
-        "Content-Type": "application/octet-stream",
-        "X-Package-Name": os.environ["PACKAGE_NAME"],
-        "X-Package-Version": os.environ["PROOF_VERSION"],
-        "X-Package-SHA256": sha256_value,
-        "X-Package-Description": os.environ["PACKAGE_DESCRIPTION"],
-    },
-)
-try:
-    with urllib.request.urlopen(request, timeout=20) as response:
-        body_bytes = response.read()
-        status = response.status
-        headers = dict(response.headers.items())
-except urllib.error.HTTPError as exc:
-    body_bytes = exc.read()
-    status = exc.code
-    headers = dict(exc.headers.items())
-
-Path(body_out).write_bytes(body_bytes)
-Path(headers_out).write_text(json.dumps(headers, indent=2, sort_keys=True))
-Path(status_out).write_text(str(status))
-print(f"status={status}")
-PY
-  then
+  if curl --silent --show-error --location --connect-timeout 10 --max-time 20 \
+    --request POST \
+    --header "Authorization: Bearer ${MESH_PUBLISH_TOKEN}" \
+    --header "Content-Type: application/octet-stream" \
+    --header "X-Package-Name: ${PACKAGE_NAME}" \
+    --header "X-Package-Version: ${PROOF_VERSION}" \
+    --header "X-Package-SHA256: ${sha256}" \
+    --header "X-Package-Description: ${PACKAGE_DESCRIPTION}" \
+    --header 'Expect:' \
+    --data-binary "@${tarball_path}" \
+    --dump-header "$headers_path" \
+    --output "$body_path" \
+    --write-out '%{http_code}' \
+    "$url" >"$status_path" 2>"$stderr_path"; then
     :
   else
     {

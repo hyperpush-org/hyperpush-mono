@@ -4,28 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R007 — Mesh projects have a believable dependency/package workflow for building and shipping backend applications with reproducible inputs.
-- Class: launchability
-- Status: active
-- Description: Mesh projects have a believable dependency/package workflow for building and shipping backend applications with reproducible inputs.
-- Why it matters: A language may have good runtime features and still fail as a serious backend option if dependency flow is rough or confidence-eroding.
-- Source: inferred
-- Primary owning slice: M034/S01
-- Supporting slices: M034/S03, M034/S05
-- Validation: mapped
-- Notes: M034 turns the old provisional package-trust intent into a real publish/install/download/lockfile proof path tied to release truth instead of leaving it as a vague future milestone.
-
-### R021 — Registry, publishing flow, package trust, and ecosystem polish should rise from credible to mature.
-- Class: admin/support
-- Status: active
-- Description: Registry, publishing flow, package trust, and ecosystem polish should rise from credible to mature.
-- Why it matters: It matters for adoption, and this discussion made it an explicit part of the near-term Mesh maturity sequence rather than a distant backlog item.
-- Source: research
-- Primary owning slice: M037/S01 (provisional)
-- Supporting slices: M037/S02 (provisional)
-- Validation: mapped
-- Notes: The user wants package-manager improvement, mostly because the UI is simple. M037 owns the website-first maturity wave after M034 proves the underlying trust path.
-
 ### R040 — The M033 data-layer design should be shaped so SQLite-specific extras can be added later without backing out a PG-only abstraction.
 - Class: constraint
 - Status: active
@@ -36,50 +14,6 @@ This file is the explicit capability and coverage contract for the project.
 - Supporting slices: M033/S02 (provisional)
 - Validation: Design seam advanced by the combined M033/S01+S04 proof set: `bash scripts/verify-m033-s01.sh`, `cargo test -p meshc --test e2e_m033_s04 -- --nocapture`, `cargo run -q -p meshc -- fmt --check mesher`, `cargo run -q -p meshc -- build mesher`, and `bash scripts/verify-m033-s04.sh`; full validation still depends on later vendor-extra slices.
 - Notes: Further advanced by M033/S05: `website/docs/docs/databases/index.md` and `scripts/verify-m033-s05.sh` now enforce the portable core vs explicit `Pg.*` vs SQLite-later contract in the public docs, but runtime validation still depends on later vendor-extra slices.
-
-### R045 — CI/CD and release flows prove the shipped Mesh surfaces instead of only building artifacts.
-- Class: launchability
-- Status: active
-- Description: CI/CD and release flows must prove the shipped Mesh surfaces instead of only building artifacts.
-- Why it matters: A release pipeline that compiles and uploads binaries without rerunning the real proof surfaces can ship false confidence.
-- Source: inferred
-- Primary owning slice: M034/S02
-- Supporting slices: M034/S03, M034/S04, M034/S05
-- Validation: mapped
-- Notes: This comes directly from the user's request to harden CI/CD and ensure everything important is included in it, plus the repo investigation showing artifact-heavy workflows.
-
-### R046 — Mesh package publishing, install, search, download, and lockfile behavior are proven end-to-end against the real registry path.
-- Class: integration
-- Status: active
-- Description: Mesh package publishing, install, search, download, and lockfile behavior are proven end-to-end against the real registry path.
-- Why it matters: The package manager and registry can look credible in pieces while still failing on the full publish-to-consume loop.
-- Source: user
-- Primary owning slice: M034/S01
-- Supporting slices: M034/S02, M034/S05
-- Validation: mapped
-- Notes: This preserves the user's exact push to test the package manager end to end, and it anchors M034 on the live registry contract instead of a mock-only story.
-
-### R047 — Official editor support matches the real Mesh syntax and toolchain behavior, starting with VS Code and at least one first-class secondary editor path.
-- Class: quality-attribute
-- Status: active
-- Description: Official editor support must match the real Mesh syntax and toolchain behavior, starting with VS Code and at least one first-class secondary editor path.
-- Why it matters: A language feels broken when docs say syntax is supported but the real editor experience lags behind the grammar and tooling.
-- Source: user
-- Primary owning slice: M036/S01 (provisional)
-- Supporting slices: M036/S02 (provisional)
-- Validation: mapped
-- Notes: The current concrete gap is `#{}` string interpolation highlighting in VS Code. The user also explicitly wants support for Vim or another non-VSCode editor in some real, maintained way.
-
-### R048 — Mesh’s testing framework is strong enough to test Mesher thoroughly during day-to-day development without obvious maturity gaps.
-- Class: quality-attribute
-- Status: active
-- Description: Mesh’s testing framework must be strong enough to test Mesher thoroughly during day-to-day development without obvious maturity gaps.
-- Why it matters: If Mesher cannot lean on Mesh tests as a daily-driver harness, the language still fails an important production-readiness bar.
-- Source: user
-- Primary owning slice: M035/S01 (provisional)
-- Supporting slices: M035/S02 (provisional)
-- Validation: mapped
-- Notes: The user delegated the exact success bar, but the direction is explicit: get `meshc test` and its surrounding testing story on par with other language testing frameworks for serious app development.
 
 ## Validated
 
@@ -145,9 +79,20 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Better DX is part of the explicit comparison target against Elixir.
 - Source: user
 - Primary owning slice: M028/S03
-- Supporting slices: M034/S02 (provisional), M035/S01 (provisional), M036/S01 (provisional)
+- Supporting slices: M030/S01 (provisional), M030/S02 (provisional)
 - Validation: validated
-- Notes: The toolchain is judged against real backend code, not toy fixtures, and the next maturity wave now lives in M034–M036 instead of the old provisional M030 placeholder.
+- Notes: The toolchain is judged against real backend code, not toy fixtures.
+
+### R007 — Mesh projects have a believable dependency/package workflow for building and shipping backend applications with reproducible inputs.
+- Class: launchability
+- Status: validated
+- Description: Mesh projects have a believable dependency/package workflow for building and shipping backend applications with reproducible inputs.
+- Why it matters: A language may have good runtime features and still fail as a serious backend option if dependency flow is rough or confidence-eroding.
+- Source: inferred
+- Primary owning slice: M030/S01 (provisional)
+- Supporting slices: M030/S02 (provisional)
+- Validation: `cargo test -p meshc --test e2e_m034_s01 scoped_installed_package_builds -- --nocapture`, `cargo test -p mesh-lsp scoped_installed_package -- --nocapture`, `bash -n scripts/verify-m034-s01.sh`, `rg -n '"your-login/your-package" = "1.0.0"' website/docs/docs/tooling/index.md`, `rg -n 'does not edit mesh.toml|updates mesh.lock' website/docs/docs/tooling/index.md compiler/meshpkg/src/install.rs`, and `set -a && source .env && set +a && bash scripts/verify-m034-s01.sh`
+- Notes: Validated by M034/S01 after the real-registry proof closed: scoped installed packages resolve from the natural `.mesh/packages/<owner>/<package>@<version>` cache layout, and the authoritative live verifier now proves publish -> metadata/search/detail -> download checksum -> install -> named-install manifest stability -> `mesh.lock` truth -> consumer build/run -> duplicate publish 409 on the real registry path.
 
 ### R008 — Mesh documentation and examples show a production-style backend path and do not rely mainly on toy examples to make the language look ready.
 - Class: launchability
@@ -404,16 +349,16 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: unmapped
 - Notes: Deferred until the current trust and data-layer work lands.
 
-### R049 — Additional editor breadth beyond the first serious non-VSCode target can follow after the support model is proven.
+### R021 — Registry, publishing flow, package trust, and ecosystem polish should rise from credible to mature.
 - Class: admin/support
 - Status: deferred
-- Description: Additional editor breadth beyond the first serious non-VSCode target can follow after the support model is proven.
-- Why it matters: It keeps the first multi-editor wave honest instead of pretending every editor will be equally supported at once.
-- Source: inferred
+- Description: Registry, publishing flow, package trust, and ecosystem polish should rise from credible to mature.
+- Why it matters: It matters for adoption, but it should not displace the present dogfood and ORM pressure work.
+- Source: research
 - Primary owning slice: none
 - Supporting slices: none
 - Validation: unmapped
-- Notes: M036 should first prove one first-class secondary editor path, then wider editor reach can expand from that model.
+- Notes: M030 keeps the nearer-term package and tooling trust work active.
 
 ### R022 — Operators eventually get richer admin controls, manual retries, and deeper operational tooling.
 - Class: operability
@@ -516,28 +461,6 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: n/a
 - Notes: Narrow app changes are acceptable only when required to dogfood the repaired or expanded platform path.
 
-### R050 — This initiative is not a broad language-feature sweep unrelated to release, package, editor, and testing trust.
-- Class: anti-feature
-- Status: out-of-scope
-- Description: This initiative is not a broad language-feature sweep unrelated to release, package, editor, and testing trust.
-- Why it matters: It prevents the new milestone sequence from ballooning into another vague “improve everything” wave.
-- Source: inferred
-- Primary owning slice: none
-- Supporting slices: none
-- Validation: n/a
-- Notes: New syntax or runtime features need a trust, tooling, package, or editor justification to belong in M034–M037.
-
-### R051 — The package-manager improvement wave is not a ground-up registry product redesign before the trust path is proven.
-- Class: anti-feature
-- Status: out-of-scope
-- Description: The package-manager improvement wave is not a ground-up registry product redesign before the trust path is proven.
-- Why it matters: It keeps M034 focused on trustworthy publish/install/release truth and leaves the website-first polish wave for M037.
-- Source: inferred
-- Primary owning slice: none
-- Supporting slices: none
-- Validation: n/a
-- Notes: The user asked to improve the package manager because the UI is simple, but not to replace the product surface before the underlying flow is trustworthy.
-
 ## Traceability
 
 | ID | Class | Status | Primary owner | Supporting | Proof |
@@ -547,8 +470,8 @@ This file is the explicit capability and coverage contract for the project.
 | R003 | quality-attribute | validated | M028/S02 | M028/S06 | validated |
 | R004 | quality-attribute | validated | M028/S05 | M028/S02, M028/S06, M028/S07 | validated |
 | R005 | launchability | validated | M028/S04 | M028/S06 | validated |
-| R006 | quality-attribute | validated | M028/S03 | M034/S02 (provisional), M035/S01 (provisional), M036/S01 (provisional) | validated |
-| R007 | launchability | active | M034/S01 | M034/S03, M034/S05 | mapped |
+| R006 | quality-attribute | validated | M028/S03 | M030/S01 (provisional), M030/S02 (provisional) | validated |
+| R007 | launchability | validated | M030/S01 (provisional) | M030/S02 (provisional) | `cargo test -p meshc --test e2e_m034_s01 scoped_installed_package_builds -- --nocapture`, `cargo test -p mesh-lsp scoped_installed_package -- --nocapture`, `bash -n scripts/verify-m034-s01.sh`, `rg -n '"your-login/your-package" = "1.0.0"' website/docs/docs/tooling/index.md`, `rg -n 'does not edit mesh.toml|updates mesh.lock' website/docs/docs/tooling/index.md compiler/meshpkg/src/install.rs`, and `set -a && source .env && set +a && bash scripts/verify-m034-s01.sh` |
 | R008 | launchability | validated | M028/S06 | M028/S01, M028/S03, M028/S04, M028/S05, M028/S07, M028/S08 | validated |
 | R009 | differentiator | validated | M028/S06 | M028/S01, M028/S02, M028/S05, M028/S07 | validated |
 | R010 | differentiator | validated | M032/S05 | M028/S04, M028/S06 | Validated by the M028 native deploy proof plus the M032 closeout bundle: `bash scripts/verify-m032-s01.sh`, `cargo test -q -p meshc --test e2e m032_inferred -- --nocapture`, `cargo test -q -p meshc --test e2e e2e_m032_supported_nested_wrapper_list_from_json -- --nocapture`, `cargo test -q -p meshc --test e2e e2e_m032_supported_inline_writer_cast_body -- --nocapture`, `cargo test -q -p meshc --test e2e_stdlib e2e_m032_route_closure_runtime_failure -- --nocapture`, `cargo run -q -p meshc -- fmt --check mesher`, and `cargo run -q -p meshc -- build mesher`, with the retained-limit ledger tying supported Mesher dogfood wins to honest remaining boundaries. |
@@ -562,7 +485,7 @@ This file is the explicit capability and coverage contract for the project.
 | R018 | quality-attribute | validated | M031/S02 | none | validated |
 | R019 | quality-attribute | validated | M031/S02 | none | validated |
 | R020 | operability | deferred | none | none | unmapped |
-| R021 | admin/support | active | M037/S01 (provisional) | M037/S02 (provisional) | mapped |
+| R021 | admin/support | deferred | none | none | unmapped |
 | R022 | operability | deferred | none | none | unmapped |
 | R023 | quality-attribute | validated | M031/S03 | none | validated |
 | R024 | quality-attribute | validated | M029/S02 | M029/S01, M029/S03 | validated |
@@ -583,17 +506,10 @@ This file is the explicit capability and coverage contract for the project.
 | R041 | integration | deferred | none | none | unmapped |
 | R043 | anti-feature | out-of-scope | none | none | n/a |
 | R044 | constraint | out-of-scope | none | none | n/a |
-| R045 | launchability | active | M034/S02 | M034/S03, M034/S04, M034/S05 | mapped |
-| R046 | integration | active | M034/S01 | M034/S02, M034/S05 | mapped |
-| R047 | quality-attribute | active | M036/S01 (provisional) | M036/S02 (provisional) | mapped |
-| R048 | quality-attribute | active | M035/S01 (provisional) | M035/S02 (provisional) | mapped |
-| R049 | admin/support | deferred | none | none | unmapped |
-| R050 | anti-feature | out-of-scope | none | none | n/a |
-| R051 | anti-feature | out-of-scope | none | none | n/a |
 
 ## Coverage Summary
 
-- Active requirements: 7
-- Mapped to slices: 7
-- Validated: 26 (R001, R002, R003, R004, R005, R006, R008, R009, R010, R011, R013, R015, R016, R017, R018, R019, R023, R024, R025, R026, R027, R035, R036, R037, R038, R039)
+- Active requirements: 1
+- Mapped to slices: 1
+- Validated: 27 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R013, R015, R016, R017, R018, R019, R023, R024, R025, R026, R027, R035, R036, R037, R038, R039)
 - Unmapped active requirements: 0
