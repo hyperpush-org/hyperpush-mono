@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exported_at": "2026-03-27T21:50:28.425Z",
+  "exported_at": "2026-03-27T22:36:20.754Z",
   "milestones": [
     {
       "id": "M001",
@@ -4357,12 +4357,12 @@
       "slice_id": "S11",
       "id": "T02",
       "title": "Roll the approved release fixes onto the hosted refs and capture `first-green` exactly once",
-      "status": "pending",
+      "status": "complete",
       "one_liner": "",
       "narrative": "",
       "verification_result": "",
       "duration": "",
-      "completed_at": null,
+      "completed_at": "2026-03-27T22:20:44.227Z",
       "blocker_discovered": false,
       "deviations": "",
       "known_issues": "",
@@ -4405,19 +4405,29 @@
       "milestone_id": "M034",
       "slice_id": "S11",
       "id": "T03",
-      "title": "Run the full S05 assembly replay and seal the final closeout evidence",
-      "status": "pending",
-      "one_liner": "",
-      "narrative": "",
-      "verification_result": "",
+      "title": "Confirmed T03 is blocked because `release.yml` still fails on the approved `v0.1.0` rollout ref, leaving `first-green` absent and preventing the final S05 replay.",
+      "status": "complete",
+      "one_liner": "Confirmed T03 is blocked because `release.yml` still fails on the approved `v0.1.0` rollout ref, leaving `first-green` absent and preventing the final S05 replay.",
+      "narrative": "T03 started by checking the expected hosted-proof handoff from T02. That handoff was not real: `.tmp/m034-s06/evidence/first-green/manifest.json` does not exist, and T02 never produced its local hosted-rollout summary. I refreshed `remote-evidence` authoritatively with `VERIFY_M034_S05_STOP_AFTER=remote-evidence bash scripts/verify-m034-s05.sh` instead of trusting stale partial artifacts. The refreshed run stayed red at `remote-evidence`, not because of ref drift, but because `release.yml` is still failing on the approved binary-tag ref `v0.1.0` at SHA `1e83ea930fdfd346b9e56659dc50d2f759ec5da2` while the other hosted workflows are green.\n\nI downloaded the uploaded Windows diagnostics artifact from the failing hosted run (`23669185030`). The actionable evidence is in `.tmp/m034-s11/t03/diag-download/windows/verify/run/07-hello-build.log`: the `Verify release assets (x86_64-pc-windows-msvc)` job crashes during `installed meshc.exe build installer smoke fixture` with `exit_code: -1073741819` and empty stdout/stderr. Because the task plan explicitly depends on a valid `first-green` manifest before the final assembled replay, I stopped before sourcing `.env` for the full live proof and wrote `.tmp/m034-s11/t03/final-assembly-summary.json` as a blocker artifact instead. This is a plan-invalidating blocker for the current task contract because the hosted release-lane fix is not actually retired yet.",
+      "verification_result": "Verified that `.env` is present locally, confirmed that the `first-green` manifest is still missing, refreshed `remote-evidence` from a clean verify root, and confirmed the wrapper truthfully reports `status.txt = failed` and `current-phase.txt = remote-evidence`. Downloaded the hosted Windows diagnostics artifact and verified that `07-hello-build.log` records the access-violation crash (`exit_code: -1073741819`). Validated the generated blocker summary at `.tmp/m034-s11/t03/final-assembly-summary.json`.",
       "duration": "",
-      "completed_at": null,
-      "blocker_discovered": false,
-      "deviations": "",
-      "known_issues": "",
-      "key_files": [],
-      "key_decisions": [],
-      "full_summary_md": "",
+      "completed_at": "2026-03-27T22:36:19.684Z",
+      "blocker_discovered": true,
+      "deviations": "The written task plan assumed T02 had already captured a valid `first-green` archive and that T03 could proceed straight into the full `.env`-backed replay. In local reality, `first-green` is still missing and the hosted `release.yml` reroll is red, so I stopped before the full replay and converted the task into blocker capture instead of writing stale closeout evidence.",
+      "known_issues": "`release.yml` run `23669185030` is still failing on `v0.1.0` at SHA `1e83ea930fdfd346b9e56659dc50d2f759ec5da2`. The blocking hosted job is `Verify release assets (x86_64-pc-windows-msvc)`, which crashes during `installed meshc.exe build installer smoke fixture` with access-violation exit code `-1073741819`. `.tmp/m034-s06/evidence/first-green/manifest.json` does not exist, so the final S05 assembly replay cannot be claimed truthfully.",
+      "key_files": [
+        ".tmp/m034-s11/t03/final-assembly-summary.json",
+        ".tmp/m034-s11/t03/verification-summary.json",
+        ".tmp/m034-s11/t03/diag-download/windows/verify/run/07-hello-build.log",
+        ".gsd/KNOWLEDGE.md",
+        ".gsd/milestones/M034/slices/S11/tasks/T03-SUMMARY.md"
+      ],
+      "key_decisions": [
+        "Stopped before the `.env`-backed full replay once the `first-green` precondition failed, rather than manufacturing stale closeout evidence from an earlier verify root.",
+        "Treated the missing `first-green` archive plus the still-red hosted `release.yml` run on the approved tag ref as a plan-invalidating blocker for T03.",
+        "Anchored the blocker report to the downloaded hosted diagnostics artifact instead of the top-level workflow log because the actionable crash evidence lives in `07-hello-build.log`."
+      ],
+      "full_summary_md": "---\nid: T03\nparent: S11\nmilestone: M034\nkey_files:\n  - .tmp/m034-s11/t03/final-assembly-summary.json\n  - .tmp/m034-s11/t03/verification-summary.json\n  - .tmp/m034-s11/t03/diag-download/windows/verify/run/07-hello-build.log\n  - .gsd/KNOWLEDGE.md\n  - .gsd/milestones/M034/slices/S11/tasks/T03-SUMMARY.md\nkey_decisions:\n  - Stopped before the `.env`-backed full replay once the `first-green` precondition failed, rather than manufacturing stale closeout evidence from an earlier verify root.\n  - Treated the missing `first-green` archive plus the still-red hosted `release.yml` run on the approved tag ref as a plan-invalidating blocker for T03.\n  - Anchored the blocker report to the downloaded hosted diagnostics artifact instead of the top-level workflow log because the actionable crash evidence lives in `07-hello-build.log`.\nduration: \"\"\nverification_result: mixed\ncompleted_at: 2026-03-27T22:36:19.686Z\nblocker_discovered: true\n---\n\n# T03: Confirmed T03 is blocked because `release.yml` still fails on the approved `v0.1.0` rollout ref, leaving `first-green` absent and preventing the final S05 replay.\n\n**Confirmed T03 is blocked because `release.yml` still fails on the approved `v0.1.0` rollout ref, leaving `first-green` absent and preventing the final S05 replay.**\n\n## What Happened\n\nT03 started by checking the expected hosted-proof handoff from T02. That handoff was not real: `.tmp/m034-s06/evidence/first-green/manifest.json` does not exist, and T02 never produced its local hosted-rollout summary. I refreshed `remote-evidence` authoritatively with `VERIFY_M034_S05_STOP_AFTER=remote-evidence bash scripts/verify-m034-s05.sh` instead of trusting stale partial artifacts. The refreshed run stayed red at `remote-evidence`, not because of ref drift, but because `release.yml` is still failing on the approved binary-tag ref `v0.1.0` at SHA `1e83ea930fdfd346b9e56659dc50d2f759ec5da2` while the other hosted workflows are green.\n\nI downloaded the uploaded Windows diagnostics artifact from the failing hosted run (`23669185030`). The actionable evidence is in `.tmp/m034-s11/t03/diag-download/windows/verify/run/07-hello-build.log`: the `Verify release assets (x86_64-pc-windows-msvc)` job crashes during `installed meshc.exe build installer smoke fixture` with `exit_code: -1073741819` and empty stdout/stderr. Because the task plan explicitly depends on a valid `first-green` manifest before the final assembled replay, I stopped before sourcing `.env` for the full live proof and wrote `.tmp/m034-s11/t03/final-assembly-summary.json` as a blocker artifact instead. This is a plan-invalidating blocker for the current task contract because the hosted release-lane fix is not actually retired yet.\n\n## Verification\n\nVerified that `.env` is present locally, confirmed that the `first-green` manifest is still missing, refreshed `remote-evidence` from a clean verify root, and confirmed the wrapper truthfully reports `status.txt = failed` and `current-phase.txt = remote-evidence`. Downloaded the hosted Windows diagnostics artifact and verified that `07-hello-build.log` records the access-violation crash (`exit_code: -1073741819`). Validated the generated blocker summary at `.tmp/m034-s11/t03/final-assembly-summary.json`.\n\n## Verification Evidence\n\n| # | Command | Exit Code | Verdict | Duration |\n|---|---------|-----------|---------|----------|\n| 1 | `bash -lc test -f .env` | 0 | ✅ pass | 33ms |\n| 2 | `bash -lc test -f .tmp/m034-s06/evidence/first-green/manifest.json` | 1 | ❌ fail | 94ms |\n| 3 | `bash -lc VERIFY_M034_S05_STOP_AFTER=remote-evidence bash scripts/verify-m034-s05.sh` | 1 | ❌ fail | 157996ms |\n| 4 | `bash -lc grep -Fxq 'failed' .tmp/m034-s05/verify/status.txt` | 0 | ✅ pass | 83ms |\n| 5 | `bash -lc grep -Fxq 'remote-evidence' .tmp/m034-s05/verify/current-phase.txt` | 0 | ✅ pass | 30ms |\n| 6 | `python3 -c \"from pathlib import Path; text=Path('.tmp/m034-s11/t03/diag-download/windows/verify/run/07-hello-build.log').read_text(); assert 'exit_code: -1073741819' in text\"` | 0 | ✅ pass | 116ms |\n| 7 | `python3 -c \"import json; from pathlib import Path; data=json.loads(Path('.tmp/m034-s11/t03/final-assembly-summary.json').read_text()); assert data['status']=='blocked'; assert data['blocker']['firstGreenManifestExists'] is False; assert data['remoteEvidence']['releaseWorkflow']['status']=='failed'\"` | 0 | ✅ pass | 238ms |\n\n\n## Deviations\n\nThe written task plan assumed T02 had already captured a valid `first-green` archive and that T03 could proceed straight into the full `.env`-backed replay. In local reality, `first-green` is still missing and the hosted `release.yml` reroll is red, so I stopped before the full replay and converted the task into blocker capture instead of writing stale closeout evidence.\n\n## Known Issues\n\n`release.yml` run `23669185030` is still failing on `v0.1.0` at SHA `1e83ea930fdfd346b9e56659dc50d2f759ec5da2`. The blocking hosted job is `Verify release assets (x86_64-pc-windows-msvc)`, which crashes during `installed meshc.exe build installer smoke fixture` with access-violation exit code `-1073741819`. `.tmp/m034-s06/evidence/first-green/manifest.json` does not exist, so the final S05 assembly replay cannot be claimed truthfully.\n\n## Files Created/Modified\n\n- `.tmp/m034-s11/t03/final-assembly-summary.json`\n- `.tmp/m034-s11/t03/verification-summary.json`\n- `.tmp/m034-s11/t03/diag-download/windows/verify/run/07-hello-build.log`\n- `.gsd/KNOWLEDGE.md`\n- `.gsd/milestones/M034/slices/S11/tasks/T03-SUMMARY.md`\n",
       "description": "Why: `first-green` only proves hosted freshness through `remote-evidence`. Milestone revalidation still needs the full public-surface and live publish/install replay to finish green from a fresh verify root.\n\nFiles: `scripts/verify-m034-s05.sh`, `.env`, `.tmp/m034-s05/verify/status.txt`, `.tmp/m034-s05/verify/current-phase.txt`, `.tmp/m034-s05/verify/phase-report.txt`, `.tmp/m034-s06/evidence/first-green/manifest.json`.\n\nDo:\n- Confirm the `first-green` manifest exists and still matches the expected binary and extension refs before the full replay.\n- Source `.env` in-process and run the full blocking `bash scripts/verify-m034-s05.sh` path; use the fresh phase artifacts rather than async wrappers so the evidence stays authoritative.\n- Assert `.tmp/m034-s05/verify/status.txt = ok`, `.tmp/m034-s05/verify/current-phase.txt = complete`, and passed `remote-evidence`, `public-http`, and `s01-live-proof` entries in `.tmp/m034-s05/verify/phase-report.txt`.\n- Write a compact closeout summary under `.tmp/m034-s11/t03/` linking the `first-green` manifest to the final S05 verify root and stop red if any phase regresses.\n\nDone when: the full S05 replay finishes green from a clean verify root and the final summary ties the milestone-closeout proof back to the one-shot `first-green` archive.",
       "estimate": "45m",
       "files": [
@@ -9186,6 +9196,83 @@
       "verdict": "✅ pass",
       "duration_ms": 1997,
       "created_at": "2026-03-27T21:50:27.749Z"
+    },
+    {
+      "id": 316,
+      "task_id": "T03",
+      "slice_id": "S11",
+      "milestone_id": "M034",
+      "command": "bash -lc test -f .env",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 33,
+      "created_at": "2026-03-27T22:36:19.684Z"
+    },
+    {
+      "id": 317,
+      "task_id": "T03",
+      "slice_id": "S11",
+      "milestone_id": "M034",
+      "command": "bash -lc test -f .tmp/m034-s06/evidence/first-green/manifest.json",
+      "exit_code": 1,
+      "verdict": "❌ fail",
+      "duration_ms": 94,
+      "created_at": "2026-03-27T22:36:19.684Z"
+    },
+    {
+      "id": 318,
+      "task_id": "T03",
+      "slice_id": "S11",
+      "milestone_id": "M034",
+      "command": "bash -lc VERIFY_M034_S05_STOP_AFTER=remote-evidence bash scripts/verify-m034-s05.sh",
+      "exit_code": 1,
+      "verdict": "❌ fail",
+      "duration_ms": 157996,
+      "created_at": "2026-03-27T22:36:19.684Z"
+    },
+    {
+      "id": 319,
+      "task_id": "T03",
+      "slice_id": "S11",
+      "milestone_id": "M034",
+      "command": "bash -lc grep -Fxq 'failed' .tmp/m034-s05/verify/status.txt",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 83,
+      "created_at": "2026-03-27T22:36:19.684Z"
+    },
+    {
+      "id": 320,
+      "task_id": "T03",
+      "slice_id": "S11",
+      "milestone_id": "M034",
+      "command": "bash -lc grep -Fxq 'remote-evidence' .tmp/m034-s05/verify/current-phase.txt",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 30,
+      "created_at": "2026-03-27T22:36:19.684Z"
+    },
+    {
+      "id": 321,
+      "task_id": "T03",
+      "slice_id": "S11",
+      "milestone_id": "M034",
+      "command": "python3 -c \"from pathlib import Path; text=Path('.tmp/m034-s11/t03/diag-download/windows/verify/run/07-hello-build.log').read_text(); assert 'exit_code: -1073741819' in text\"",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 116,
+      "created_at": "2026-03-27T22:36:19.684Z"
+    },
+    {
+      "id": 322,
+      "task_id": "T03",
+      "slice_id": "S11",
+      "milestone_id": "M034",
+      "command": "python3 -c \"import json; from pathlib import Path; data=json.loads(Path('.tmp/m034-s11/t03/final-assembly-summary.json').read_text()); assert data['status']=='blocked'; assert data['blocker']['firstGreenManifestExists'] is False; assert data['remoteEvidence']['releaseWorkflow']['status']=='failed'\"",
+      "exit_code": 0,
+      "verdict": "✅ pass",
+      "duration_ms": 238,
+      "created_at": "2026-03-27T22:36:19.684Z"
     }
   ]
 }

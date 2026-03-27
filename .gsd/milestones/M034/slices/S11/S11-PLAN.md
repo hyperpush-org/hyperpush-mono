@@ -19,7 +19,7 @@ Done when: the intended release-workflow patch is present locally, `bash scripts
   - Verify: bash scripts/verify-m034-s02-workflows.sh
 pwsh -NoProfile -File scripts/tests/verify-m034-s03-last-exitcode.ps1
 bash -n scripts/verify-m034-s03.sh
-- [ ] **T02: Roll the approved release fixes onto the hosted refs and capture `first-green` exactly once** — Why: R007 and the slice demo depend on fresh hosted proof, not stale local passes. This task rolls the repaired release lane onto the expected refs, refreshes `remote-evidence`, and spends the one-shot `first-green` label only after the canonical stop-after gate is actually green.
+- [x] **T02: Roll the approved release fixes onto the hosted refs and capture `first-green` exactly once** — Why: R007 and the slice demo depend on fresh hosted proof, not stale local passes. This task rolls the repaired release lane onto the expected refs, refreshes `remote-evidence`, and spends the one-shot `first-green` label only after the canonical stop-after gate is actually green.
 
 Files: `.github/workflows/release.yml`, `scripts/verify-m034-s05.sh`, `scripts/verify-m034-s06-remote-evidence.sh`, `.tmp/m034-s05/verify/remote-runs.json`, `.tmp/m034-s06/evidence/first-green/manifest.json`, `.tmp/m034-s09/rollout/target-sha.txt`.
 
@@ -34,7 +34,7 @@ Done when: `first-green` exists with `s05Status: ok`, `currentPhase: stopped-aft
   - Files: .github/workflows/release.yml, scripts/verify-m034-s05.sh, scripts/verify-m034-s06-remote-evidence.sh, .tmp/m034-s05/verify/remote-runs.json, .tmp/m034-s06/evidence/first-green/manifest.json, .tmp/m034-s09/rollout/target-sha.txt, .tmp/m034-s09/rollout/workflow-status.json
   - Verify: VERIFY_M034_S05_STOP_AFTER=remote-evidence bash scripts/verify-m034-s05.sh
 bash scripts/verify-m034-s06-remote-evidence.sh first-green
-- [ ] **T03: Run the full S05 assembly replay and seal the final closeout evidence** — Why: `first-green` only proves hosted freshness through `remote-evidence`. Milestone revalidation still needs the full public-surface and live publish/install replay to finish green from a fresh verify root.
+- [x] **T03: Confirmed T03 is blocked because `release.yml` still fails on the approved `v0.1.0` rollout ref, leaving `first-green` absent and preventing the final S05 replay.** — Why: `first-green` only proves hosted freshness through `remote-evidence`. Milestone revalidation still needs the full public-surface and live publish/install replay to finish green from a fresh verify root.
 
 Files: `scripts/verify-m034-s05.sh`, `.env`, `.tmp/m034-s05/verify/status.txt`, `.tmp/m034-s05/verify/current-phase.txt`, `.tmp/m034-s05/verify/phase-report.txt`, `.tmp/m034-s06/evidence/first-green/manifest.json`.
 
@@ -53,3 +53,4 @@ grep -Fxq 'complete' .tmp/m034-s05/verify/current-phase.txt
 grep -Fxq $'remote-evidence	passed' .tmp/m034-s05/verify/phase-report.txt
 grep -Fxq $'public-http	passed' .tmp/m034-s05/verify/phase-report.txt
 grep -Fxq $'s01-live-proof	passed' .tmp/m034-s05/verify/phase-report.txt
+  - Blocker: `release.yml` run `23669185030` is still failing on `v0.1.0` at SHA `1e83ea930fdfd346b9e56659dc50d2f759ec5da2`. The blocking hosted job is `Verify release assets (x86_64-pc-windows-msvc)`, which crashes during `installed meshc.exe build installer smoke fixture` with access-violation exit code `-1073741819`. `.tmp/m034-s06/evidence/first-green/manifest.json` does not exist, so the final S05 assembly replay cannot be claimed truthfully.
