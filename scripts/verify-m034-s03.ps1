@@ -92,8 +92,13 @@ function Invoke-LoggedCommand {
 
     Write-Host "==> [$Phase] $Display"
     & $Command 1> $stdoutPath 2> $stderrPath
-    $exitCode = $LASTEXITCODE
-    if ($null -eq $exitCode) { $exitCode = 0 }
+    $lastExitCodeVar = Get-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue
+    if ($null -eq $lastExitCodeVar) {
+        $exitCode = 0
+    } else {
+        $exitCode = $lastExitCodeVar.Value
+        if ($null -eq $exitCode) { $exitCode = 0 }
+    }
 
     Combine-CommandLog -Display $Display -StdoutPath $stdoutPath -StderrPath $stderrPath -LogPath $logPath
     $script:LastStdoutPath = $stdoutPath
@@ -292,6 +297,10 @@ function Start-LocalServer {
     }
 
     Fail-Phase 'server' 'local staged release server did not become ready' (Join-Path $RunDir 'http-server.stderr')
+}
+
+if ($env:M034_S03_LIB_ONLY -eq '1') {
+    return
 }
 
 try {

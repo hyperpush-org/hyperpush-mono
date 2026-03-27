@@ -26,6 +26,8 @@ LAST_LOG_PATH=""
 LAST_BODY_PATH=""
 LAST_HEADERS_PATH=""
 LAST_STATUS=""
+FETCH_RETRY_ATTEMPTS="${M034_S01_FETCH_RETRY_ATTEMPTS:-3}"
+FETCH_RETRY_DELAY_SECONDS="${M034_S01_FETCH_RETRY_DELAY_SECONDS:-2}"
 
 fail_phase() {
   local phase_name="$1"
@@ -210,6 +212,57 @@ fetch_url() {
   return 0
 }
 
+copy_fetch_attempt_artifacts() {
+  local base_label="$1"
+  local attempt_label="$2"
+
+  local ext
+  for ext in body headers status stderr log; do
+    local src="$RUN_DIR/${attempt_label}.${ext}"
+    local dst="$RUN_DIR/${base_label}.${ext}"
+    if [[ -f "$src" ]]; then
+      cp "$src" "$dst"
+    fi
+  done
+}
+
+fetch_required_status_with_retry() {
+  local phase_name="$1"
+  local label="$2"
+  local url="$3"
+  local expected_status="$4"
+  local timeout_seconds="$5"
+  local retry_attempts="${6:-$FETCH_RETRY_ATTEMPTS}"
+  local retry_delay_seconds="${7:-$FETCH_RETRY_DELAY_SECONDS}"
+
+  local attempt
+  for ((attempt = 1; attempt <= retry_attempts; attempt++)); do
+    local attempt_label="$label-attempt${attempt}"
+    echo "==> [${phase_name}] GET ${url} (attempt ${attempt}/${retry_attempts})"
+    if fetch_url "$attempt_label" "$url" "$timeout_seconds"; then
+      copy_fetch_attempt_artifacts "$label" "$attempt_label"
+      LAST_BODY_PATH="$RUN_DIR/${label}.body"
+      LAST_HEADERS_PATH="$RUN_DIR/${label}.headers"
+      LAST_LOG_PATH="$RUN_DIR/${label}.log"
+      if [[ "$LAST_STATUS" == "$expected_status" ]]; then
+        return 0
+      fi
+      fail_phase "$phase_name" "GET ${url} returned HTTP ${LAST_STATUS}, expected ${expected_status}" "$LAST_LOG_PATH"
+    fi
+
+    copy_fetch_attempt_artifacts "$label" "$attempt_label"
+    LAST_BODY_PATH="$RUN_DIR/${label}.body"
+    LAST_HEADERS_PATH="$RUN_DIR/${label}.headers"
+    LAST_LOG_PATH="$RUN_DIR/${label}.log"
+
+    if (( attempt < retry_attempts )); then
+      sleep "$retry_delay_seconds"
+    fi
+  done
+
+  fail_phase "$phase_name" "GET ${url} timed out or failed to connect after ${retry_attempts} attempts" "$LAST_LOG_PATH"
+}
+
 fetch_required_status() {
   local phase_name="$1"
   local label="$2"
@@ -321,6 +374,10 @@ post_duplicate_publish() {
   LAST_LOG_PATH="$log_path"
   return 0
 }
+
+if [[ "${M034_S01_LIB_ONLY:-0}" == "1" ]]; then
+  return 0 2>/dev/null || exit 0
+fi
 
 if [[ -z "${MESH_PUBLISH_OWNER:-}" ]]; then
   echo "MESH_PUBLISH_OWNER is required" >&2
@@ -466,13 +523,13 @@ PY
 )"
 cp "$LAST_STDOUT_PATH" "$RUN_DIR/publish.json"
 
-fetch_required_status metadata 04-package-meta "$PACKAGE_URL" 200 20
+fetch_required_status_with_retry metadata 04-package-meta "$PACKAGE_URL" 200 20
 cp "$LAST_BODY_PATH" "$RUN_DIR/package.json"
-fetch_required_status metadata 05-version-meta "$VERSION_URL" 200 20
+fetch_required_status_with_retry metadata 05-version-meta "$VERSION_URL" 200 20
 cp "$LAST_BODY_PATH" "$RUN_DIR/version.json"
-fetch_required_status metadata 06-versions "$VERSIONS_URL" 200 20
+fetch_required_status_with_retry metadata 06-versions "$VERSIONS_URL" 200 20
 cp "$LAST_BODY_PATH" "$RUN_DIR/versions.json"
-fetch_required_status metadata 07-search "$SEARCH_URL" 200 20
+fetch_required_status_with_retry metadata 07-search "$SEARCH_URL" 200 20
 cp "$LAST_BODY_PATH" "$RUN_DIR/search.json"
 fetch_required_status download 08-download "$DOWNLOAD_URL" 200 20
 cp "$LAST_BODY_PATH" "$RUN_DIR/download.tar.gz"
