@@ -424,7 +424,8 @@ fi
 run_command contract 00a-docs-scoped-key "grep -nF '\"your-login/your-package\" = \"1.0.0\"' website/docs/docs/tooling/index.md" grep -nF '"your-login/your-package" = "1.0.0"' website/docs/docs/tooling/index.md
 run_command contract 00b-named-install-contract "grep -nE 'does not edit mesh.toml|updates mesh.lock' website/docs/docs/tooling/index.md compiler/meshpkg/src/install.rs" grep -nE 'does not edit mesh.toml|updates mesh.lock' website/docs/docs/tooling/index.md compiler/meshpkg/src/install.rs
 
-run_command tooling 01-build-tooling "cargo build -q -p meshpkg -p meshc" cargo build -q -p meshpkg -p meshc
+run_command tooling 01-build-tooling "cargo build -q -p mesh-rt -p meshpkg -p meshc" cargo build -q -p mesh-rt -p meshpkg -p meshc
+[[ -f "$ROOT_DIR/target/debug/libmesh_rt.a" ]] || fail_phase "tooling" "mesh-rt static library was not built" "$LAST_LOG_PATH"
 [[ -x "$MESHPKG_BIN" ]] || fail_phase "tooling" "meshpkg binary was not built" "$LAST_LOG_PATH"
 [[ -x "$MESHC_BIN" ]] || fail_phase "tooling" "meshc binary was not built" "$LAST_LOG_PATH"
 

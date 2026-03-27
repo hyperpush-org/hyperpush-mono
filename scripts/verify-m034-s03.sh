@@ -295,7 +295,8 @@ setup_local_release_assets() {
   MESHC_ARCHIVE="meshc-v${VERSION}-${TARGET}.tar.gz"
   MESHPKG_ARCHIVE="meshpkg-v${VERSION}-${TARGET}.tar.gz"
 
-  run_command tooling 05-build-tooling "cargo build -q -p meshc -p meshpkg" cargo build -q -p meshc -p meshpkg
+  run_command tooling 05-build-tooling "cargo build -q -p mesh-rt -p meshc -p meshpkg" cargo build -q -p mesh-rt -p meshc -p meshpkg
+  [[ -f "$ROOT_DIR/target/debug/libmesh_rt.a" ]] || fail_phase "tooling" "mesh-rt static library was not built" "$LAST_LOG_PATH"
   [[ -x "$MESHC_BIN" ]] || fail_phase "tooling" "meshc binary was not built" "$LAST_LOG_PATH"
   [[ -x "$MESHPKG_BIN" ]] || fail_phase "tooling" "meshpkg binary was not built" "$LAST_LOG_PATH"
 
