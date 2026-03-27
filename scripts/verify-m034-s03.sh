@@ -403,8 +403,8 @@ TARGET="$(detect_target)"
 
 run_command contract 01-shell-diff "diff -u tools/install/install.sh website/docs/public/install.sh" diff -u "$REPO_INSTALL_SCRIPT" "$INSTALL_SCRIPT"
 run_command contract 02-ps1-diff "diff -u tools/install/install.ps1 website/docs/public/install.ps1" diff -u "$REPO_INSTALL_PS1" "$INSTALL_PS1"
-run_command contract 03-shell-hooks "rg -n 'MESH_INSTALL_RELEASE_API_URL|MESH_INSTALL_RELEASE_BASE_URL|MESH_INSTALL_STRICT_PROOF' website/docs/public/install.sh" rg -n 'MESH_INSTALL_RELEASE_API_URL|MESH_INSTALL_RELEASE_BASE_URL|MESH_INSTALL_STRICT_PROOF' website/docs/public/install.sh
-run_command contract 04-ps1-contract "rg -n 'snowdamiz/mesh-lang|meshpkg' website/docs/public/install.ps1" rg -n 'snowdamiz/mesh-lang|meshpkg' website/docs/public/install.ps1
+run_command contract 03-shell-hooks "grep -nE 'MESH_INSTALL_RELEASE_API_URL|MESH_INSTALL_RELEASE_BASE_URL|MESH_INSTALL_STRICT_PROOF' website/docs/public/install.sh" grep -nE 'MESH_INSTALL_RELEASE_API_URL|MESH_INSTALL_RELEASE_BASE_URL|MESH_INSTALL_STRICT_PROOF' website/docs/public/install.sh
+run_command contract 04-ps1-contract "grep -nE 'snowdamiz/mesh-lang|meshpkg' website/docs/public/install.ps1" grep -nE 'snowdamiz/mesh-lang|meshpkg' website/docs/public/install.ps1
 
 if [[ -n "$PREBUILT_RELEASE_DIR" ]]; then
   setup_prebuilt_release_assets "$PREBUILT_RELEASE_DIR"

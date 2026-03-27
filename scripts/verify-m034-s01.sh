@@ -421,8 +421,8 @@ if ! grep -Fq "\"$PACKAGE_NAME\" = \"$PROOF_VERSION\"" "$NAMED_INSTALL_WORK_DIR/
   fail_phase "render" "named-install manifest did not preserve the quoted scoped dependency key" "$RUN_DIR/00-context.log"
 fi
 
-run_command contract 00a-docs-scoped-key "rg -n '\"your-login/your-package\" = \"1.0.0\"' website/docs/docs/tooling/index.md" rg -n '"your-login/your-package" = "1.0.0"' website/docs/docs/tooling/index.md
-run_command contract 00b-named-install-contract "rg -n 'does not edit mesh.toml|updates mesh.lock' website/docs/docs/tooling/index.md compiler/meshpkg/src/install.rs" rg -n 'does not edit mesh.toml|updates mesh.lock' website/docs/docs/tooling/index.md compiler/meshpkg/src/install.rs
+run_command contract 00a-docs-scoped-key "grep -nF '\"your-login/your-package\" = \"1.0.0\"' website/docs/docs/tooling/index.md" grep -nF '"your-login/your-package" = "1.0.0"' website/docs/docs/tooling/index.md
+run_command contract 00b-named-install-contract "grep -nE 'does not edit mesh.toml|updates mesh.lock' website/docs/docs/tooling/index.md compiler/meshpkg/src/install.rs" grep -nE 'does not edit mesh.toml|updates mesh.lock' website/docs/docs/tooling/index.md compiler/meshpkg/src/install.rs
 
 run_command tooling 01-build-tooling "cargo build -q -p meshpkg -p meshc" cargo build -q -p meshpkg -p meshc
 [[ -x "$MESHPKG_BIN" ]] || fail_phase "tooling" "meshpkg binary was not built" "$LAST_LOG_PATH"
