@@ -340,7 +340,7 @@ pub fn compile_to_binary(
         build_trace::set_stage("lower-to-mir");
         let mir = lower_to_mir_module(parse, typeck)?;
 
-        build_trace::set_stage("create-codegen");
+        build_trace::set_stage("pre-llvm-init");
         let context = Context::create();
         let mut codegen = CodeGen::new(&context, "mesh_module", opt_level, target_triple)?;
 
@@ -411,7 +411,7 @@ pub fn compile_mir_to_binary(
     let link_plan = link::prepare_link(target_triple, rt_lib_path)?;
 
     let result: Result<(), String> = (|| -> Result<(), String> {
-        build_trace::set_stage("create-codegen");
+        build_trace::set_stage("pre-llvm-init");
         let context = Context::create();
         let mut codegen = CodeGen::new(&context, "mesh_module", opt_level, target_triple)?;
 

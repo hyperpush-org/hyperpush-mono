@@ -118,16 +118,6 @@ jobs:
 
       # ── Platform dependencies ─────────────────────────────────────
 
-      - name: Install libxml2 (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          vcpkg install libxml2:x64-windows-static
-          $libdir = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows-static\lib"
-          # LLVM expects libxml2s.lib (static suffix), vcpkg produces libxml2.lib
-          Copy-Item "$libdir\libxml2.lib" "$libdir\libxml2s.lib"
-          echo "LIB=$libdir;$env:LIB" >> $env:GITHUB_ENV
-
       # ── Rust Toolchain ────────────────────────────────────────────
 
       - name: Install Rust
@@ -176,7 +166,6 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
         env:
           LLVM_SYS_211_PREFIX: ${{ env.LLVM_SYS_211_PREFIX }}
-          RUSTFLAGS: -Clink-args=/FORCE:MULTIPLE
 
       # ── Strip & Package ───────────────────────────────────────────
 
