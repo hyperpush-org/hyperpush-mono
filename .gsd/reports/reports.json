@@ -2,7 +2,7 @@
   "version": 1,
   "projectName": "mesh-lang",
   "projectPath": "/Users/sn0w/Documents/dev/mesh-lang",
-  "gsdVersion": "2.43.0",
+  "gsdVersion": "2.57.0",
   "entries": [
     {
       "filename": "M032-2026-03-25T01-01-09.html",
@@ -19,6 +19,22 @@
       "doneMilestones": 25,
       "totalMilestones": 30,
       "phase": "needs-discussion"
+    },
+    {
+      "filename": "M034-2026-03-28T01-04-36.html",
+      "generatedAt": "2026-03-28T01:04:36.206Z",
+      "milestoneId": "M034",
+      "milestoneTitle": "M034: Delivery Truth & Public Release Confidence",
+      "label": "M034: M034: Delivery Truth & Public Release Confidence",
+      "kind": "milestone",
+      "totalCost": 393.84283524999967,
+      "totalTokens": 734277066,
+      "totalDuration": 169860638,
+      "doneSlices": 50,
+      "totalSlices": 50,
+      "doneMilestones": 27,
+      "totalMilestones": 34,
+      "phase": "pre-planning"
     }
   ]
 }
