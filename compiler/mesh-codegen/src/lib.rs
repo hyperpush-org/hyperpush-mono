@@ -502,12 +502,13 @@ pub fn merge_mir_modules(
     let mut seen_structs: HashSet<String> = HashSet::new();
     let mut seen_sum_types: HashSet<String> = HashSet::new();
 
-    // Process entry module first (its main() takes priority)
+    // Process entry module first so its lowered `mesh_main` wins if multiple
+    // modules define a source-level `fn main()`.
     if let Some(entry) = modules.get(entry_module_idx) {
         merged.entry_function = entry.entry_function.clone();
     }
 
-    for module in &modules {
+    let mut merge_module = |module: &mir::MirModule| {
         for func in &module.functions {
             if seen_functions.insert(func.name.clone()) {
                 merged.functions.push(func.clone());
@@ -529,6 +530,17 @@ pub fn merge_mir_modules(
                 .entry(key.clone())
                 .or_insert_with(|| value.clone());
         }
+    };
+
+    if let Some(entry) = modules.get(entry_module_idx) {
+        merge_module(entry);
+    }
+
+    for (idx, module) in modules.iter().enumerate() {
+        if idx == entry_module_idx {
+            continue;
+        }
+        merge_module(module);
     }
 
     // Run monomorphization on the merged module to eliminate unreachable
@@ -545,8 +557,61 @@ pub fn merge_mir_modules(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mir::{MirExpr, MirFunction, MirModule, MirType};
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn merge_mir_modules_prefers_entry_module_mesh_main_when_multiple_modules_define_main() {
+        let merged = merge_mir_modules(
+            vec![
+                MirModule {
+                    functions: vec![MirFunction {
+                        name: "mesh_main".to_string(),
+                        params: Vec::new(),
+                        return_type: MirType::Int,
+                        body: MirExpr::IntLit(1, MirType::Int),
+                        is_closure_fn: false,
+                        captures: Vec::new(),
+                        has_tail_calls: false,
+                    }],
+                    structs: Vec::new(),
+                    sum_types: Vec::new(),
+                    entry_function: Some("mesh_main".to_string()),
+                    service_dispatch: std::collections::HashMap::new(),
+                },
+                MirModule {
+                    functions: vec![MirFunction {
+                        name: "mesh_main".to_string(),
+                        params: Vec::new(),
+                        return_type: MirType::Int,
+                        body: MirExpr::IntLit(2, MirType::Int),
+                        is_closure_fn: false,
+                        captures: Vec::new(),
+                        has_tail_calls: false,
+                    }],
+                    structs: Vec::new(),
+                    sum_types: Vec::new(),
+                    entry_function: Some("mesh_main".to_string()),
+                    service_dispatch: std::collections::HashMap::new(),
+                },
+            ],
+            1,
+            &[],
+        );
+
+        let entry = merged
+            .functions
+            .iter()
+            .find(|function| function.name == "mesh_main")
+            .expect("merged MIR should retain mesh_main");
+
+        assert_eq!(merged.entry_function.as_deref(), Some("mesh_main"));
+        match &entry.body {
+            MirExpr::IntLit(value, MirType::Int) => assert_eq!(*value, 2),
+            other => panic!("expected entry mesh_main body from entry module, got {other:?}"),
+        }
+    }
 
     #[test]
     fn llvm_codegen_prefers_local_string_binding_over_same_named_function() {

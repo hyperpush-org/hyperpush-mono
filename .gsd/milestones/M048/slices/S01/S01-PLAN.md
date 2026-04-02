@@ -12,7 +12,7 @@
   - Estimate: 90m
   - Files: compiler/meshc/src/test_runner.rs, compiler/meshc/tests/tooling_e2e.rs, compiler/mesh-pkg/src/manifest.rs
   - Verify: cargo test -p meshc --test tooling_e2e test_test_ -- --nocapture
-- [ ] **T03: Add a dedicated S01 end-to-end proof rail for default and override entrypoints** — Create one named acceptance target that proves build and test discovery stay aligned for default projects and manifest-override projects, including the no-root-main cases that currently fail or false-green.
+- [x] **T03: Added the M048/S01 acceptance rail and fixed MIR merge so manifest-selected entrypoints win end-to-end.** — Create one named acceptance target that proves build and test discovery stay aligned for default projects and manifest-override projects, including the no-root-main cases that currently fail or false-green.
   - Estimate: 75m
   - Files: compiler/meshc/tests/e2e_m048_s01.rs
   - Verify: cargo test -p meshc --test e2e_m048_s01 -- --nocapture
