@@ -9,15 +9,15 @@ VS Code is a **first-class** editor host in the public Mesh tooling contract. Th
 
 ## Features
 
-- **Syntax Highlighting** -- shared TextMate grammar with verified scoping for keywords, types, literals, comments, module-qualified calls, and both `#{...}` plus `${...}` interpolation in double- and triple-quoted strings
+- **Syntax Highlighting** -- shared TextMate grammar with verified scoping for keywords, `@cluster` / `@cluster(N)` decorators, types, literals, comments, module-qualified calls, and both `#{...}` plus `${...}` interpolation in double- and triple-quoted strings
 - **Language Configuration** -- bracket matching, auto-closing pairs, and Mesh-specific indentation for `do`/`end` blocks
 - **Verified LSP Diagnostics** -- real-time parse and type errors from the Mesh compiler
 - **Verified Hover** -- inferred type information on hover
-- **Verified Go to Definition** -- jump to definitions across files
+- **Verified Go to Definition** -- same-file go-to-definition inside backend-shaped project code
 - **Verified Document Formatting** -- format the current Mesh document through `meshc lsp`
 - **Verified Signature Help** -- parameter hints with active-parameter tracking for function calls
 
-The current transport-level regression suite exercises the LSP path over real stdio JSON-RPC against `reference-backend/`, so the documented editor experience is tied to the same backend-shaped proof as the CLI tooling. The bundled syntax grammar is also verified through the shared VS Code/docs parity corpus, including `#{...}` and `${...}` inside double- and triple-quoted strings.
+The current transport-level regression suite exercises the LSP path over real stdio JSON-RPC against `reference-backend/`, so the documented editor experience is tied to the same backend-shaped proof as the CLI tooling. The editor-host smoke remains intentionally bounded to same-file definition on `reference-backend/api/jobs.mpl` plus clean diagnostics and hover for a manifest-first override-entry fixture rooted by `mesh.toml` + `lib/start.mpl`. The bundled syntax grammar is also verified through the shared VS Code/docs parity corpus, including `@cluster`, `@cluster(N)`, and both `#{...}` plus `${...}` inside double- and triple-quoted strings.
 
 ## Installation
 

@@ -74,6 +74,15 @@ meshc --version
 meshpkg --version
 ```
 
+Refresh an installer-backed toolchain in place with either binary:
+
+```bash
+meshc update
+meshpkg update
+```
+
+Both commands rerun the canonical installer path and refresh both installed tools together.
+
 **Alternative: build from source (contributors / unsupported targets; Rust + LLVM required):**
 
 Source builds are still supported, but they are an explicit alternative workflow rather than the public install path proven by the release process.
@@ -85,6 +94,12 @@ cargo install --path compiler/meshc
 cargo install --path compiler/meshpkg
 ```
 
+When you need the assembled repo-root proof for override-entry projects, toolchain updates, grammar parity, and the refreshed public touchpoints, run:
+
+```bash
+bash scripts/verify-m048-s05.sh
+```
+
 ### 2. Optional: Scaffold a Project
 
 ```bash
@@ -92,7 +107,16 @@ meshc init hello_mesh
 cd hello_mesh
 ```
 
-This creates a Mesh project directory with a `mesh.toml` manifest and `main.mpl` entrypoint.
+This creates a Mesh project directory with a `mesh.toml` manifest and `main.mpl`; `main.mpl` remains the default executable entrypoint.
+
+When you need a different startup file, keep the override project-root-relative and set the optional `[package].entrypoint = "lib/start.mpl"` in `mesh.toml`:
+
+```toml
+[package]
+name = "hello_mesh"
+version = "0.1.0"
+entrypoint = "lib/start.mpl"
+```
 
 If you want the public clustered-app scaffold instead of the hello-world app, generate it explicitly:
 

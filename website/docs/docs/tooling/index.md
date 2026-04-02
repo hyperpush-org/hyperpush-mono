@@ -36,6 +36,17 @@ meshc --version
 meshpkg --version
 ```
 
+### Update an installed toolchain
+
+If you installed Mesh through the public installers, refresh both binaries in place with either command:
+
+```bash
+meshc update
+meshpkg update
+```
+
+Both commands rerun the canonical installer path and refresh both `meshc` and `meshpkg` together.
+
 For the named backend proof behind this public install contract, see [Production Backend Proof](/docs/production-backend-proof/) and `reference-backend/README.md`.
 
 If you are contributing to Mesh or need an unsupported target, build from source instead; treat that as an alternative workflow, not the primary public install contract.
@@ -76,6 +87,14 @@ The verifier persists the candidate and hosted-run evidence under:
 
 - `.tmp/m034-s05/verify/candidate-tags.json`
 - `.tmp/m034-s05/verify/remote-runs.json`
+
+## Assembled contract verifier
+
+When you need the retained repo-root proof for installer-backed updates, optional override entrypoints, package publish/archive truth, shared grammar parity, and the bounded editor surface, run:
+
+```bash
+bash scripts/verify-m048-s05.sh
+```
 
 ## Formatter
 
@@ -252,6 +271,17 @@ version = "0.1.0"
 [dependencies]
 ```
 
+`main.mpl` stays the default executable entrypoint. When you need a different startup file, add the optional project-root-relative `[package].entrypoint = "lib/start.mpl"` override:
+
+```toml
+[package]
+name = "my_app"
+version = "0.1.0"
+entrypoint = "lib/start.mpl"
+
+[dependencies]
+```
+
 The manifest supports both **git** and **path** dependencies:
 
 ```toml
@@ -321,6 +351,8 @@ meshpkg publish
 ```
 
 This reads `mesh.toml`, creates a `.tar.gz` tarball, computes the SHA-256 checksum, and uploads to the registry. Publishing the same name+version twice is rejected (HTTP 409).
+
+The publish archive preserves project-root-relative `.mpl` paths, including nested sources like `features/workflows/renderer.mpl` and override entries like `lib/start.mpl`, while still keeping `main.mpl` when it exists. Only visible source files are archived: hidden paths and test-only files such as `*.test.mpl` are excluded from the tarball.
 
 ### Installing a Package
 
@@ -409,7 +441,7 @@ The JSON-RPC transport is shared across editors, but Mesh only publishes repo-ow
 
 ### VS Code
 
-VS Code is a first-class editor host in the public Mesh tooling contract. The official Mesh extension provides syntax highlighting plus the `meshc lsp` features that now have transport-level proof on `reference-backend/`: diagnostics, hover, go-to-definition, document formatting, and signature help. The extension is located in the `tools/editors/vscode-mesh/` directory of the Mesh repository.
+VS Code is a first-class editor host in the public Mesh tooling contract. The official Mesh extension provides syntax highlighting plus the `meshc lsp` features that now have transport-level proof on `reference-backend/`: diagnostics, hover, go-to-definition, document formatting, and signature help. The current repo-owned proof stays intentionally bounded to same-file go-to-definition on `reference-backend/api/jobs.mpl`, clean diagnostics plus hover for a manifest-first override-entry fixture rooted by `mesh.toml` + `lib/start.mpl`, and shared grammar parity for `@cluster`, `@cluster(N)`, `#{...}`, and `${...}`. The extension is located in the `tools/editors/vscode-mesh/` directory of the Mesh repository.
 
 #### Features
 
