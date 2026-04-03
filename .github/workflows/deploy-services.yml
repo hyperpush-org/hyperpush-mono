@@ -2,6 +2,7 @@ name: Deploy Services to Fly.io
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 

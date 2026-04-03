@@ -278,8 +278,8 @@ unless on_block.keys == ["push", "workflow_dispatch"]
 end
 
 push_block = on_block["push"]
-unless push_block.is_a?(Hash) && push_block["tags"] == ["v*"]
-  errors << "deploy-services workflow push trigger must stay limited to v* tags"
+unless push_block.is_a?(Hash) && push_block["branches"] == ["main"] && push_block["tags"] == ["v*"]
+  errors << "deploy-services workflow push trigger must keep main branches and v* tags"
 end
 
 workflow_dispatch_block = on_block["workflow_dispatch"]
