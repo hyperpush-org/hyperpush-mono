@@ -1,6 +1,8 @@
 ---
 title: Production Backend Proof
 description: Canonical proof surface for Mesh's real backend package, staged deploy path, supervision signals, and documentation-truth checks
+prev: false
+next: false
 ---
 
 # Production Backend Proof

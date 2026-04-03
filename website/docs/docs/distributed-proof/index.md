@@ -1,6 +1,8 @@
 ---
 title: Distributed Proof
 description: Public proof map for the scaffold/examples-first clustered story, the serious PostgreSQL Todo starter, the honest SQLite local starter, and the lower-level retained fixture rails behind them.
+prev: false
+next: false
 ---
 
 # Distributed Proof

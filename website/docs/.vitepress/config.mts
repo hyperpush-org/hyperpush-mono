@@ -85,7 +85,6 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/docs/getting-started/', icon: 'BookOpen' } as any,
             { text: 'Clustered Example', link: '/docs/getting-started/clustered-example/', icon: 'Network' } as any,
-            { text: 'Production Backend Proof', link: '/docs/production-backend-proof/', icon: 'ShieldCheck' } as any,
           ],
         },
         {
@@ -117,7 +116,6 @@ export default defineConfig({
           collapsed: false,
           items: [
             { text: 'Distributed Actors', link: '/docs/distributed/', icon: 'Network' } as any,
-            { text: 'Distributed Proof', link: '/docs/distributed-proof/', icon: 'ShieldCheck' } as any,
           ],
         },
         {
@@ -140,6 +138,24 @@ export default defineConfig({
           collapsed: false,
           items: [
             { text: 'Syntax Cheatsheet', link: '/docs/cheatsheet/', icon: 'ClipboardList' } as any,
+          ],
+        },
+        {
+          text: 'Proof Surfaces',
+          collapsed: false,
+          items: [
+            {
+              text: 'Distributed Proof',
+              link: '/docs/distributed-proof/',
+              icon: 'ShieldCheck',
+              includeInFooter: false,
+            } as any,
+            {
+              text: 'Production Backend Proof',
+              link: '/docs/production-backend-proof/',
+              icon: 'ShieldCheck',
+              includeInFooter: false,
+            } as any,
           ],
         },
       ],

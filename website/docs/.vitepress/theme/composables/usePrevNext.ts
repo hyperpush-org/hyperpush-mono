@@ -1,11 +1,11 @@
 import { computed } from 'vue'
 import { useData } from 'vitepress'
-import { isActive } from './useSidebar'
 
 interface FlatLink {
   text: string
   link: string
   docFooterText?: string
+  includeInFooter?: boolean
 }
 
 export function usePrevNext() {
@@ -19,14 +19,18 @@ export function usePrevNext() {
     const relativePath = page.value.relativePath
     const sidebar = resolveSidebar(sidebarConfig, relativePath)
 
-    // Flatten all links from sidebar
-    const links = flattenSidebarLinks(sidebar)
+    // Flatten all footer-eligible links from sidebar
+    const links = flattenSidebarLinks(sidebar).filter(
+      (link) => link.includeInFooter !== false,
+    )
     const candidates = uniqBy(links, (l) => l.link.replace(/[?#].*$/, ''))
 
-    // Find current page index
+    // Find current page index using exact page matching
     const index = candidates.findIndex((link) =>
-      isActive(page.value.relativePath, link.link),
+      isSamePage(page.value.relativePath, link.link),
     )
+
+    if (index === -1) return { prev: undefined, next: undefined }
 
     return {
       prev:
@@ -60,6 +64,7 @@ function flattenSidebarLinks(items: any[]): FlatLink[] {
           text: item.text,
           link: item.link,
           docFooterText: item.docFooterText,
+          includeInFooter: item.includeInFooter,
         })
       }
       if (item.items) recurse(item.items)
@@ -78,6 +83,23 @@ function resolveSidebar(sidebar: any, relativePath: string): any[] {
     .sort((a, b) => b.split('/').length - a.split('/').length)
     .find((d) => path.startsWith(d.startsWith('/') ? d : `/${d}`))
   return dir ? sidebar[dir] : []
+}
+
+function normalizeDocPath(path: string): string {
+  return ensureStartingSlash(
+    path.replace(/(index)?\.(md|html)$/, '').replace(/\/$/, ''),
+  )
+}
+
+function isSamePage(currentPath: string, candidatePath?: string): boolean {
+  if (!candidatePath) return false
+  const normalizedCurrent = normalizeDocPath(currentPath)
+  const normalizedCandidate = normalizeDocPath(candidatePath)
+  return normalizedCurrent === normalizedCandidate
+}
+
+function ensureStartingSlash(path: string): string {
+  return path.startsWith('/') ? path : `/${path}`
 }
 
 function uniqBy<T>(arr: T[], fn: (item: T) => string): T[] {
