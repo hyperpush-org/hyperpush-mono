@@ -47,9 +47,26 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
+  deploy-hyperpush-landing:
+    name: Deploy hyperpush landing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy landing to Fly.io
+        run: flyctl deploy --remote-only
+        working-directory: mesher/landing
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
   health-check:
     name: Post-deploy health checks
-    needs: [deploy-registry, deploy-packages-website]
+    needs: [deploy-registry, deploy-packages-website, deploy-hyperpush-landing]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -62,3 +79,12 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/lib/m034_public_surface_contract.py public-http --root "$GITHUB_WORKSPACE" --artifact-dir "$RUNNER_TEMP/m034-public-surface-contract"
+
+      - name: Verify hyperpush landing
+        shell: bash
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          curl -fsSL https://hyperpush-landing.fly.dev > "$RUNNER_TEMP/hyperpush-landing.html"
+          grep -q "hyperpush" "$RUNNER_TEMP/hyperpush-landing.html"
+          grep -q "Open Source Error Tracking" "$RUNNER_TEMP/hyperpush-landing.html"

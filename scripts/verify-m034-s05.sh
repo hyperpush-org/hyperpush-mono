@@ -653,11 +653,13 @@ workflow_specs = [
         'requiredJobs': [
             'Deploy mesh-registry',
             'Deploy mesh-packages website',
+            'Deploy hyperpush landing',
             'Post-deploy health checks',
         ],
         'requiredSteps': {
             'Post-deploy health checks': [
                 'Verify public surface contract',
+                'Verify hyperpush landing',
             ],
         },
     },

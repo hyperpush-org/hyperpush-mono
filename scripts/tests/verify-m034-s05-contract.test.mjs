@@ -113,8 +113,9 @@ test("hosted workflows consume the stronger shared contract and reject the old s
   assert.doesNotMatch(deployWorkflow, /DIST_ROOT="website\/docs\/\.vitepress\/dist"/);
   assert.doesNotMatch(deployWorkflow, /missing exact public proof markers/);
 
+  assert.match(deployServicesWorkflow, /deploy-hyperpush-landing:[\s\S]*name: Deploy hyperpush landing[\s\S]*working-directory: mesher\/landing/);
   assert.match(deployServicesWorkflow, /- name: Verify public surface contract[\s\S]*python3 scripts\/lib\/m034_public_surface_contract\.py public-http/);
-  assert.match(deployServicesWorkflow, /health-check:[\s\S]*- name: Checkout[\s\S]*- name: Verify public surface contract/);
+  assert.match(deployServicesWorkflow, /health-check:[\s\S]*- name: Checkout[\s\S]*- name: Verify public surface contract[\s\S]*- name: Verify hyperpush landing/);
   for (const legacy of [
     "Check registry package search proof",
     "Check packages detail page proof",
@@ -126,8 +127,9 @@ test("hosted workflows consume the stronger shared contract and reject the old s
     assert.ok(!deployServicesWorkflow.includes(legacy), `deploy-services.yml must not keep legacy inline proof: ${legacy}`);
   }
 
-  assert.match(s05Verifier, /'Post-deploy health checks': \[[\s\S]*'Verify public surface contract'/);
+  assert.match(s05Verifier, /'Post-deploy health checks': \[[\s\S]*'Verify public surface contract'[\s\S]*'Verify hyperpush landing'/);
   assert.match(workflowVerifier, /Verify public surface contract step must call the shared helper/);
+  assert.match(workflowVerifier, /health-check job must verify the hyperpush landing deployment/);
 });
 
 test("remote evidence resolves expected remote refs and records freshness failures", () => {

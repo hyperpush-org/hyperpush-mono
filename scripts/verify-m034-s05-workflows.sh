@@ -301,11 +301,11 @@ errors << "deploy-services workflow concurrency group must stay deploy-fly-${{ g
 errors << "deploy-services workflow concurrency must keep cancel-in-progress false" unless concurrency["cancel-in-progress"] == false
 
 jobs = workflow["jobs"]
-unless jobs.is_a?(Hash) && jobs.keys == ["deploy-registry", "deploy-packages-website", "health-check"]
-  errors << "deploy-services workflow must define deploy-registry, deploy-packages-website, and health-check jobs"
+unless jobs.is_a?(Hash) && jobs.keys == ["deploy-registry", "deploy-packages-website", "deploy-hyperpush-landing", "health-check"]
+  errors << "deploy-services workflow must define deploy-registry, deploy-packages-website, deploy-hyperpush-landing, and health-check jobs"
 end
 
-verify_fly_deploy_job = lambda do |job_key, expected_name, expected_dir|
+verify_fly_deploy_job = lambda do |job_key, expected_name, expected_dir, deploy_step_name|
   job = jobs.is_a?(Hash) ? jobs[job_key] : nil
   unless job.is_a?(Hash)
     errors << "workflow must keep the #{job_key} job"
@@ -338,7 +338,6 @@ verify_fly_deploy_job = lambda do |job_key, expected_name, expected_dir|
     errors << "#{job_key} Setup flyctl step must use superfly/flyctl-actions/setup-flyctl@master"
   end
 
-  deploy_step_name = job_key == "deploy-registry" ? "Deploy registry to Fly.io" : "Deploy packages website to Fly.io"
   deploy_step = find_step.call(deploy_step_name)
   if deploy_step.is_a?(Hash)
     errors << "#{job_key} deploy step must shell out to flyctl deploy --remote-only" unless deploy_step["run"].to_s.strip == "flyctl deploy --remote-only"
@@ -349,15 +348,16 @@ verify_fly_deploy_job = lambda do |job_key, expected_name, expected_dir|
   end
 end
 
-verify_fly_deploy_job.call("deploy-registry", "Deploy mesh-registry", "registry")
-verify_fly_deploy_job.call("deploy-packages-website", "Deploy mesh-packages website", "packages-website")
+verify_fly_deploy_job.call("deploy-registry", "Deploy mesh-registry", "registry", "Deploy registry to Fly.io")
+verify_fly_deploy_job.call("deploy-packages-website", "Deploy mesh-packages website", "packages-website", "Deploy packages website to Fly.io")
+verify_fly_deploy_job.call("deploy-hyperpush-landing", "Deploy hyperpush landing", "mesher/landing", "Deploy landing to Fly.io")
 
 health = jobs.is_a?(Hash) ? jobs["health-check"] : nil
 if health.is_a?(Hash)
   errors << "health-check job name must stay 'Post-deploy health checks'" unless health["name"] == "Post-deploy health checks"
-  expected_needs = %w[deploy-packages-website deploy-registry]
+  expected_needs = %w[deploy-hyperpush-landing deploy-packages-website deploy-registry]
   unless health["needs"].is_a?(Array) && health["needs"].sort == expected_needs.sort
-    errors << "health-check job must depend on deploy-registry and deploy-packages-website"
+    errors << "health-check job must depend on deploy-registry, deploy-packages-website, and deploy-hyperpush-landing"
   end
   errors << "health-check job must stay on ubuntu-latest" unless health["runs-on"] == "ubuntu-latest"
   unless health["timeout-minutes"].is_a?(Integer) && health["timeout-minutes"] >= 15
@@ -389,6 +389,19 @@ if health.is_a?(Hash)
     errors << "Verify public surface contract step must call the shared helper" unless verify_run.include?(expected_command)
   else
     errors << "health-check job must call the shared public surface contract helper"
+  end
+
+  verify_landing = find_step.call("Verify hyperpush landing")
+  if verify_landing.is_a?(Hash)
+    errors << "Verify hyperpush landing step must run under bash" unless verify_landing["shell"] == "bash"
+    unless verify_landing["timeout-minutes"].is_a?(Integer) && verify_landing["timeout-minutes"] >= 3
+      errors << "Verify hyperpush landing step must declare timeout-minutes"
+    end
+    verify_landing_run = verify_landing["run"].to_s
+    errors << "Verify hyperpush landing step must probe the Fly hostname" unless verify_landing_run.include?("https://hyperpush-landing.fly.dev")
+    errors << "Verify hyperpush landing step must assert the hyperpush marker" unless verify_landing_run.include?("grep -q \"hyperpush\"")
+  else
+    errors << "health-check job must verify the hyperpush landing deployment"
   end
 else
   errors << "deploy-services workflow must keep the health-check job"

@@ -1,0 +1,27 @@
+app = 'hyperpush-landing'
+primary_region = 'iad'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[build.args]
+  NEXT_PUBLIC_SITE_URL = 'https://hyperpush.dev'
+  NEXT_PUBLIC_DISCORD_URL = 'https://discord.gg/hyperpush'
+  NEXT_PUBLIC_WAITLIST_EMAIL = 'waitlist@hyperpush.dev'
+  NEXT_PUBLIC_FORMSPREE_ID = ''
+
+[env]
+  HOSTNAME = '0.0.0.0'
+  PORT = '3000'
+  NEXT_TELEMETRY_DISABLED = '1'
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'off'
+  min_machines_running = 1
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
