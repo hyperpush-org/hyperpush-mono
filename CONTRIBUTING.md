@@ -25,6 +25,18 @@ This repository contains the Mesh language, compiler/runtime/tooling crates, sta
 - Node.js and npm for `website/` and `packages-website/`
 - Docker for starter, Postgres, and clustered/container verification flows
 
+### Recommended repo hook setup
+
+Install the repo-owned pre-commit hook once per clone:
+
+```bash
+bash scripts/install-git-hooks.sh
+```
+
+That hook runs `scripts/verify-whitespace.sh --staged --fix` before each commit. It trims safe staged trailing whitespace automatically, then fails closed if whitespace errors remain.
+
+Git cannot force local hooks from a clone, so GitHub enforcement also lives in CI. Pull requests and `main` pushes run the same whitespace guard on the incoming diff.
+
 ## Common commands
 
 Use the lightest command that truthfully proves your change.

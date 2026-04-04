@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ -z "$ROOT_DIR" ]]; then
+  echo "pre-commit: must run inside a git worktree" >&2
+  exit 1
+fi
+
+cd "$ROOT_DIR"
+exec bash scripts/verify-whitespace.sh --staged --fix
