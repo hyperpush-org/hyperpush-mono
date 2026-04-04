@@ -118,8 +118,6 @@ function Detect-Architecture {
         $env:PROCESSOR_ARCHITECTURE
     }
 
-    Write-Host "Detected architecture: $arch"
-
     # Check if supported
     switch ($arch) {
         "x86_64" { return "x86_64" }  # Supported
