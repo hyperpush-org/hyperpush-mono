@@ -103,9 +103,18 @@ function validateSupportContract(baseRoot) {
     'VS Code is a **first-class** editor host in the public Mesh tooling contract.',
     'https://meshlang.dev/docs/tooling/',
     'keeps this README scoped to the VS Code install, packaging, and run path.',
+    'real stdio JSON-RPC against a small backend-shaped Mesh project',
+    'same-file go-to-definition inside backend-shaped project code',
+    'manifest-first override-entry fixture rooted by `mesh.toml` + `lib/start.mpl`',
     '## Verification',
     'bash scripts/verify-m036-s03.sh',
     'this real Extension Development Host smoke',
+  ])
+  requireExcludes(errors, vscodeReadmePath, vscodeReadme, [
+    'reference-backend/',
+    'reference-backend/api/jobs.mpl',
+    'scripts/fixtures/backend/reference-backend',
+    '`reference-backend/README.md`',
   ])
 
   requireIncludes(errors, neovimReadmePath, neovimReadme, [
@@ -113,10 +122,13 @@ function validateSupportContract(baseRoot) {
     'https://meshlang.dev/docs/tooling/',
     'stays intentionally bounded to the audited classic syntax plus native `meshc lsp` path proven in this repository',
     'No claims beyond the classic syntax plus native `meshc lsp` path proven in `scripts/verify-m036-s02.sh`.',
+    'backend-shaped manifest-rooted fixture',
     'bash scripts/verify-m036-s03.sh',
     "Use the Neovim-specific verifier below when you only need to replay this pack's bounded proof surface:",
   ])
   requireExcludes(errors, neovimReadmePath, neovimReadme, [
+    'reference-backend/',
+    'scripts/fixtures/backend/reference-backend',
     'No public support-tier promise beyond the repo-local proof in `scripts/verify-m036-s02.sh`.',
     'No broader editor/tooling contract that belongs in later S03-facing docs.',
   ])
@@ -191,6 +203,46 @@ test('contract validation fails closed when the Neovim README reverts to withhol
 
   const errors = validateSupportContract(tmpRoot)
   assert.ok(errors.some((error) => error.includes('tools/editors/neovim-mesh/README.md still contains stale text "No public support-tier promise beyond the repo-local proof in `scripts/verify-m036-s02.sh`."')), errors.join('\n'))
+})
+
+test('contract validation fails closed when the VS Code README reintroduces repo-root backend proof wording', (t) => {
+  const tmpRoot = mkTmpDir(t, 'verify-m036-s03-vscode-backend-')
+  for (const relativePath of [
+    'website/docs/docs/tooling/index.md',
+    'tools/editors/vscode-mesh/README.md',
+    'tools/editors/neovim-mesh/README.md',
+  ]) {
+    copyRepoFile(tmpRoot, relativePath)
+  }
+
+  const vscodePath = 'tools/editors/vscode-mesh/README.md'
+  const mutatedReadme = readFrom(tmpRoot, vscodePath)
+    .replace(
+      'same-file go-to-definition inside backend-shaped project code',
+      'same-file definition on `reference-backend/api/jobs.mpl`',
+    )
+  writeTo(tmpRoot, vscodePath, mutatedReadme)
+
+  const errors = validateSupportContract(tmpRoot)
+  assert.ok(errors.some((error) => error.includes('tools/editors/vscode-mesh/README.md still contains stale text "reference-backend/"') || error.includes('tools/editors/vscode-mesh/README.md still contains stale text "reference-backend/api/jobs.mpl"')), errors.join('\n'))
+})
+
+test('contract validation fails closed when editor READMEs leak the retained fixture path', (t) => {
+  const tmpRoot = mkTmpDir(t, 'verify-m036-s03-retained-fixture-')
+  for (const relativePath of [
+    'website/docs/docs/tooling/index.md',
+    'tools/editors/vscode-mesh/README.md',
+    'tools/editors/neovim-mesh/README.md',
+  ]) {
+    copyRepoFile(tmpRoot, relativePath)
+  }
+
+  const neovimPath = 'tools/editors/neovim-mesh/README.md'
+  const mutatedReadme = `${readFrom(tmpRoot, neovimPath)}\nMaintainer shortcut: open scripts/fixtures/backend/reference-backend directly when replaying this proof surface.\n`
+  writeTo(tmpRoot, neovimPath, mutatedReadme)
+
+  const errors = validateSupportContract(tmpRoot)
+  assert.ok(errors.some((error) => error.includes('tools/editors/neovim-mesh/README.md still contains stale text "scripts/fixtures/backend/reference-backend"')), errors.join('\n'))
 })
 
 test('the existing M034 tooling-page helper still passes on the current repo', () => {

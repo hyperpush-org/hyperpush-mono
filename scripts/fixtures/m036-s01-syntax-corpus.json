@@ -4,14 +4,14 @@
     {
       "id": "mesher-connected-peer-log",
       "path": "mesher/main.mpl",
-      "startLine": 58,
-      "endLine": 58,
+      "startLine": 69,
+      "endLine": 69,
       "expectedForms": ["hash"],
       "expectedStringKind": "double"
     },
     {
       "id": "reference-backend-http-port-log",
-      "path": "reference-backend/main.mpl",
+      "path": "scripts/fixtures/backend/reference-backend/main.mpl",
       "startLine": 27,
       "endLine": 27,
       "expectedForms": ["hash"],
@@ -68,8 +68,8 @@
     {
       "id": "docs-language-basics-preferred-hash",
       "path": "website/docs/docs/language-basics/index.md",
-      "startLine": 64,
-      "endLine": 64,
+      "startLine": 65,
+      "endLine": 65,
       "expectedForms": ["hash"],
       "expectedStringKind": "double"
     },
@@ -84,8 +84,8 @@
     {
       "id": "docs-cheatsheet-dollar",
       "path": "website/docs/docs/cheatsheet/index.md",
-      "startLine": 43,
-      "endLine": 43,
+      "startLine": 44,
+      "endLine": 44,
       "expectedForms": ["dollar"],
       "expectedStringKind": "double"
     },

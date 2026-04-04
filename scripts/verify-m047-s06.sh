@@ -478,31 +478,131 @@ assert_file_omits_regex \
   'HTTP\.clustered\(\.\.\.\) is still not shipped' \
   'README still claims HTTP.clustered(...) is unshipped'
 
+assert_file_contains_regex \
+  contract-distributed-proof-canonical-marker \
+  website/docs/docs/distributed-proof/index.md \
+  'only public-secondary docs page that carries the named clustered verifier rails' \
+  'Distributed Proof lost the canonical clustered proof-map marker'
+assert_file_contains_regex \
+  contract-distributed-proof-clustered-example-page \
+  website/docs/docs/distributed-proof/index.md \
+  '/docs/getting-started/clustered-example/' \
+  'Distributed Proof lost the Clustered Example handoff'
+assert_file_contains_regex \
+  contract-distributed-proof-production-proof-page \
+  website/docs/docs/distributed-proof/index.md \
+  '/docs/production-backend-proof/' \
+  'Distributed Proof lost the Production Backend Proof handoff'
+assert_file_contains_regex \
+  contract-distributed-proof-s04 \
+  website/docs/docs/distributed-proof/index.md \
+  'scripts/verify-m047-s04.sh' \
+  'Distributed Proof lost the S04 cutover rail reference'
+assert_file_contains_regex \
+  contract-distributed-proof-s05 \
+  website/docs/docs/distributed-proof/index.md \
+  'scripts/verify-m047-s05.sh' \
+  'Distributed Proof lost the S05 historical Todo subrail reference'
+assert_file_contains_regex \
+  contract-distributed-proof-s06 \
+  website/docs/docs/distributed-proof/index.md \
+  'scripts/verify-m047-s06.sh' \
+  'Distributed Proof lost the S06 closeout rail reference'
+assert_file_contains_regex \
+  contract-distributed-proof-s07 \
+  website/docs/docs/distributed-proof/index.md \
+  'e2e_m047_s07' \
+  'Distributed Proof lost the repo S07 clustered-route rail handoff'
+assert_file_contains_regex \
+  contract-distributed-proof-fly \
+  website/docs/docs/distributed-proof/index.md \
+  'scripts/verify-m043-s04-fly.sh' \
+  'Distributed Proof lost the read-only Fly verifier handoff'
+assert_file_contains_regex \
+  contract-distributed-proof-current-repo-postgres \
+  website/docs/docs/distributed-proof/index.md \
+  'https://github\.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README\.md' \
+  'Distributed Proof lost the current PostgreSQL starter repo URL'
+assert_file_contains_regex \
+  contract-distributed-proof-current-repo-sqlite \
+  website/docs/docs/distributed-proof/index.md \
+  'https://github\.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README\.md' \
+  'Distributed Proof lost the current SQLite starter repo URL'
+assert_file_contains_regex \
+  contract-distributed-proof-current-repo-reference-backend \
+  website/docs/docs/distributed-proof/index.md \
+  'https://github\.com/snowdamiz/mesh-lang/blob/main/reference-backend/README\.md' \
+  'Distributed Proof lost the current backend runbook repo URL'
+assert_file_contains_regex \
+  contract-distributed-proof-sqlite-template \
+  website/docs/docs/distributed-proof/index.md \
+  'meshc init --template todo-api --db sqlite' \
+  'Distributed Proof lost the explicit SQLite starter command'
+assert_file_contains_regex \
+  contract-distributed-proof-postgres-template \
+  website/docs/docs/distributed-proof/index.md \
+  'meshc init --template todo-api --db postgres' \
+  'Distributed Proof lost the explicit PostgreSQL starter command'
+assert_file_contains_regex \
+  contract-distributed-proof-historical-m046-closeout \
+  website/docs/docs/distributed-proof/index.md \
+  'scripts/verify-m046-s06.sh' \
+  'Distributed Proof lost the retained M046 closeout alias'
+assert_file_contains_regex \
+  contract-distributed-proof-historical-m046-equal \
+  website/docs/docs/distributed-proof/index.md \
+  'scripts/verify-m046-s05.sh' \
+  'Distributed Proof lost the retained M046 equal-surface alias'
+assert_file_contains_regex \
+  contract-distributed-proof-historical-m046-package \
+  website/docs/docs/distributed-proof/index.md \
+  'scripts/verify-m046-s04.sh' \
+  'Distributed Proof lost the retained M046 package alias'
+assert_file_contains_regex \
+  contract-distributed-proof-historical-m045-closeout \
+  website/docs/docs/distributed-proof/index.md \
+  'scripts/verify-m045-s05.sh' \
+  'Distributed Proof lost the retained M045 closeout alias'
+assert_file_contains_regex \
+  contract-distributed-proof-historical-m045-assembled \
+  website/docs/docs/distributed-proof/index.md \
+  'scripts/verify-m045-s04.sh' \
+  'Distributed Proof lost the retained M045 assembled alias'
+assert_file_contains_regex \
+  contract-distributed-proof-historical-m045-failover \
+  website/docs/docs/distributed-proof/index.md \
+  'scripts/verify-m045-s03.sh' \
+  'Distributed Proof lost the retained M045 failover subrail'
+assert_file_omits_regex \
+  contract-distributed-proof-stale-fixture-runbooks \
+  website/docs/docs/distributed-proof/index.md \
+  'tiny-cluster/README\.md|cluster-proof/README\.md' \
+  'Distributed Proof still presents retained fixture runbooks as public onboarding surfaces'
+assert_file_omits_regex \
+  contract-distributed-proof-stale-repo \
+  website/docs/docs/distributed-proof/index.md \
+  'https://github\.com/hyperpush-org/hyperpush-mono/blob/main/' \
+  'Distributed Proof still points at the stale hyperpush repo identity'
+
 for surface in \
   website/docs/docs/tooling/index.md \
-  website/docs/docs/distributed-proof/index.md \
   website/docs/docs/distributed/index.md; do
   safe_name="$(printf '%s' "$surface" | tr '/.' '__')"
   assert_file_contains_regex \
-    "${safe_name}-s04" \
+    "${safe_name}-clustered-example-page" \
     "$surface" \
-    'scripts/verify-m047-s04.sh' \
-    "$surface lost the S04 cutover rail reference"
+    '/docs/getting-started/clustered-example/' \
+    "$surface lost the Clustered Example handoff"
   assert_file_contains_regex \
-    "${safe_name}-s05" \
+    "${safe_name}-distributed-proof-page" \
     "$surface" \
-    'scripts/verify-m047-s05.sh' \
-    "$surface lost the S05 Todo/runtime subrail reference"
+    '/docs/distributed-proof/' \
+    "$surface lost the Distributed Proof handoff"
   assert_file_contains_regex \
-    "${safe_name}-s06" \
+    "${safe_name}-production-proof-page" \
     "$surface" \
-    'scripts/verify-m047-s06.sh' \
-    "$surface lost the S06 closeout rail reference"
-  assert_file_contains_regex \
-    "${safe_name}-s07" \
-    "$surface" \
-    'e2e_m047_s07' \
-    "$surface lost the repo S07 clustered-route rail handoff"
+    '/docs/production-backend-proof/' \
+    "$surface lost the Production Backend Proof handoff"
   assert_file_contains_regex \
     "${safe_name}-todo-postgres" \
     "$surface" \
@@ -534,20 +634,20 @@ for surface in \
     'https://github\.com/snowdamiz/mesh-lang/blob/main/reference-backend/README\.md' \
     "$surface lost the current backend runbook repo URL"
   assert_file_contains_regex \
-    "${safe_name}-sqlite-template" \
+    "${safe_name}-starter-split-local" \
     "$surface" \
-    'meshc init --template todo-api --db sqlite' \
-    "$surface lost the explicit SQLite starter command"
+    'honest local' \
+    "$surface lost the honest local starter split"
   assert_file_contains_regex \
-    "${safe_name}-postgres-template" \
+    "${safe_name}-starter-split-shared" \
     "$surface" \
-    'meshc init --template todo-api --db postgres' \
-    "$surface lost the explicit PostgreSQL starter command"
+    'shared/deployable' \
+    "$surface lost the shared/deployable starter split"
   assert_file_omits_regex \
-    "${safe_name}-old-authority" \
+    "${safe_name}-proof-ledger" \
     "$surface" \
-    'authoritative assembled closeout rail' \
-    "$surface still treats proof closeout as a first-contact authority"
+    'scripts/verify-m047-s04\.sh|scripts/verify-m047-s05\.sh|scripts/verify-m047-s06\.sh|e2e_m047_s07|scripts/verify-m043-s04-fly\.sh|scripts/verify-m046-s06\.sh|scripts/verify-m046-s05\.sh|scripts/verify-m046-s04\.sh|scripts/verify-m045-s05\.sh|scripts/verify-m045-s04\.sh|scripts/verify-m045-s03\.sh' \
+    "$surface still duplicates the named clustered proof ledger instead of handing off to Distributed Proof"
   assert_file_omits_regex \
     "${safe_name}-stale-generic-template" \
     "$surface" \
@@ -557,7 +657,7 @@ for surface in \
     "${safe_name}-stale-fixture-runbooks" \
     "$surface" \
     'tiny-cluster/README\.md|cluster-proof/README\.md' \
-    "$surface still presents retained proof fixtures as public onboarding surfaces"
+    "$surface still presents retained fixture runbooks as public onboarding surfaces"
   assert_file_omits_regex \
     "${safe_name}-stale-sqlite-clustered" \
     "$surface" \
@@ -612,7 +712,7 @@ assert_file_contains_regex \
 assert_file_omits_regex \
   contract-clustered-example-direct-rails \
   website/docs/docs/getting-started/clustered-example/index.md \
-  'scripts/verify-m047-s04\.sh|scripts/verify-m047-s05\.sh|scripts/verify-m047-s06\.sh|e2e_m047_s07' \
+  'scripts/verify-m047-s04\.sh|scripts/verify-m047-s05\.sh|scripts/verify-m047-s06\.sh|e2e_m047_s07|scripts/verify-m043-s04-fly\.sh|scripts/verify-m046-s06\.sh|scripts/verify-m046-s05\.sh|scripts/verify-m046-s04\.sh|scripts/verify-m045-s05\.sh|scripts/verify-m045-s04\.sh|scripts/verify-m045-s03\.sh' \
   'Clustered Example still inlines retained proof-rail commands instead of handing off to the proof page'
 assert_file_omits_regex \
   contract-clustered-example-helper-names \

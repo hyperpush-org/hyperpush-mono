@@ -32,8 +32,7 @@ function Say-Green {
     param([string]$Message)
     if (Use-Color) {
         Write-Host $Message -ForegroundColor Green
-    }
-    else {
+    } else {
         Write-Host $Message
     }
 }
@@ -42,8 +41,7 @@ function Say-Red {
     param([string]$Message)
     if (Use-Color) {
         Write-Host $Message -ForegroundColor Red
-    }
-    else {
+    } else {
         Write-Host $Message
     }
 }
@@ -107,24 +105,11 @@ function Get-RequestHeaders {
 # --- Platform detection ---
 
 function Detect-Architecture {
-    # Detect architecture from environment variable
-    $arch = if ($env:PROCESSOR_ARCHITECTURE -eq "AMD64") {
-        "x86_64"
-    }
-    elseif ($env:PROCESSOR_ARCHITECTURE -eq "x86") {
-        "x86"
-    }
-    else {
-        $env:PROCESSOR_ARCHITECTURE
-    }
-
-    Write-Host "Detected architecture: $arch"
-
-    # Check if supported
+    $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
     switch ($arch) {
-        "x86_64" { return "x86_64" }  # Supported
+        "X64" { return "x86_64" }
         default {
-            Fail-Installer "error: Unsupported architecture: $arch`nmeshc currently supports x86_64 (64-bit) Windows only."
+            Fail-Installer "error: Unsupported architecture: $arch`n  meshc currently supports x86_64 (64-bit) Windows only."
         }
     }
 }
@@ -135,8 +120,7 @@ function Get-LatestVersion {
     $releaseApiUrl = Get-ReleaseApiUrl
     try {
         $release = Invoke-RestMethod -Uri $releaseApiUrl -Headers (Get-RequestHeaders) -TimeoutSec (Get-DownloadTimeoutSec)
-    }
-    catch {
+    } catch {
         Fail-Installer "error: Failed to fetch release metadata.`n  URL: $releaseApiUrl"
     }
 
@@ -211,8 +195,7 @@ function Invoke-MeshDownload {
 
     try {
         Invoke-WebRequest -Uri $Url -OutFile $OutFile -Headers (Get-RequestHeaders) -TimeoutSec (Get-DownloadTimeoutSec) | Out-Null
-    }
-    catch {
+    } catch {
         Fail-Installer "$FailureMessage`n  URL: $Url`n  timeout: $(Get-DownloadTimeoutSec)s"
     }
 }
@@ -261,8 +244,7 @@ function Install-Binary {
 
         try {
             Invoke-WebRequest -Uri $checksumUrl -OutFile $checksumPath -Headers (Get-RequestHeaders) -TimeoutSec (Get-DownloadTimeoutSec) | Out-Null
-        }
-        catch {
+        } catch {
             if (Test-StrictProofMode) {
                 Fail-Installer "error: Could not download SHA256SUMS in staged-proof mode.`n  URL: $checksumUrl`n  timeout: $(Get-DownloadTimeoutSec)s"
             }
@@ -276,11 +258,9 @@ function Install-Binary {
                     Fail-Installer "error: SHA256SUMS contained a malformed checksum for $archive.`n  checksum file: $checksumPath`n  checksum URL:  $checksumUrl"
                 }
                 Say "warning: Malformed SHA256SUMS entry for $archive, skipping verification."
-            }
-            elseif ($expectedHash) {
+            } elseif ($expectedHash) {
                 Verify-Checksum -FilePath $archivePath -Expected $expectedHash
-            }
-            else {
+            } else {
                 if (Test-StrictProofMode) {
                     Fail-Installer "error: SHA256SUMS did not contain $archive.`n  checksum file: $checksumPath`n  checksum URL:  $checksumUrl"
                 }
@@ -291,8 +271,7 @@ function Install-Binary {
         $extractDir = Join-Path $tmpDir 'extracted'
         try {
             Expand-Archive -Path $archivePath -DestinationPath $extractDir -Force
-        }
-        catch {
+        } catch {
             Fail-Installer "error: Failed to extract $archive.`n  archive: $archivePath"
         }
 
@@ -304,8 +283,7 @@ function Install-Binary {
         New-Item -ItemType Directory -Path $BinDir -Force | Out-Null
         Copy-Item -Path $sourceBinary.FullName -Destination (Join-Path $BinDir "$BinaryName.exe") -Force
         $success = $true
-    }
-    finally {
+    } finally {
         if ($success -and (Test-Path $tmpDir)) {
             Remove-Item -Recurse -Force $tmpDir -ErrorAction SilentlyContinue
         }
@@ -340,21 +318,14 @@ function Invoke-Install {
         if (-not $userPath -or $userPath -notlike "*$BinDir*") {
             if ($userPath) {
                 [Environment]::SetEnvironmentVariable('Path', "$BinDir;$userPath", 'User')
-            }
-            else {
+            } else {
                 [Environment]::SetEnvironmentVariable('Path', $BinDir, 'User')
             }
         }
 
-        # Update PATH for current session
-        if ($env:Path -notlike "*$BinDir*") {
-            $env:Path = "$BinDir;$env:Path"
-        }
-
         Say-Green "Installed meshc and meshpkg v$RequestedVersion to ~\.mesh\bin\"
-        Say "Run 'meshc --version' and 'meshpkg --version' to verify."
-    }
-    catch {
+        Say "Run 'meshc --version' and 'meshpkg --version' to verify, or restart your terminal."
+    } catch {
         Show-ErrorMessage $_.Exception.Message
         exit 1
     }
@@ -383,7 +354,6 @@ if ($Help) {
 
 if ($Uninstall) {
     Invoke-Uninstall
-}
-else {
+} else {
     Invoke-Install -RequestedVersion $Version
 }

@@ -1,3 +1,5 @@
+mod support;
+
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
@@ -10,6 +12,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mesh_rt::db::pg::{native_pg_close, native_pg_connect, native_pg_execute, native_pg_query};
 use serde_json::Value;
+use support::m051_reference_backend as retained_backend;
 
 const REFERENCE_BACKEND_MIGRATION_VERSION: i64 = 20260323010000;
 const REFERENCE_BACKEND_MIGRATION_NAME: &str = "create_jobs";
@@ -48,58 +51,28 @@ struct HttpResponse {
 }
 
 fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .to_path_buf()
+    retained_backend::repo_root()
 }
 
 fn find_meshc() -> PathBuf {
-    let mut path = std::env::current_exe()
-        .expect("cannot find current exe")
-        .parent()
-        .expect("cannot find parent dir")
-        .to_path_buf();
-
-    if path.file_name().map_or(false, |n| n == "deps") {
-        path = path.parent().unwrap().to_path_buf();
-    }
-
-    let meshc = path.join("meshc");
-    assert!(
-        meshc.exists(),
-        "meshc binary not found at {}. Run `cargo build -p meshc` first.",
-        meshc.display()
-    );
-    meshc
+    retained_backend::meshc_bin()
 }
 
 fn build_reference_backend() -> Output {
-    let root = repo_root();
-    let meshc = find_meshc();
-    Command::new(&meshc)
-        .current_dir(&root)
-        .args(["build", "reference-backend"])
-        .output()
-        .expect("failed to invoke meshc build for reference-backend")
+    retained_backend::build_reference_backend()
 }
 
 fn assert_reference_backend_build_succeeds() {
     let output = build_reference_backend();
-    assert!(
-        output.status.success(),
-        "meshc build reference-backend failed:\nstdout: {}\nstderr: {}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
+    assert_command_success(
+        &output,
+        "meshc build scripts/fixtures/backend/reference-backend --output <retained-artifact>",
     );
+    retained_backend::assert_runtime_binary_outside_legacy_tree(&reference_backend_binary());
 }
 
 fn reference_backend_binary() -> PathBuf {
-    repo_root()
-        .join("reference-backend")
-        .join("reference-backend")
+    retained_backend::runtime_binary_path()
 }
 
 fn pick_unused_port() -> u16 {
@@ -118,44 +91,25 @@ fn reference_backend_test_config(job_poll_ms: u64) -> ReferenceBackendConfig {
 }
 
 fn run_reference_backend_migration(database_url: &str, command: &str) -> Output {
-    let root = repo_root();
-    let meshc = find_meshc();
-    Command::new(&meshc)
-        .current_dir(&root)
-        .env("DATABASE_URL", database_url)
-        .args(["migrate", "reference-backend", command])
-        .output()
-        .unwrap_or_else(|e| {
-            panic!(
-                "failed to invoke meshc migrate reference-backend {}: {}",
-                command, e
-            )
-        })
+    retained_backend::run_reference_backend_migration(database_url, command)
 }
 
 fn assert_reference_backend_migration_succeeds(database_url: &str, command: &str) {
     let output = run_reference_backend_migration(database_url, command);
     assert_command_success(
         &output,
-        &format!("meshc migrate reference-backend {command}"),
+        &format!(
+            "meshc migrate scripts/fixtures/backend/reference-backend {command}"
+        ),
     );
 }
 
 fn command_output_text(output: &Output) -> String {
-    format!(
-        "{}{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    )
+    retained_backend::command_output_text(output)
 }
 
 fn assert_command_success(output: &Output, description: &str) {
-    assert!(
-        output.status.success(),
-        "{description} failed:\nstdout: {}\nstderr: {}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
+    retained_backend::assert_command_success(output, description)
 }
 
 fn reference_backend_log_paths() -> (PathBuf, PathBuf) {
@@ -501,25 +455,15 @@ fn run_reference_backend_smoke_script(
     database_url: &str,
     config: &ReferenceBackendConfig,
 ) -> Output {
-    let root = repo_root();
-    Command::new("bash")
-        .current_dir(&root)
-        .arg("reference-backend/scripts/smoke.sh")
-        .env("DATABASE_URL", database_url)
-        .env("PORT", config.port.to_string())
-        .env("JOB_POLL_MS", config.job_poll_ms.to_string())
-        .output()
-        .expect("failed to invoke reference-backend/scripts/smoke.sh")
+    retained_backend::run_reference_backend_smoke_script(
+        database_url,
+        config.port,
+        config.job_poll_ms,
+    )
 }
 
 fn run_reference_backend_stage_deploy_script(bundle_dir: &Path) -> Output {
-    let root = repo_root();
-    Command::new("bash")
-        .current_dir(&root)
-        .arg("reference-backend/scripts/stage-deploy.sh")
-        .arg(bundle_dir)
-        .output()
-        .expect("failed to invoke reference-backend/scripts/stage-deploy.sh")
+    retained_backend::run_reference_backend_stage_deploy_script(bundle_dir)
 }
 
 fn run_staged_apply_deploy_migrations_script(bundle_dir: &Path, database_url: &str) -> Output {
@@ -1431,7 +1375,10 @@ fn e2e_reference_backend_stage_deploy_bundle() {
     let output = run_reference_backend_stage_deploy_script(bundle.path());
     let combined = command_output_text(&output);
 
-    assert_command_success(&output, "reference-backend/scripts/stage-deploy.sh");
+    assert_command_success(
+        &output,
+        "scripts/fixtures/backend/reference-backend/scripts/stage-deploy.sh",
+    );
     assert!(
         combined.contains("[stage-deploy] staged layout"),
         "expected staged layout output, got:\n{}",
@@ -1466,7 +1413,10 @@ fn e2e_reference_backend_deploy_artifact_smoke() {
 
     let stage_output = run_reference_backend_stage_deploy_script(bundle.path());
     let stage_text = command_output_text(&stage_output);
-    assert_command_success(&stage_output, "reference-backend/scripts/stage-deploy.sh");
+    assert_command_success(
+        &stage_output,
+        "scripts/fixtures/backend/reference-backend/scripts/stage-deploy.sh",
+    );
     assert!(
         stage_text.contains("[stage-deploy] bundle ready dir="),
         "expected staged bundle ready output, got:\n{}",
@@ -1732,7 +1682,7 @@ fn e2e_reference_backend_migration_status_and_apply() {
     let status_before = run_reference_backend_migration(&database_url, "status");
     assert_command_success(
         &status_before,
-        "meshc migrate reference-backend status (before up)",
+        "meshc migrate scripts/fixtures/backend/reference-backend status (before up)",
     );
     let status_before_text = command_output_text(&status_before);
     assert!(
@@ -1766,7 +1716,10 @@ fn e2e_reference_backend_migration_status_and_apply() {
     );
 
     let up_output = run_reference_backend_migration(&database_url, "up");
-    assert_command_success(&up_output, "meshc migrate reference-backend up");
+    assert_command_success(
+        &up_output,
+        "meshc migrate scripts/fixtures/backend/reference-backend up",
+    );
     let up_text = command_output_text(&up_output);
     assert!(
         up_text.contains(&format!(
@@ -1785,7 +1738,7 @@ fn e2e_reference_backend_migration_status_and_apply() {
     let status_after = run_reference_backend_migration(&database_url, "status");
     assert_command_success(
         &status_after,
-        "meshc migrate reference-backend status (after up)",
+        "meshc migrate scripts/fixtures/backend/reference-backend status (after up)",
     );
     let status_after_text = command_output_text(&status_after);
     assert!(

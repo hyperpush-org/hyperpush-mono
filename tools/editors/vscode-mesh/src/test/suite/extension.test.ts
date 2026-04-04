@@ -30,6 +30,23 @@ const repoRoot = requiredEnv("MESH_VSCODE_SMOKE_REPO_ROOT");
 const meshcPath = requiredEnv("MESH_VSCODE_SMOKE_MESHC_PATH");
 const workspaceFile = requiredEnv("MESH_VSCODE_SMOKE_WORKSPACE_FILE");
 const extensionId = "OpenWorthTechnologies.mesh-lang";
+const retainedReferenceBackendRoot = path.join(
+  repoRoot,
+  "scripts",
+  "fixtures",
+  "backend",
+  "reference-backend"
+);
+const retainedHealthPath = path.join(
+  retainedReferenceBackendRoot,
+  "api",
+  "health.mpl"
+);
+const retainedJobsPath = path.join(
+  retainedReferenceBackendRoot,
+  "api",
+  "jobs.mpl"
+);
 
 function log(message: string) {
   const line = `[smoke] ${message}`;
@@ -282,9 +299,8 @@ export async function runSmokeSuite(): Promise<void> {
     const extension = vscode.extensions.getExtension<MeshExtensionApi>(extensionId);
     assert.ok(extension, `[activation] Missing extension ${extensionId}.`);
 
-    const healthPath = path.join(repoRoot, "reference-backend", "api", "health.mpl");
-    const jobsPath = path.join(repoRoot, "reference-backend", "api", "jobs.mpl");
-    const healthDocument = await openDocument(healthPath, "health");
+    log(`Using retained backend fixture root ${retainedReferenceBackendRoot}`);
+    const healthDocument = await openDocument(retainedHealthPath, "health");
 
     log(`Waiting for extension activation via ${extensionId}`);
     const api = await withTimeout(
@@ -306,7 +322,7 @@ export async function runSmokeSuite(): Promise<void> {
 
     await assertCleanDiagnostics(diagnostics, healthDocument, "diagnostics/health");
 
-    const jobsDocument = await openDocument(jobsPath, "jobs");
+    const jobsDocument = await openDocument(retainedJobsPath, "jobs");
     await assertCleanDiagnostics(diagnostics, jobsDocument, "diagnostics/jobs");
 
     const overrideFixture = materializeOverrideEntryFixture();
@@ -330,7 +346,7 @@ export async function runSmokeSuite(): Promise<void> {
       "diagnostics/override-entry-support"
     );
 
-    const jobsSource = fs.readFileSync(jobsPath, "utf8");
+    const jobsSource = fs.readFileSync(retainedJobsPath, "utf8");
     const createJobCallMarker = "create_job_response(job, body)";
     const createJobDefinitionMarker =
       "fn create_job_response(job :: Job, payload :: String) do";
@@ -384,10 +400,10 @@ export async function runSmokeSuite(): Promise<void> {
     assert.ok(
       targets.some(
         (target) =>
-          target.uri.fsPath === jobsPath &&
+          target.uri.fsPath === retainedJobsPath &&
           target.startLine === createJobDefinitionPosition.line
       ),
-      `[probe/definition] Expected definition target ${jobsPath}:${createJobDefinitionPosition.line}, got ${JSON.stringify(
+      `[probe/definition] Expected definition target ${retainedJobsPath}:${createJobDefinitionPosition.line}, got ${JSON.stringify(
         targets.map((target) => ({
           file: target.uri.fsPath,
           line: target.startLine,
@@ -395,7 +411,7 @@ export async function runSmokeSuite(): Promise<void> {
       )}.`
     );
     log(
-      `Definition probe resolved to ${jobsPath}:${createJobDefinitionPosition.line}`
+      `Definition probe resolved to ${retainedJobsPath}:${createJobDefinitionPosition.line}`
     );
 
     const overrideMessageCallPosition = sourcePosition(

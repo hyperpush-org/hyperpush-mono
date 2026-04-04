@@ -10,7 +10,7 @@ Rules:
 2. `main.mpl` boots through `Node.start_from_env()`; the runtime owns startup, placement, continuity, and diagnostics.
 3. The runtime derives the clustered handler name from the ordinary function name (for example, `Work.add` or `Work.sync_todos`).
 4. The public onboarding flow starts with `meshc init --clustered`, then branches to `examples/todo-postgres` for the shared/deployable starter and `examples/todo-sqlite` for the honest local starter.
-5. Keep `reference-backend/README.md` as the deeper backend proof once the generated starters stop being enough.
+5. The public deeper backend handoff goes through `/docs/production-backend-proof/`, which keeps the starter/examples-first ladder intact and names `mesher/README.md` plus `bash scripts/verify-m051-s01.sh` and `bash scripts/verify-m051-s02.sh` as maintainer-only surfaces once the generated starters stop being enough.
 6. Keep the clustered story source-first and runtime-owned — do not invent package-owned control or inspection surfaces, and do not project clustered/operator claims onto the SQLite starter.
 
 Code example (minimal clustered surface):
@@ -37,7 +37,17 @@ Rules:
 5. `meshc init --template todo-api --db sqlite <name>` is the honest local single-node starter: generated package tests, local `/health`, actor-backed write rate limiting, and Docker packaging around `meshc build .`.
 6. The SQLite Todo starter does not claim `work.mpl`, `HTTP.clustered(...)`, `meshc cluster`, or clustered/operator proof surfaces.
 7. Use the Postgres Todo template when you need the packaged clustered HTTP starter; use the clustered scaffold when you want the minimal route-free public clustered surface; use the SQLite Todo template only when you want the local-first path.
-8. The generated repo examples live at `examples/todo-postgres` and `examples/todo-sqlite`; keep `reference-backend/README.md` as the deeper backend proof instead of a first-contact clustered tutorial.
+8. The generated repo examples live at `examples/todo-postgres` and `examples/todo-sqlite`; after those public starters, send repo maintainers through `/docs/production-backend-proof/` so the deeper maintained app stays on `mesher/README.md` and the retained backend-only proof stays on the named maintainer verifiers `bash scripts/verify-m051-s01.sh` and `bash scripts/verify-m051-s02.sh` instead of a first-contact repo-root runbook.
+
+## Deeper Maintainer Surfaces
+
+Rules:
+1. Keep the public clustered story scaffold/examples-first: `meshc init --clustered`, then the PostgreSQL or SQLite Todo examples depending whether the reader needs shared/deployable or local-only behavior.
+2. Use `/docs/production-backend-proof/` only when the question has moved beyond those public starters and into maintainer-facing backend proof.
+3. `mesher/README.md` is the deeper maintained app runbook for repo maintainers.
+4. `bash scripts/verify-m051-s01.sh` verifies the shipped Mesher app surface.
+5. `bash scripts/verify-m051-s02.sh` verifies the retained backend-only proof replay.
+6. Do not teach `reference-backend/README.md` or fixture/runbook paths as the public next step after the clustered scaffold or Todo starters.
 
 ## Runtime Inspection
 

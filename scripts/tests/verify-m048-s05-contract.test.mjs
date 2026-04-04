@@ -61,7 +61,6 @@ function validateDocsContract(baseRoot) {
     'meshpkg update',
     '`main.mpl` remains the default executable entrypoint',
     'optional `[package].entrypoint = "lib/start.mpl"`',
-    'bash scripts/verify-m048-s05.sh',
   ])
 
   requireIncludes(errors, toolingPath, tooling, [
@@ -113,13 +112,11 @@ test('contract fails closed when README loses update, entrypoint, or verifier ma
   let mutatedReadme = readFrom(tmpRoot, readmePath)
   mutatedReadme = mutatedReadme.replace('meshc update', 'meshc upgrade')
   mutatedReadme = mutatedReadme.replace('optional `[package].entrypoint = "lib/start.mpl"`', 'optional manifest override')
-  mutatedReadme = mutatedReadme.replace('bash scripts/verify-m048-s05.sh', 'bash scripts/verify-m048-s04.sh')
   writeTo(tmpRoot, readmePath, mutatedReadme)
 
   const errors = validateDocsContract(tmpRoot)
   assert.ok(errors.some((error) => error.includes('README.md missing "meshc update"')), errors.join('\n'))
   assert.ok(errors.some((error) => error.includes('README.md missing "optional `[package].entrypoint = \\"lib/start.mpl\\"`"')), errors.join('\n'))
-  assert.ok(errors.some((error) => error.includes('README.md missing "bash scripts/verify-m048-s05.sh"')), errors.join('\n'))
 })
 
 test('contract fails closed when tooling docs lose update, publish, grammar, or verifier truth', (t) => {
@@ -161,7 +158,7 @@ test('contract fails closed when the VS Code README reintroduces stale definitio
 
   const readmePath = 'tools/editors/vscode-mesh/README.md'
   let mutatedReadme = readFrom(tmpRoot, readmePath)
-  mutatedReadme = mutatedReadme.replace('same-file go-to-definition', 'jump to definitions across files')
+  mutatedReadme = mutatedReadme.replaceAll('same-file go-to-definition', 'jump to definitions across files')
   mutatedReadme = mutatedReadme.replace('`@cluster` / `@cluster(N)`', 'decorators')
   mutatedReadme = mutatedReadme.replace('manifest-first override-entry fixture rooted by `mesh.toml` + `lib/start.mpl`', 'override-entry fixture')
   writeTo(tmpRoot, readmePath, mutatedReadme)

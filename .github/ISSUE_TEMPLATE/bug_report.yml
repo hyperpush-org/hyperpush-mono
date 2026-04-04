@@ -1,0 +1,98 @@
+name: Bug report
+description: Report a reproducible defect in Mesh, its tooling, starter templates, or docs.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report.
+
+        Please use this form for reproducible defects in Mesh itself, its compiler/runtime/tooling, starter templates, examples, installers, or documentation.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched existing issues and checked the relevant docs/examples first.
+          required: true
+        - label: I can reproduce this with a current build, the latest public release, or a specific commit I list below.
+          required: true
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      description: Pick the closest match.
+      options:
+        - compiler / meshc
+        - package manager / meshpkg
+        - runtime / mesh-rt
+        - LSP / editor integration
+        - starter templates / examples
+        - installers / release tooling
+        - documentation / website
+        - other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Paste the output of `meshc --version`, `meshpkg --version`, or the commit SHA you tested.
+      placeholder: meshc 12.0.0 / meshpkg 12.0.0 / abc1234
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Project / starter / path (if relevant)
+      description: Tell us what you were running.
+      placeholder: examples/todo-postgres, meshc init --clustered, website/docs/docs/getting-started/index.md
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Give the smallest truthful sequence that reproduces the problem.
+      placeholder: |
+        1. Run ...
+        2. Open ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: What happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, errors, or screenshots
+      description: Paste terminal output, stack traces, diagnostics, or screenshots if they help.
+      render: shell
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include workarounds, frequency, regression range, or anything else useful.

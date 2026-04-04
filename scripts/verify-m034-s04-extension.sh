@@ -414,8 +414,20 @@ run_command \
   "cargo test -q -p meshc --test e2e_lsp -- --nocapture" \
   cargo test -q -p meshc --test e2e_lsp -- --nocapture
 
-if ! grep -Fq 'running 1 test' "$LAST_LOG_PATH"; then
-  fail_phase "e2e-lsp" "e2e_lsp output did not report the expected test count" "$LAST_LOG_PATH"
+if ! python3 - "$LAST_LOG_PATH" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+text = Path(sys.argv[1]).read_text(errors='replace')
+counts = [int(value) for value in re.findall(r"running (\d+) test", text)]
+if not counts:
+    raise SystemExit("e2e_lsp output did not report a test count")
+if max(counts) <= 0:
+    raise SystemExit("e2e_lsp output reported 0 tests")
+PY
+then
+  fail_phase "e2e-lsp" "e2e_lsp output did not report a non-zero test count" "$LAST_LOG_PATH"
 fi
 if ! grep -Fq 'test result: ok.' "$LAST_LOG_PATH"; then
   fail_phase "e2e-lsp" "e2e_lsp output did not report a passing result" "$LAST_LOG_PATH"

@@ -16,7 +16,8 @@ fn build_cluster_proof_binary(artifacts: &Path) -> (PathBuf, route_free::BuildOu
     let binary_dir = artifacts.join("bin");
     fs::create_dir_all(&binary_dir).expect("failed to create cluster-proof binary dir");
     let output_path = binary_dir.join("cluster-proof");
-    let metadata = route_free::build_package_binary_to_output(&fixture_root, &output_path, artifacts);
+    let metadata =
+        route_free::build_package_binary_to_output(&fixture_root, &output_path, artifacts);
     (fixture_root, metadata)
 }
 
@@ -94,8 +95,14 @@ fn e2e_m039_s01_converges_without_manual_peers() {
 
     let standby_logs = route_free::stop_process(standby_proc);
     let primary_logs = route_free::stop_process(primary_proc);
-    route_free::write_artifact(&artifacts.join("primary.combined.log"), &primary_logs.combined);
-    route_free::write_artifact(&artifacts.join("standby.combined.log"), &standby_logs.combined);
+    route_free::write_artifact(
+        &artifacts.join("primary.combined.log"),
+        &primary_logs.combined,
+    );
+    route_free::write_artifact(
+        &artifacts.join("standby.combined.log"),
+        &standby_logs.combined,
+    );
 
     if let Err(payload) = result {
         panic!(
@@ -231,8 +238,14 @@ fn e2e_m039_s01_membership_updates_after_node_loss() {
                 .expect("standby process missing during cleanup"),
         ),
     };
-    route_free::write_artifact(&artifacts.join("primary.combined.log"), &primary_logs.combined);
-    route_free::write_artifact(&artifacts.join("standby.combined.log"), &standby_logs.combined);
+    route_free::write_artifact(
+        &artifacts.join("primary.combined.log"),
+        &primary_logs.combined,
+    );
+    route_free::write_artifact(
+        &artifacts.join("standby.combined.log"),
+        &standby_logs.combined,
+    );
 
     if let Err(payload) = result {
         panic!(

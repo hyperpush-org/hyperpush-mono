@@ -421,6 +421,203 @@ PY
   printf 'source=%s\n' "$RESOLVED_POSTGRES_CONNECTION_SOURCE" >"$source_path"
 }
 
+wait_for_postgres_connection() {
+  local connection="$1"
+  local timeout_secs="$2"
+
+  python3 - "$connection" "$timeout_secs" <<'PY'
+import socket
+import sys
+import time
+from urllib.parse import urlsplit
+
+connection = sys.argv[1]
+timeout_secs = float(sys.argv[2])
+parsed = urlsplit(connection)
+host = parsed.hostname
+port = parsed.port
+if not host or port is None:
+    raise SystemExit("connection string is missing host or port")
+
+deadline = time.time() + timeout_secs
+last_error = "unknown error"
+while time.time() < deadline:
+    try:
+        with socket.create_connection((host, port), timeout=1.5):
+            raise SystemExit(0)
+    except OSError as exc:
+        last_error = str(exc)
+        time.sleep(0.5)
+
+raise SystemExit(
+    f"Postgres connection remained unreachable at {host}:{port} after {timeout_secs:.0f}s: {last_error}"
+)
+PY
+}
+
+refresh_fallback_postgres_connection_from_container() {
+  local meta_path="$ROOT_DIR/.tmp/m049-s01/local-postgres/container-meta.txt"
+  local connection_path="$ROOT_DIR/.tmp/m049-s01/local-postgres/connection.env"
+
+  python3 - "$meta_path" "$connection_path" <<'PY'
+from pathlib import Path
+import subprocess
+import sys
+from urllib.parse import urlsplit, urlunsplit
+
+meta_path = Path(sys.argv[1])
+connection_path = Path(sys.argv[2])
+
+if not meta_path.is_file():
+    raise SystemExit(f"missing fallback Postgres metadata: {meta_path}")
+if not connection_path.is_file():
+    raise SystemExit(f"missing fallback Postgres connection file: {connection_path}")
+
+meta = {}
+for line in meta_path.read_text(errors="strict").splitlines():
+    stripped = line.strip()
+    if not stripped or "=" not in stripped:
+        continue
+    key, value = stripped.split("=", 1)
+    meta[key.strip()] = value.strip()
+
+container = meta.get("container")
+if not container:
+    raise SystemExit(f"{meta_path}: missing container name")
+
+connection_value = None
+for line in connection_path.read_text(errors="strict").splitlines():
+    stripped = line.strip()
+    if not stripped or stripped.startswith("#"):
+        continue
+    if stripped.startswith("export "):
+        stripped = stripped[len("export ") :].lstrip()
+    if not stripped.startswith("DATABASE_URL="):
+        continue
+    connection_value = stripped.split("=", 1)[1].strip()
+    if connection_value[:1] in {'"', "'"} and connection_value[-1:] == connection_value[:1]:
+        connection_value = connection_value[1:-1]
+    break
+
+if not connection_value:
+    raise SystemExit(f"{connection_path}: missing DATABASE_URL")
+
+parts = urlsplit(connection_value)
+if not parts.scheme or not parts.hostname or parts.port is None:
+    raise SystemExit(f"{connection_path}: malformed DATABASE_URL")
+
+try:
+    running = subprocess.check_output(
+        ["docker", "inspect", "-f", "{{.State.Running}}", container],
+        text=True,
+        stderr=subprocess.STDOUT,
+    ).strip()
+except subprocess.CalledProcessError as exc:
+    raise SystemExit(
+        f"failed to inspect fallback Postgres container {container}: {exc.output.strip()}"
+    )
+
+if running.lower() != "true":
+    try:
+        subprocess.run(
+            ["docker", "start", container],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        combined = ((exc.stdout or "") + (exc.stderr or "")).strip()
+        raise SystemExit(
+            f"failed to start fallback Postgres container {container}: {combined}"
+        )
+
+try:
+    published = subprocess.check_output(
+        ["docker", "port", container, "5432/tcp"],
+        text=True,
+        stderr=subprocess.STDOUT,
+    )
+except subprocess.CalledProcessError as exc:
+    raise SystemExit(
+        f"failed to resolve published port for fallback Postgres container {container}: {exc.output.strip()}"
+    )
+
+mappings = [line.strip() for line in published.splitlines() if line.strip()]
+if not mappings:
+    raise SystemExit(
+        f"fallback Postgres container {container} has no published 5432/tcp port"
+    )
+
+try:
+    _, published_port = mappings[0].rsplit(":", 1)
+except ValueError as exc:
+    raise SystemExit(
+        f"could not parse published port mapping {mappings[0]!r}: {exc}"
+    )
+if not published_port.isdigit():
+    raise SystemExit(f"published port is not numeric: {mappings[0]!r}")
+
+userinfo = ""
+if parts.username is not None:
+    userinfo = parts.username
+    if parts.password is not None:
+        userinfo += f":{parts.password}"
+    userinfo += "@"
+
+host = parts.hostname
+if ":" in host and not host.startswith("["):
+    host = f"[{host}]"
+
+new_url = urlunsplit(
+    (
+        parts.scheme,
+        f"{userinfo}{host}:{published_port}",
+        parts.path,
+        parts.query,
+        parts.fragment,
+    )
+)
+
+connection_path.write_text(f"export DATABASE_URL={new_url}\n")
+meta["port"] = published_port
+meta_path.write_text(
+    "".join(f"{key}={value}\n" for key, value in meta.items())
+)
+print(f"fallback Postgres container {container} refreshed")
+PY
+}
+
+ensure_resolved_postgres_connection_reachable() {
+  local phase="$1"
+  local reachability_log="$ARTIFACT_DIR/${phase}.reachability.log"
+  local refresh_log="$ARTIFACT_DIR/${phase}.fallback-refresh.log"
+
+  if wait_for_postgres_connection "$RESOLVED_POSTGRES_CONNECTION" 2 >"$reachability_log" 2>&1; then
+    return 0
+  fi
+
+  if [[ "$RESOLVED_POSTGRES_CONNECTION_SOURCE" != "m049-s01-fallback-env" ]]; then
+    record_phase "$phase" failed
+    fail_phase "$phase" "resolved Postgres connection is unreachable" "$reachability_log"
+  fi
+
+  if ! command -v docker >/dev/null 2>&1; then
+    record_phase "$phase" failed
+    fail_phase "$phase" "fallback Postgres connection is unreachable and docker is unavailable for container refresh" "$reachability_log"
+  fi
+
+  if ! refresh_fallback_postgres_connection_from_container >"$refresh_log" 2>&1; then
+    record_phase "$phase" failed
+    fail_phase "$phase" "failed to refresh fallback Postgres container metadata" "$refresh_log" ".tmp/m049-s01/local-postgres"
+  fi
+
+  resolve_postgres_connection "$phase"
+  if ! wait_for_postgres_connection "$RESOLVED_POSTGRES_CONNECTION" 20 >"$reachability_log" 2>&1; then
+    record_phase "$phase" failed
+    fail_phase "$phase" "fallback Postgres connection remained unreachable after container refresh" "$reachability_log" ".tmp/m049-s01/local-postgres"
+  fi
+}
+
 run_expect_success_with_postgres_connection() {
   local phase="$1"
   local label="$2"
@@ -606,6 +803,41 @@ for marker in [
 ]:
     assert_phase_marker(m050 / 'phase-report.txt', marker)
 
+m050_s03 = require_dir(bundle_root / 'retained-m050-s03-verify')
+for rel in [
+    'status.txt',
+    'current-phase.txt',
+    'phase-report.txt',
+    'full-contract.log',
+    'latest-proof-bundle.txt',
+    'secondary-surfaces-contract.log',
+    'm047-s04-docs-contract.log',
+    'm047-s05-docs-contract.log',
+    'm047-s06-docs-contract.log',
+    'production-proof-surface.log',
+    'docs-build.log',
+    'built-html/distributed.index.html',
+    'built-html/distributed-proof.index.html',
+    'built-html/production-backend-proof.index.html',
+    'built-html/summary.json',
+]:
+    require_file(m050_s03 / rel)
+assert_text(m050_s03 / 'status.txt', 'ok', 'retained m050 s03 status')
+assert_text(m050_s03 / 'current-phase.txt', 'complete', 'retained m050 s03 current phase')
+assert_non_empty(m050_s03 / 'latest-proof-bundle.txt', 'retained m050 s03 bundle pointer')
+for marker in [
+    'secondary-surfaces-contract\tpassed',
+    'm047-s04-docs-contract\tpassed',
+    'm047-s05-docs-contract\tpassed',
+    'm047-s06-docs-contract\tpassed',
+    'production-proof-surface\tpassed',
+    'docs-build\tpassed',
+    'retain-built-html\tpassed',
+    'built-html\tpassed',
+    'm050-s03-bundle-shape\tpassed',
+]:
+    assert_phase_marker(m050_s03 / 'phase-report.txt', marker)
+
 manifest_paths = [
     bundle_root / 'retained-m049-s01-artifacts.manifest.txt',
     bundle_root / 'retained-m049-s02-artifacts.manifest.txt',
@@ -735,6 +967,9 @@ run_expect_success m050-s01-preflight m050-s01-preflight no 1800 ".tmp/m050-s01/
 require_file m050-s02-preflight "$ROOT_DIR/scripts/verify-m050-s02.sh" "first-contact docs preflight" ".tmp/m050-s02/verify"
 run_expect_success m050-s02-preflight m050-s02-preflight no 2400 ".tmp/m050-s02/verify" \
   bash scripts/verify-m050-s02.sh
+require_file m050-s03-preflight "$ROOT_DIR/scripts/verify-m050-s03.sh" "secondary-surface docs preflight" ".tmp/m050-s03/verify"
+run_expect_success m050-s03-preflight m050-s03-preflight no 2400 ".tmp/m050-s03/verify" \
+  bash scripts/verify-m050-s03.sh
 run_expect_success m049-s04-onboarding-contract m049-s04-onboarding-contract no 120 "" \
   node --test scripts/tests/verify-m049-s04-onboarding-contract.test.mjs
 run_expect_success m049-scaffold-mesh-pkg m049-scaffold-mesh-pkg yes 2400 "" \
@@ -757,6 +992,7 @@ capture_snapshot "$ROOT_DIR/.tmp/m049-s03" "$S03_BEFORE" verify
 
 begin_phase m049-s01-env-preflight
 resolve_postgres_connection m049-s01-env-preflight
+ensure_resolved_postgres_connection_reachable m049-s01-env-preflight
 record_phase m049-s01-env-preflight passed
 
 run_expect_success_with_postgres_connection m049-s01-e2e m049-s01-e2e yes 5400 ".tmp/m049-s01" \
@@ -852,6 +1088,28 @@ copy_fixed_dir_or_fail retain-m050-s02-verify \
   built-html/summary.json
 record_phase retain-m050-s02-verify passed
 
+begin_phase retain-m050-s03-verify
+copy_fixed_dir_or_fail retain-m050-s03-verify \
+  "$ROOT_DIR/.tmp/m050-s03/verify" \
+  "$RETAINED_PROOF_BUNDLE_DIR/retained-m050-s03-verify" \
+  "retained M050 S03 verify directory is missing or malformed" \
+  status.txt \
+  current-phase.txt \
+  phase-report.txt \
+  full-contract.log \
+  latest-proof-bundle.txt \
+  secondary-surfaces-contract.log \
+  m047-s04-docs-contract.log \
+  m047-s05-docs-contract.log \
+  m047-s06-docs-contract.log \
+  production-proof-surface.log \
+  docs-build.log \
+  built-html/distributed.index.html \
+  built-html/distributed-proof.index.html \
+  built-html/production-backend-proof.index.html \
+  built-html/summary.json
+record_phase retain-m050-s03-verify passed
+
 begin_phase retain-m049-s01-artifacts
 copy_new_artifacts_or_fail \
   retain-m049-s01-artifacts \
@@ -899,6 +1157,7 @@ for expected_phase in \
   init \
   m050-s01-preflight \
   m050-s02-preflight \
+  m050-s03-preflight \
   m049-s04-onboarding-contract \
   m049-scaffold-mesh-pkg \
   m049-scaffold-tooling \
@@ -917,6 +1176,7 @@ for expected_phase in \
   retain-m047-s05-verify \
   retain-m048-s05-verify \
   retain-m050-s02-verify \
+  retain-m050-s03-verify \
   retain-m049-s01-artifacts \
   retain-m049-s02-artifacts \
   retain-m049-s03-artifacts \

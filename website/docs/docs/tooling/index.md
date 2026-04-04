@@ -7,7 +7,7 @@ description: Formatter, REPL, package manager, LSP, and editor support for Mesh
 
 Mesh ships a developer toolchain centered on the `meshc` compiler plus the companion `meshpkg` package CLI. The verified public install path uses the documentation-served installer pair `https://meshlang.dev/install.sh` and `https://meshlang.dev/install.ps1` to place both binaries on your PATH before you choose a starter, configure formatting or testing, or wire Mesh into your editor.
 
-> **Production backend proof:** This page stays focused on the public day-one CLI workflow first. When you need the named backend proof commands that tie `meshc fmt`, `meshc test`, staged deploy smoke, and doc-truth verification together, start later with [Production Backend Proof](/docs/production-backend-proof/) and `reference-backend/README.md`.
+> **Production backend proof:** This page stays focused on the public day-one CLI workflow first. When you later need the deeper maintainer-facing backend proof path, start with [Production Backend Proof](/docs/production-backend-proof/). That page is the handoff to the named backend proof surfaces instead of a first-contact repo-root runbook.
 
 ## Install the CLI tools
 
@@ -47,13 +47,15 @@ meshpkg update
 
 Both commands rerun the canonical installer path and refresh both `meshc` and `meshpkg` together.
 
-For the named backend proof behind this public install contract, see [Production Backend Proof](/docs/production-backend-proof/) and `reference-backend/README.md`.
+For the named maintainer-facing backend proof behind this public install contract, see [Production Backend Proof](/docs/production-backend-proof/).
 
 If you are contributing to Mesh or need an unsupported target, build from source instead; treat that as an alternative workflow, not the primary public install contract.
 
 ## Package Manager
 
 Mesh includes a built-in package manager for creating and managing projects.
+
+Keep the public CLI workflow explicit and examples-first: hello world first, then the clustered scaffold, then the honest local SQLite starter or the serious shared/deployable PostgreSQL starter, and only after that the maintainer-facing backend proof page.
 
 ### Creating a New Project
 
@@ -93,7 +95,7 @@ That scaffold adds:
 - built-in operator guidance that points at the runtime-owned CLI instead of app-authored control-plane surfaces
 - follow-on guidance that points at [`examples/todo-postgres/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md) for the serious shared/deployable starter and [`examples/todo-sqlite/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md) for the honest local starter instead of internal proof fixtures
 
-If you are migrating older clustered code, move `clustered(work)` into source-first `@cluster`, delete any `[cluster]` manifest stanza, and rename helper-shaped entries such as `execute_declared_work(...)` / `Work.execute_declared_work` to ordinary verbs like `add()` or `sync_todos()`. Keep the route-free `@cluster` surfaces canonical: the PostgreSQL Todo starter only dogfoods explicit-count `HTTP.clustered(1, ...)` on `GET /todos` and `GET /todos/:id`, while `GET /health` and mutating routes stay local. Default-count and two-node clustered-route behavior stay on the repo S07 rail (`cargo test -p meshc --test e2e_m047_s07 -- --nocapture`).
+If you are migrating older clustered code, move `clustered(work)` into source-first `@cluster`, delete any `[cluster]` manifest stanza, and rename helper-shaped entries such as `execute_declared_work(...)` / `Work.execute_declared_work` to ordinary verbs like `add()` or `sync_todos()`. Keep the route-free `@cluster` surfaces canonical: the PostgreSQL Todo starter only dogfoods explicit-count `HTTP.clustered(1, ...)` on `GET /todos` and `GET /todos/:id`, while `GET /health` and mutating routes stay local. Default-count and two-node clustered-route behavior stay on the Distributed Proof handoff instead of the public starter contract.
 
 If you want the honest local Todo starter, generate SQLite explicitly:
 
@@ -120,7 +122,14 @@ meshc cluster continuity <node-name@host:port> <request_key> --json
 meshc cluster diagnostics <node-name@host:port> --json
 ```
 
-Use the list form first to discover startup or request keys, then inspect a single continuity record. Start with [Clustered Example](/docs/getting-started/clustered-example/) when you want the scaffold-first app story. Then use [`examples/todo-postgres/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md) for the serious shared/deployable starter, [`examples/todo-sqlite/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md) for the honest local starter, and [`reference-backend/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md) for the deeper backend proof. For the named clustered-app/operator proof rails behind that public story, start with [Distributed Proof](/docs/distributed-proof/). `bash scripts/verify-m047-s04.sh` remains the authoritative cutover rail for the source-first route-free clustered contract, `bash scripts/verify-m047-s05.sh` is the retained historical clustered Todo subrail kept behind fixture-backed rails instead of the public starter contract, `cargo test -p meshc --test e2e_m047_s07 -- --nocapture` remains the repo S07 rail for default-count and two-node wrapper behavior beyond the PostgreSQL Todo starter's explicit-count read routes, and `bash scripts/verify-m047-s06.sh` is the docs and retained-proof closeout rail that wraps S05, rebuilds docs truth, and owns the assembled `.tmp/m047-s06/verify` bundle. The lower-level retained fixture rails now live under `scripts/fixtures/clustered/` instead of public README runbooks, while `bash scripts/verify-m046-s06.sh`, `bash scripts/verify-m046-s05.sh`, `bash scripts/verify-m046-s04.sh`, `bash scripts/verify-m045-s05.sh`, and `bash scripts/verify-m045-s04.sh` remain historical compatibility aliases into the M047 cutover rail and `bash scripts/verify-m045-s03.sh` remains the historical failover-specific subrail.
+Use the list form first to discover startup or request keys, then inspect a single continuity record. After that CLI order, keep the public follow-on ladder explicit:
+
+- [Clustered Example](/docs/getting-started/clustered-example/) — the scaffold-first clustered app story
+- [SQLite Todo starter](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md) — the honest local single-node starter
+- [PostgreSQL Todo starter](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md) — the serious shared/deployable starter
+- [Production Backend Proof](/docs/production-backend-proof/) — the maintainer-facing backend proof page after the starter/examples-first ladder
+
+Keep the starter split explicit here too: [`examples/todo-sqlite/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md) is the honest local starter with no `work.mpl`, `HTTP.clustered(...)`, or `meshc cluster` story, while [`examples/todo-postgres/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md) is the shared/deployable route-free starter that only dogfoods explicit-count `HTTP.clustered(1, ...)` on `GET /todos` and `GET /todos/:id`.
 
 ### Project Manifest
 
@@ -164,9 +173,9 @@ When dependencies are resolved, a lockfile (`mesh.lock`) is generated to ensure 
 Run all `*.test.mpl` files from a project root, a tests directory, or a specific test file with `meshc test`:
 
 ```bash
-meshc test reference-backend
-meshc test reference-backend/tests
-meshc test reference-backend/tests/config.test.mpl
+meshc test .
+meshc test tests
+meshc test tests/example.test.mpl
 ```
 
 The test runner discovers all files ending in `.test.mpl` under the requested target, compiles and executes each independently, and prints a per-test pass/fail summary:
@@ -184,7 +193,7 @@ Exit code is non-zero if any test fails, making `meshc test` suitable for CI pip
 Coverage requests are intentionally honest today:
 
 ```bash
-meshc test --coverage reference-backend
+meshc test --coverage .
 ```
 
 `--coverage` currently exits non-zero with an explicit unsupported message instead of claiming a stub report.
@@ -208,7 +217,7 @@ meshc fmt .
 To fail fast in CI or before committing if any file would change:
 
 ```bash
-meshc fmt --check reference-backend
+meshc fmt --check .
 ```
 
 The formatter uses the **Wadler-Lindig** pretty-printing algorithm with a CST-based approach. This means:

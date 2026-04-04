@@ -293,8 +293,7 @@ fn m050_s02_contract_fails_closed_when_built_html_bundle_markers_disappear() {
         errors.iter().any(|error| {
             error.contains("$BUILT_HTML_DIR/tooling.index.html")
                 || error.contains("begin_phase m050-s02-bundle-shape")
-                || (error.contains("LATEST_PROOF_BUNDLE_PATH")
-                    && error.contains("ARTIFACT_DIR"))
+                || (error.contains("LATEST_PROOF_BUNDLE_PATH") && error.contains("ARTIFACT_DIR"))
         }),
         "{}",
         errors.join("\n")

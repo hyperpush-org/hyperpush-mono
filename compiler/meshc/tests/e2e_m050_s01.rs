@@ -8,8 +8,7 @@ const VERIFIER_PATH: &str = "scripts/verify-m050-s01.sh";
 const GRAPH_TEST_COMMAND: &str =
     "node --test scripts/tests/verify-m050-s01-onboarding-graph.test.mjs";
 const M047_S04_COMMAND: &str = "cargo test -p meshc --test e2e_m047_s04 -- --nocapture";
-const M047_S06_COMMAND: &str =
-    "cargo test -p meshc --test e2e_m047_s06 m047_s06_ -- --nocapture";
+const M047_S06_COMMAND: &str = "cargo test -p meshc --test e2e_m047_s06 m047_s06_ -- --nocapture";
 const PRODUCTION_PROOF_COMMAND: &str =
     "bash reference-backend/scripts/verify-production-proof-surface.sh";
 const DOCS_BUILD_COMMAND: &str = "npm --prefix website run build";
@@ -262,7 +261,10 @@ fn m050_s01_contract_fails_closed_when_built_html_bundle_markers_disappear() {
             "$BUILT_HTML_DIR/clustered-example.index.html",
             "$BUILT_HTML_DIR/clustered-example.html",
         )
-        .replace("begin_phase m050-s01-bundle-shape", "begin_phase m050-s01-bundle")
+        .replace(
+            "begin_phase m050-s01-bundle-shape",
+            "begin_phase m050-s01-bundle",
+        )
         .replace(
             "printf '%s\\n' \"$ARTIFACT_DIR\" >\"$LATEST_PROOF_BUNDLE_PATH\"",
             "printf '%s\\n' \"$BUILT_HTML_DIR\" >\"$LATEST_PROOF_BUNDLE_PATH\"",
@@ -273,8 +275,7 @@ fn m050_s01_contract_fails_closed_when_built_html_bundle_markers_disappear() {
         errors.iter().any(|error| {
             error.contains("$BUILT_HTML_DIR/clustered-example.index.html")
                 || error.contains("begin_phase m050-s01-bundle-shape")
-                || (error.contains("LATEST_PROOF_BUNDLE_PATH")
-                    && error.contains("ARTIFACT_DIR"))
+                || (error.contains("LATEST_PROOF_BUNDLE_PATH") && error.contains("ARTIFACT_DIR"))
         }),
         "{}",
         errors.join("\n")

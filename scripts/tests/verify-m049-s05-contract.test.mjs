@@ -72,6 +72,8 @@ function validateVerifierContract(baseRoot) {
     'm050-s01-preflight',
     'bash scripts/verify-m050-s02.sh',
     'm050-s02-preflight',
+    'bash scripts/verify-m050-s03.sh',
+    'm050-s03-preflight',
     'node --test scripts/tests/verify-m049-s04-onboarding-contract.test.mjs',
     'cargo test -p mesh-pkg m049_s0 -- --nocapture',
     'cargo test -p meshc --test tooling_e2e test_init_todo_template_ -- --nocapture',
@@ -94,6 +96,7 @@ function validateVerifierContract(baseRoot) {
     'retained-m047-s05-verify',
     'retained-m048-s05-verify',
     'retained-m050-s02-verify',
+    'retained-m050-s03-verify',
     'retained-m049-s01-artifacts',
     'retained-m049-s02-artifacts',
     'retained-m049-s03-artifacts',
@@ -105,7 +108,18 @@ function validateVerifierContract(baseRoot) {
     'built-html/getting-started.index.html',
     'built-html/clustered-example.index.html',
     'built-html/tooling.index.html',
+    'built-html/distributed.index.html',
+    'built-html/distributed-proof.index.html',
+    'built-html/production-backend-proof.index.html',
     'built-html/summary.json',
+    'secondary-surfaces-contract\\tpassed',
+    'm047-s04-docs-contract\\tpassed',
+    'm047-s05-docs-contract\\tpassed',
+    'm047-s06-docs-contract\\tpassed',
+    'production-proof-surface\\tpassed',
+    'retain-built-html\\tpassed',
+    'built-html\\tpassed',
+    'm050-s03-bundle-shape\\tpassed',
     'todos-unmigrated.http',
     'todos-unmigrated.json',
   ])
@@ -127,6 +141,7 @@ function validateVerifierContract(baseRoot) {
   requireOrdered(errors, verifierPath, verifier, [
     'bash scripts/verify-m050-s01.sh',
     'bash scripts/verify-m050-s02.sh',
+    'bash scripts/verify-m050-s03.sh',
     'node --test scripts/tests/verify-m049-s04-onboarding-contract.test.mjs',
     'cargo test -p mesh-pkg m049_s0 -- --nocapture',
     'cargo test -p meshc --test tooling_e2e test_init_todo_template_ -- --nocapture',
@@ -194,15 +209,15 @@ test('contract fails closed when the assembled replay order drifts', (t) => {
 
   let mutated = readFrom(tmpRoot, verifierPath)
   mutated = mutated.replace(
-    'bash scripts/verify-m050-s02.sh',
-    'bash scripts/verify-m050-s02.sh # moved-later',
+    'bash scripts/verify-m050-s03.sh',
+    'bash scripts/verify-m050-s03.sh # moved-later',
   )
   mutated = mutated.replace(
     'node --test scripts/tests/verify-m049-s04-onboarding-contract.test.mjs',
-    'bash scripts/verify-m050-s02.sh',
+    'bash scripts/verify-m050-s03.sh',
   )
   mutated = mutated.replace(
-    'bash scripts/verify-m050-s02.sh # moved-later',
+    'bash scripts/verify-m050-s03.sh # moved-later',
     'node --test scripts/tests/verify-m049-s04-onboarding-contract.test.mjs',
   )
   mutated = mutated.replace(
@@ -219,20 +234,20 @@ test('contract fails closed when the assembled replay order drifts', (t) => {
   assert.ok(errors.some((error) => error.includes('drifted order')), errors.join('\n'))
 })
 
-test('contract fails closed when retained m050-s02 bundle markers disappear', (t) => {
+test('contract fails closed when retained m050-s03 bundle markers disappear', (t) => {
   const tmpRoot = mkTmpDir(t, 'verify-m049-s05-bundle-')
   copyRepoFile(tmpRoot, verifierPath)
 
   let mutated = readFrom(tmpRoot, verifierPath)
-  mutated = mutated.replaceAll('retained-m050-s02-verify', 'retained-m050-s02-copy')
-  mutated = mutated.replaceAll('built-html/tooling.index.html', 'built-html/tooling.html')
-  mutated = mutated.replaceAll('built-html/summary.json', 'built-html/markers.json')
+  mutated = mutated.replaceAll('retained-m050-s03-verify', 'retained-m050-s03-copy')
+  mutated = mutated.replaceAll('built-html/distributed-proof.index.html', 'built-html/distributed-proof.html')
+  mutated = mutated.replaceAll('built-html/production-backend-proof.index.html', 'built-html/production-proof.index.html')
   writeTo(tmpRoot, verifierPath, mutated)
 
   const errors = validateVerifierContract(tmpRoot)
-  assert.ok(errors.some((error) => error.includes('missing "retained-m050-s02-verify"')), errors.join('\n'))
-  assert.ok(errors.some((error) => error.includes('missing "built-html/tooling.index.html"')), errors.join('\n'))
-  assert.ok(errors.some((error) => error.includes('missing "built-html/summary.json"')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('missing "retained-m050-s03-verify"')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('missing "built-html/distributed-proof.index.html"')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('missing "built-html/production-backend-proof.index.html"')), errors.join('\n'))
 })
 
 test('current repo documents the assembled verifier and dual-db onboarding split', () => {

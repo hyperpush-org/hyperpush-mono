@@ -1,0 +1,57 @@
+name: Documentation issue
+description: Report missing, outdated, confusing, or incorrect documentation.
+title: "[Docs]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for docs problems on the website, in starter/example READMEs, or in contributor-facing repo docs.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I checked the related docs page and searched existing documentation issues.
+          required: true
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Affected page or file
+      description: Paste the URL or repo path.
+      placeholder: https://meshlang.dev/docs/getting-started/ or README.md
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of docs issue is this?
+      options:
+        - incorrect information
+        - outdated information
+        - missing explanation
+        - unclear instructions
+        - typo / wording / formatting
+        - broken link
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong today?
+      placeholder: Describe the mismatch, omission, or confusing part.
+    validations:
+      required: true
+  - type: textarea
+    id: fix
+    attributes:
+      label: Suggested fix
+      description: If you know how the page should read, describe it here.
+      placeholder: Explain the change, updated command, corrected link, or missing context.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, exact commands, related pages, or follow-up notes.

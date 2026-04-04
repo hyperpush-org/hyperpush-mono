@@ -6,19 +6,27 @@ use support::m046_route_free as route_free;
 
 const TODO_POSTGRES_README: &str = "examples/todo-postgres/README.md";
 const TODO_SQLITE_README: &str = "examples/todo-sqlite/README.md";
-const REFERENCE_BACKEND_RUNBOOK: &str = "reference-backend/README.md";
+const MESHER_RUNBOOK: &str = "mesher/README.md";
+const VERIFY_M051_S01: &str = "bash scripts/verify-m051-s01.sh";
+const VERIFY_M051_S02: &str = "bash scripts/verify-m051-s02.sh";
 const DISTRIBUTED_PROOF_SITE_URL: &str = "https://meshlang.dev/docs/distributed-proof/";
+const CLUSTERED_EXAMPLE_DOC_LINK: &str = "/docs/getting-started/clustered-example/";
 const PRODUCTION_BACKEND_PROOF_DOC_LINK: &str = "/docs/production-backend-proof/";
-const PRODUCTION_BACKEND_PROOF_SITE_URL: &str = "https://meshlang.dev/docs/production-backend-proof/";
+const PRODUCTION_BACKEND_PROOF_SITE_URL: &str =
+    "https://meshlang.dev/docs/production-backend-proof/";
 const CUTOVER_RAIL: &str = "bash scripts/verify-m047-s04.sh";
+const TODO_SUBRAIL: &str = "bash scripts/verify-m047-s05.sh";
+const S07_RAIL_COMMAND: &str = "cargo test -p meshc --test e2e_m047_s07 -- --nocapture";
 const CLOSEOUT_RAIL: &str = "bash scripts/verify-m047-s06.sh";
+const FLY_READ_ONLY_RAIL: &str = "bash scripts/verify-m043-s04-fly.sh";
 const HISTORICAL_M046_CLOSEOUT_ALIAS: &str = "bash scripts/verify-m046-s06.sh";
 const HISTORICAL_M046_EQUAL_SURFACE_ALIAS: &str = "bash scripts/verify-m046-s05.sh";
 const HISTORICAL_M046_PACKAGE_ALIAS: &str = "bash scripts/verify-m046-s04.sh";
 const HISTORICAL_M045_CLOSEOUT_ALIAS: &str = "bash scripts/verify-m045-s05.sh";
 const HISTORICAL_M045_ASSEMBLED_ALIAS: &str = "bash scripts/verify-m045-s04.sh";
 const HISTORICAL_FAILOVER_SUBRAIL: &str = "bash scripts/verify-m045-s03.sh";
-const STALE_M046_AUTHORITY: &str = "`bash scripts/verify-m046-s06.sh` — the authoritative assembled closeout rail";
+const STALE_M046_AUTHORITY: &str =
+    "`bash scripts/verify-m046-s06.sh` — the authoritative assembled closeout rail";
 
 struct ContractSources {
     verify_script: String,
@@ -246,6 +254,16 @@ fn m047_s04_authoritative_cutover_rail_replays_source_first_contract_and_snapsho
             "contract-sidebar-distributed-proof-link",
             "contract-sidebar-production-proof-link",
             "contract-sidebar-proof-footer-opt-out",
+            "contract-distributed-proof-canonical-marker",
+            "contract-distributed-proof-s05",
+            "contract-distributed-proof-s07",
+            "contract-distributed-proof-fly",
+            "${safe_name}-clustered-example-page",
+            "${safe_name}-production-proof-page",
+            "${safe_name}-proof-ledger",
+            "${safe_name}-clustered-example-page",
+            "${safe_name}-production-proof-page",
+            "${safe_name}-proof-ledger",
             "contract-todo-postgres-init",
             "contract-todo-postgres-clustered-source",
             "contract-todo-postgres-clustered-route",
@@ -326,10 +344,7 @@ fn m047_s04_public_surfaces_keep_the_m050_onboarding_graph_and_proof_rails_disco
     let artifacts = artifact_dir("cutover-docs-contract");
     let sources = load_contract_sources(&artifacts);
 
-    assert_onboarding_graph_config(
-        "website/docs/.vitepress/config.mts",
-        &sources.docs_config,
-    );
+    assert_onboarding_graph_config("website/docs/.vitepress/config.mts", &sources.docs_config);
 
     assert_contains_all(
         "README.md",
@@ -337,8 +352,7 @@ fn m047_s04_public_surfaces_keep_the_m050_onboarding_graph_and_proof_rails_disco
         &[
             TODO_POSTGRES_README,
             TODO_SQLITE_README,
-            REFERENCE_BACKEND_RUNBOOK,
-            DISTRIBUTED_PROOF_SITE_URL,
+            MESHER_RUNBOOK,
             PRODUCTION_BACKEND_PROOF_SITE_URL,
         ],
     );
@@ -346,6 +360,7 @@ fn m047_s04_public_surfaces_keep_the_m050_onboarding_graph_and_proof_rails_disco
         "README.md",
         &sources.readme,
         &[
+            "reference-backend/README.md",
             CUTOVER_RAIL,
             CLOSEOUT_RAIL,
             HISTORICAL_M046_CLOSEOUT_ALIAS,
@@ -364,11 +379,19 @@ fn m047_s04_public_surfaces_keep_the_m050_onboarding_graph_and_proof_rails_disco
         "website/docs/docs/distributed-proof/index.md",
         &sources.distributed_proof,
         &[
+            "This is the only public-secondary docs page that carries the named clustered verifier rails.",
+            CLUSTERED_EXAMPLE_DOC_LINK,
             TODO_POSTGRES_README,
             TODO_SQLITE_README,
-            REFERENCE_BACKEND_RUNBOOK,
+            PRODUCTION_BACKEND_PROOF_DOC_LINK,
+            MESHER_RUNBOOK,
+            VERIFY_M051_S01,
+            VERIFY_M051_S02,
             CUTOVER_RAIL,
+            TODO_SUBRAIL,
+            S07_RAIL_COMMAND,
             CLOSEOUT_RAIL,
+            FLY_READ_ONLY_RAIL,
             HISTORICAL_M046_CLOSEOUT_ALIAS,
             HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
             HISTORICAL_M046_PACKAGE_ALIAS,
@@ -381,6 +404,7 @@ fn m047_s04_public_surfaces_keep_the_m050_onboarding_graph_and_proof_rails_disco
         "website/docs/docs/distributed-proof/index.md",
         &sources.distributed_proof,
         &[
+            "reference-backend/README.md",
             STALE_M046_AUTHORITY,
             "`bash scripts/verify-m046-s05.sh` — the lower-level equal-surface subrail",
             "`bash scripts/verify-m045-s05.sh` — the historical wrapper name retained for replay and transition into the S06 closeout rail",
@@ -399,44 +423,92 @@ fn m047_s04_clustered_runbooks_keep_example_readmes_and_secondary_proof_surfaces
     let artifacts = artifact_dir("cutover-runbook-contract");
     let sources = load_contract_sources(&artifacts);
 
-    for (path_label, source) in [
-        (
-            "website/docs/docs/distributed/index.md",
-            &sources.distributed,
-        ),
-        ("website/docs/docs/tooling/index.md", &sources.tooling),
-    ] {
-        assert_contains_all(
-            path_label,
-            source,
-            &[
-                TODO_POSTGRES_README,
-                TODO_SQLITE_README,
-                REFERENCE_BACKEND_RUNBOOK,
-                "/docs/distributed-proof/",
-                CUTOVER_RAIL,
-                CLOSEOUT_RAIL,
-                HISTORICAL_M046_CLOSEOUT_ALIAS,
-                HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
-                HISTORICAL_M046_PACKAGE_ALIAS,
-                HISTORICAL_M045_CLOSEOUT_ALIAS,
-                HISTORICAL_M045_ASSEMBLED_ALIAS,
-                HISTORICAL_FAILOVER_SUBRAIL,
-            ],
-        );
-        assert_omits_all(
-            path_label,
-            source,
-            &[
-                "The authoritative assembled closeout rail is `bash scripts/verify-m046-s06.sh`",
-                "the authoritative repo-wide closeout rail is `bash scripts/verify-m046-s06.sh`",
-                "For the repo-wide closeout story, `bash scripts/verify-m046-s06.sh` is the authoritative assembled closeout rail",
-                "tiny-cluster/README.md",
-                "cluster-proof/README.md",
-            ],
-        );
-        assert_clustered_surface_omits_routeful_drift(path_label, source);
-    }
+    assert_contains_all(
+        "website/docs/docs/distributed/index.md",
+        &sources.distributed,
+        &[
+            CLUSTERED_EXAMPLE_DOC_LINK,
+            "/docs/distributed-proof/",
+            PRODUCTION_BACKEND_PROOF_DOC_LINK,
+            TODO_POSTGRES_README,
+            TODO_SQLITE_README,
+            "honest local",
+            "shared/deployable",
+        ],
+    );
+    assert_omits_all(
+        "website/docs/docs/distributed/index.md",
+        &sources.distributed,
+        &[
+            "reference-backend/README.md",
+            CUTOVER_RAIL,
+            TODO_SUBRAIL,
+            S07_RAIL_COMMAND,
+            CLOSEOUT_RAIL,
+            FLY_READ_ONLY_RAIL,
+            HISTORICAL_M046_CLOSEOUT_ALIAS,
+            HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
+            HISTORICAL_M046_PACKAGE_ALIAS,
+            HISTORICAL_M045_CLOSEOUT_ALIAS,
+            HISTORICAL_M045_ASSEMBLED_ALIAS,
+            HISTORICAL_FAILOVER_SUBRAIL,
+            "The authoritative assembled closeout rail is `bash scripts/verify-m046-s06.sh`",
+            "the authoritative repo-wide closeout rail is `bash scripts/verify-m046-s06.sh`",
+            "For the repo-wide closeout story, `bash scripts/verify-m046-s06.sh` is the authoritative assembled closeout rail",
+            "tiny-cluster/README.md",
+            "cluster-proof/README.md",
+        ],
+    );
+    assert_clustered_surface_omits_routeful_drift(
+        "website/docs/docs/distributed/index.md",
+        &sources.distributed,
+    );
+
+    assert_contains_all(
+        "website/docs/docs/tooling/index.md",
+        &sources.tooling,
+        &[
+            CLUSTERED_EXAMPLE_DOC_LINK,
+            PRODUCTION_BACKEND_PROOF_DOC_LINK,
+            TODO_POSTGRES_README,
+            TODO_SQLITE_README,
+            "honest local",
+            "shared/deployable",
+        ],
+    );
+    assert_omits_all(
+        "website/docs/docs/tooling/index.md",
+        &sources.tooling,
+        &[
+            "reference-backend/README.md",
+            CUTOVER_RAIL,
+            TODO_SUBRAIL,
+            S07_RAIL_COMMAND,
+            CLOSEOUT_RAIL,
+            FLY_READ_ONLY_RAIL,
+            HISTORICAL_M046_CLOSEOUT_ALIAS,
+            HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
+            HISTORICAL_M046_PACKAGE_ALIAS,
+            HISTORICAL_M045_CLOSEOUT_ALIAS,
+            HISTORICAL_M045_ASSEMBLED_ALIAS,
+            HISTORICAL_FAILOVER_SUBRAIL,
+            "The authoritative assembled closeout rail is `bash scripts/verify-m046-s06.sh`",
+            "the authoritative repo-wide closeout rail is `bash scripts/verify-m046-s06.sh`",
+            "For the repo-wide closeout story, `bash scripts/verify-m046-s06.sh` is the authoritative assembled closeout rail",
+            "tiny-cluster/README.md",
+            "cluster-proof/README.md",
+        ],
+    );
+    assert_clustered_surface_omits_routeful_drift(
+        "website/docs/docs/tooling/index.md",
+        &sources.tooling,
+    );
+
+    assert_contains_all(
+        "website/docs/docs/distributed/index.md",
+        &sources.distributed,
+        &[MESHER_RUNBOOK, VERIFY_M051_S01, VERIFY_M051_S02],
+    );
 
     assert_contains_all(
         "website/docs/docs/getting-started/clustered-example/index.md",
@@ -444,7 +516,7 @@ fn m047_s04_clustered_runbooks_keep_example_readmes_and_secondary_proof_surfaces
         &[
             TODO_POSTGRES_README,
             TODO_SQLITE_README,
-            REFERENCE_BACKEND_RUNBOOK,
+            PRODUCTION_BACKEND_PROOF_DOC_LINK,
             "/docs/distributed-proof/",
         ],
     );
@@ -452,8 +524,12 @@ fn m047_s04_clustered_runbooks_keep_example_readmes_and_secondary_proof_surfaces
         "website/docs/docs/getting-started/clustered-example/index.md",
         &sources.clustered_example,
         &[
+            "reference-backend/README.md",
             CUTOVER_RAIL,
+            TODO_SUBRAIL,
+            S07_RAIL_COMMAND,
             CLOSEOUT_RAIL,
+            FLY_READ_ONLY_RAIL,
             HISTORICAL_M046_CLOSEOUT_ALIAS,
             HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
             HISTORICAL_M046_PACKAGE_ALIAS,

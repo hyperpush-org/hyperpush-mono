@@ -84,6 +84,12 @@ function validateSkillContract(baseRoot) {
     '`meshc init --template todo-api --db sqlite <name>` is the honest local single-node starter',
     'The SQLite Todo starter does not claim `work.mpl`, `HTTP.clustered(...)`, `meshc cluster`, or clustered/operator proof surfaces.',
     'Use the Postgres Todo template when you need the packaged clustered HTTP starter',
+    '/docs/production-backend-proof/',
+    'mesher/README.md',
+    'bash scripts/verify-m051-s01.sh',
+    'bash scripts/verify-m051-s02.sh',
+    'repo maintainers',
+    'Do not teach `reference-backend/README.md` or fixture/runbook paths as the public next step',
     'meshc cluster status <node-name@host:port> --json',
     'meshc cluster continuity <node-name@host:port> --json',
     'meshc cluster continuity <node-name@host:port> <request-key> --json',
@@ -136,6 +142,13 @@ function validateSkillContract(baseRoot) {
     errors,
     skillPaths.clustering,
     files[skillPaths.clustering],
+    /(keep|use) `reference-backend\/README\.md`|reference-backend\/README\.md` as the deeper backend proof/i,
+    'repo-root reference-backend onboarding handoff',
+  )
+  requireNoMatch(
+    errors,
+    skillPaths.clustering,
+    files[skillPaths.clustering],
     /local SQLite-backed HTTP app/,
     'stale clustered SQLite starter wording',
   )
@@ -172,7 +185,7 @@ test('contract fails closed when the root skill collapses the starter split back
   assert.ok(errors.some((error) => error.includes('tools/skill/mesh/SKILL.md still contains unsplit todo-api starter guidance')), errors.join('\n'))
 })
 
-test('contract fails closed when the clustering skill reintroduces the old clustered SQLite todo story', (t) => {
+test('contract fails closed when the clustering skill reintroduces the old repo-root backend handoff', (t) => {
   const tmpRoot = mkTmpDir(t, 'verify-m048-s04-clustering-')
   copySkillFiles(tmpRoot)
 
@@ -183,20 +196,24 @@ test('contract fails closed when the clustering skill reintroduces the old clust
     '`meshc init --template todo-api <name>` is the fuller starter layered on top of that same contract.',
   )
   mutated = mutated.replace(
-    '`meshc init --template todo-api --db sqlite <name>` is the honest local single-node starter: generated package tests, local `/health`, actor-backed write rate limiting, and Docker packaging around `meshc build .`.',
-    'The Todo starter keeps `work.mpl` on `@cluster pub fn sync_todos()`, starts with `Node.start_from_env()`, and adds a local SQLite-backed HTTP app.',
+    '/docs/production-backend-proof/',
+    'reference-backend/README.md',
   )
   mutated = mutated.replace(
-    'The SQLite Todo starter does not claim `work.mpl`, `HTTP.clustered(...)`, `meshc cluster`, or clustered/operator proof surfaces.',
-    'Use the Todo template when you need the packaged HTTP starter; use the clustered scaffold when you want the minimal route-free public clustered surface.',
+    'mesher/README.md',
+    'reference-backend/README.md',
+  )
+  mutated = mutated.replace(
+    'Do not teach `reference-backend/README.md` or fixture/runbook paths as the public next step after the clustered scaffold or Todo starters.',
+    'Use `reference-backend/README.md` as the deeper backend proof once the generated starters stop being enough.',
   )
   writeTo(tmpRoot, clusteringPath, mutated)
 
   const errors = validateSkillContract(tmpRoot)
   assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md missing "`meshc init --template todo-api --db postgres <name>` is the fuller shared or deployable starter layered on top of that same route-free clustered contract."')), errors.join('\n'))
-  assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md missing "`meshc init --template todo-api --db sqlite <name>` is the honest local single-node starter"')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md missing "Do not teach `reference-backend/README.md` or fixture/runbook paths as the public next step"')), errors.join('\n'))
   assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md still contains unsplit todo-api starter guidance')), errors.join('\n'))
-  assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md still contains stale clustered SQLite starter wording')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md still contains repo-root reference-backend onboarding handoff')), errors.join('\n'))
 })
 
 test('contract fails closed when the HTTP skill extends clustered route wrappers back onto the SQLite starter', (t) => {

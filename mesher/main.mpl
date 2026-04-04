@@ -2,13 +2,26 @@
 # Connects to PostgreSQL, creates schema and partitions, starts all services.
 # Services are defined in mesher/services/ modules.
 # Ingestion pipeline wires HTTP routes and WS handler.
-# Schema DDL is managed by `meshc migrate up` -- run before starting the application.
+# Maintainer runbook: mesher/README.md.
+# Schema DDL is managed by `cargo run -q -p meshc -- migrate mesher up` -- run before starting the application.
 
+from Config import (
+  database_url_key,
+  port_key,
+  ws_port_key,
+  rate_limit_window_seconds_key,
+  rate_limit_max_events_key,
+  default_port,
+  default_ws_port,
+  default_rate_limit_window_seconds,
+  default_rate_limit_max_events,
+  invalid_positive_int,
+  missing_required_env
+)
 from Storage.Schema import create_partitions_ahead
 from Services.Org import OrgService
 from Services.Project import ProjectService
 from Services.User import UserService
-from Services.Writer import StorageWriter
 from Ingestion.Pipeline import start_pipeline
 from Ingestion.Routes import (
   handle_event,
@@ -51,53 +64,31 @@ from Api.Alerts import (
 from Api.Settings import handle_get_project_settings, handle_update_project_settings, handle_get_project_storage
 from Ingestion.WsHandler import ws_on_connect, ws_on_message, ws_on_close
 
-fn connect_to_peer(peer :: String) do
-  if peer != "" do
-    let connect_result = Node.connect(peer)
-    if connect_result == 0 do
-      println("[Mesher] Connected to peer: #{peer}")
+fn log_bootstrap(status :: BootstrapStatus) do
+  println(
+    "[Mesher] runtime bootstrap mode=#{status.mode} node=#{status.node_name} cluster_port=#{status.cluster_port} discovery_seed=#{status.discovery_seed}"
+  )
+end
+
+fn log_bootstrap_failure(reason :: String) do
+  println("[Mesher] runtime bootstrap failed reason=#{reason}")
+end
+
+fn log_config_error(message :: String) do
+  println("[Mesher] Config error: #{message}")
+end
+
+fn optional_positive_env_int(name :: String, default_value :: Int) -> Int ! String do
+  let raw = Env.get(name, "")
+  if raw == "" do
+    Ok(default_value)
+  else
+    let value = Env.get_int(name, -1)
+    if value > 0 do
+      Ok(value)
     else
-      println("[Mesher] Failed to connect to peer: #{peer}")
+      Err(invalid_positive_int(name))
     end
-  else
-    println("[Mesher] No peers configured")
-  end
-end
-
-fn try_connect_peers() do
-  let peer = Env.get("MESHER_PEERS", "")
-  if peer != "" do
-    connect_to_peer(peer)
-  else
-    println("[Mesher] No peers configured")
-  end
-end
-
-fn start_node_with(node_name :: String, cookie :: String) do
-  let start_result = Node.start(node_name, cookie)
-  if start_result == 0 do
-    println("[Mesher] Node started: #{node_name}")
-  else
-    println("[Mesher] Node start failed for: #{node_name}")
-  end
-  try_connect_peers()
-end
-
-fn try_start_with_cookie(node_name :: String) do
-  let cookie = Env.get("MESHER_COOKIE", "")
-  if cookie != "" do
-    start_node_with(node_name, cookie)
-  else
-    println("[Mesher] Running in standalone mode (no distribution)")
-  end
-end
-
-fn start_node() do
-  let name = Env.get("MESHER_NODE_NAME", "")
-  if name != "" do
-    try_start_with_cookie(name)
-  else
-    println("[Mesher] Running in standalone mode (no distribution)")
   end
 end
 
@@ -113,32 +104,14 @@ fn on_ws_close(conn, code :: Int, reason :: String) do
   ws_on_close(conn, code, reason)
 end
 
-fn start_services(pool :: PoolHandle) do
-  # Start distributed node if configured (before services, after PG)
-  start_node()
-  # Create initial partitions (7 days ahead)
-  let partition_result = create_partitions_ahead(pool, 7)
-  case partition_result do
-    Ok( _) -> println("[Mesher] Partition bootstrap succeeded (7 days ahead)")
-    Err( e) -> println("[Mesher] Partition bootstrap failed: #{e}")
-  end
-  # Start services
-  let org_svc = OrgService.start(pool)
-  println("[Mesher] OrgService started")
-  let project_svc = ProjectService.start(pool)
-  println("[Mesher] ProjectService started")
-  let user_svc = UserService.start(pool)
-  println("[Mesher] UserService started")
-  # Start ingestion pipeline (registers PipelineRegistry by name)
-  let registry_pid = start_pipeline(pool)
-  println("[Mesher] Foundation ready")
-  # Read configurable ports from environment (defaults: 8080 HTTP, 8081 WS)
-  let ws_port = Env.get_int("MESHER_WS_PORT", 8081)
-  let http_port = Env.get_int("MESHER_HTTP_PORT", 8080)
-  # Start WebSocket server (non-blocking -- spawns accept thread in runtime)
+fn start_runtime(http_port :: Int, ws_port :: Int, window_seconds :: Int, max_events :: Int) do
+  println(
+    "[Mesher] Runtime ready http_port=#{http_port} ws_port=#{ws_port} db_backend=postgres rate_limit_window_seconds=#{window_seconds} rate_limit_max_events=#{max_events}"
+  )
+
   println("[Mesher] WebSocket server starting on :#{ws_port}")
   Ws.serve(on_ws_connect, on_ws_message, on_ws_close, ws_port)
-  # Set up HTTP routes and start server (ingestion, search, dashboard, detail, issues, team, API keys)
+
   println("[Mesher] HTTP server starting on :#{http_port}")
   let router = HTTP.router()
     |> HTTP.on_post("/api/v1/events", handle_event)
@@ -180,11 +153,110 @@ fn start_services(pool :: PoolHandle) do
   HTTP.serve(router, http_port)
 end
 
-fn main() do
-  println("[Mesher] Connecting to PostgreSQL...")
-  let pool_result = Pool.open("postgres://mesh:mesh@localhost:5432/mesher", 2, 10, 5000)
+fn on_runtime_ready(
+  http_port :: Int,
+  ws_port :: Int,
+  window_seconds :: Int,
+  max_events :: Int,
+  pool :: PoolHandle
+) do
+  case create_partitions_ahead(pool, 7) do
+    Ok( _) -> println("[Mesher] Partition bootstrap succeeded (7 days ahead)")
+    Err( e) -> println("[Mesher] Partition bootstrap failed: #{e}")
+  end
+
+  let org_svc = OrgService.start(pool)
+  println("[Mesher] OrgService started")
+  let project_svc = ProjectService.start(pool)
+  println("[Mesher] ProjectService started")
+  let user_svc = UserService.start(pool)
+  println("[Mesher] UserService started")
+  let pipeline_pid = start_pipeline(pool, window_seconds, max_events)
+  println("[Mesher] Foundation ready")
+  start_runtime(http_port, ws_port, window_seconds, max_events)
+end
+
+fn maybe_boot_with_pool(
+  http_port :: Int,
+  ws_port :: Int,
+  window_seconds :: Int,
+  max_events :: Int,
+  pool :: PoolHandle
+) do
+  case Node.start_from_env() do
+    Ok( status) -> do
+      log_bootstrap(status)
+      on_runtime_ready(http_port, ws_port, window_seconds, max_events, pool)
+    end
+    Err( reason) -> log_bootstrap_failure(reason)
+  end
+end
+
+fn start_with_values(
+  database_url :: String,
+  http_port :: Int,
+  ws_port :: Int,
+  window_seconds :: Int,
+  max_events :: Int
+) do
+  println(
+    "[Mesher] Config loaded http_port=#{http_port} ws_port=#{ws_port} rate_limit_window_seconds=#{window_seconds} rate_limit_max_events=#{max_events}"
+  )
+  println("[Mesher] Connecting to PostgreSQL pool...")
+
+  let pool_result = Pool.open(database_url, 2, 10, 5000)
   case pool_result do
-    Ok( pool) -> start_services(pool)
-    Err( _) -> println("[Mesher] Failed to connect to PostgreSQL")
+    Ok( pool) -> do
+      println("[Mesher] PostgreSQL pool ready")
+      maybe_boot_with_pool(http_port, ws_port, window_seconds, max_events, pool)
+    end
+    Err( _) -> println("[Mesher] PostgreSQL connect failed")
+  end
+end
+
+fn maybe_start_with_max_events(
+  database_url :: String,
+  http_port :: Int,
+  ws_port :: Int,
+  window_seconds :: Int
+) do
+  let max_events_env = rate_limit_max_events_key()
+  case optional_positive_env_int(max_events_env, default_rate_limit_max_events()) do
+    Ok( max_events) -> start_with_values(database_url, http_port, ws_port, window_seconds, max_events)
+    Err( message) -> log_config_error(message)
+  end
+end
+
+fn maybe_start_with_window_seconds(database_url :: String, http_port :: Int, ws_port :: Int) do
+  let window_seconds_env = rate_limit_window_seconds_key()
+  case optional_positive_env_int(window_seconds_env, default_rate_limit_window_seconds()) do
+    Ok( window_seconds) -> maybe_start_with_max_events(database_url, http_port, ws_port, window_seconds)
+    Err( message) -> log_config_error(message)
+  end
+end
+
+fn maybe_start_with_ws_port(database_url :: String, http_port :: Int) do
+  let ws_port_env = ws_port_key()
+  case optional_positive_env_int(ws_port_env, default_ws_port()) do
+    Ok( ws_port) -> maybe_start_with_window_seconds(database_url, http_port, ws_port)
+    Err( message) -> log_config_error(message)
+  end
+end
+
+fn maybe_start_with_port(database_url :: String) do
+  let port_env = port_key()
+  case optional_positive_env_int(port_env, default_port()) do
+    Ok( http_port) -> maybe_start_with_ws_port(database_url, http_port)
+    Err( message) -> log_config_error(message)
+  end
+end
+
+fn main() do
+  let database_url_env = database_url_key()
+  let database_url = String.trim(Env.get(database_url_env, ""))
+  if database_url == "" do
+    log_config_error(missing_required_env(database_url_env))
+  else
+    maybe_start_with_port(database_url)
   end
 end

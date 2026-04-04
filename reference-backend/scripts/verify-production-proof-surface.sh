@@ -4,54 +4,55 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 PROOF_PAGE="website/docs/docs/production-backend-proof/index.md"
-README_FILE="README.md"
-RUNBOOK_FILE="reference-backend/README.md"
+DISTRIBUTED_PAGE="website/docs/docs/distributed/index.md"
+DISTRIBUTED_PROOF_PAGE="website/docs/docs/distributed-proof/index.md"
+WEB_PAGE="website/docs/docs/web/index.md"
+DATABASES_PAGE="website/docs/docs/databases/index.md"
+TESTING_PAGE="website/docs/docs/testing/index.md"
+CONCURRENCY_PAGE="website/docs/docs/concurrency/index.md"
 SIDEBAR_FILE="website/docs/.vitepress/config.mts"
-GETTING_STARTED_FILE="website/docs/docs/getting-started/index.md"
+MESHER_RUNBOOK_FILE="mesher/README.md"
+MESHER_VERIFIER_FILE="scripts/verify-m051-s01.sh"
+RETAINED_VERIFIER_FILE="scripts/verify-m051-s02.sh"
+
 PROOF_LINK="/docs/production-backend-proof/"
-PROOF_URL="https://meshlang.dev/docs/production-backend-proof/"
-CLUSTERED_EXAMPLE_LINK="/docs/getting-started/clustered-example/"
-CLUSTERED_EXAMPLE_URL="https://meshlang.dev/docs/getting-started/clustered-example/"
-README_CLUSTERED_EXAMPLE_NEXT_STEP='- **Clustered walkthrough:** use `meshc init --clustered` and then follow https://meshlang.dev/docs/getting-started/clustered-example/'
-README_PROOF_NEXT_STEP='- **Production Backend Proof:** https://meshlang.dev/docs/production-backend-proof/'
-GETTING_STARTED_CLUSTERED_EXAMPLE_NEXT_STEP='- [Clustered Example](/docs/getting-started/clustered-example/)'
-GETTING_STARTED_PROOF_NEXT_STEP='- [Production Backend Proof](/docs/production-backend-proof/)'
-RUNBOOK_REF="reference-backend/README.md"
-RUNBOOK_LINK="https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md"
-CANONICAL_PUBLIC_PROOF_COMMANDS=(
-  'cargo run -p meshc -- build reference-backend'
-  'cargo run -p meshc -- fmt --check reference-backend'
-  'cargo run -p meshc -- test reference-backend'
-  'DATABASE_URL=${DATABASE_URL:?set DATABASE_URL} cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_migration_status_and_apply -- --ignored --nocapture'
-  'DATABASE_URL=${DATABASE_URL:?set DATABASE_URL} cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_deploy_artifact_smoke -- --ignored --nocapture'
-  'DATABASE_URL=${DATABASE_URL:?set DATABASE_URL} cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_worker_crash_recovers_job -- --ignored --nocapture'
-  'DATABASE_URL=${DATABASE_URL:?set DATABASE_URL} cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_worker_restart_is_visible_in_health -- --ignored --nocapture'
-  'DATABASE_URL=${DATABASE_URL:?set DATABASE_URL} cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_process_restart_recovers_inflight_job -- --ignored --nocapture'
-  'bash reference-backend/scripts/verify-production-proof-surface.sh'
+PRODUCTION_BACKEND_PROOF_LINK='[Production Backend Proof](/docs/production-backend-proof/)'
+CLUSTERED_EXAMPLE_LINK='[Clustered Example](/docs/getting-started/clustered-example/)'
+MESHER_RUNBOOK_LINK='[`mesher/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/mesher/README.md)'
+MESHER_VERIFIER_COMMAND='bash scripts/verify-m051-s01.sh'
+RETAINED_VERIFIER_COMMAND='bash scripts/verify-m051-s02.sh'
+PROOF_SURFACE_VERIFIER_COMMAND='bash reference-backend/scripts/verify-production-proof-surface.sh'
+STALE_RUNBOOK_LINK='[`reference-backend/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md)'
+STALE_FIXTURE_PATH='scripts/fixtures/backend/reference-backend/'
+PROOF_ROLE_SENTENCE="This is the compact public-secondary handoff for Mesh's backend proof story."
+PROOF_AUDIENCE_SENTENCE='Public readers should still stay scaffold/examples first:'
+PROOF_BOUNDARY_SENTENCE='This page only names the deeper maintainer surfaces behind that public story: Mesher as the maintained app, and a retained backend-only verifier kept behind a named replay instead of a public repo-root runbook.'
+DISTRIBUTED_PROOF_ROLE_SENTENCE='This is the only public-secondary docs page that carries the named clustered verifier rails.'
+GENERIC_GUIDE_LINKS=(
+  '/docs/web/'
+  '/docs/databases/'
+  '/docs/testing/'
+  '/docs/concurrency/'
+  '/docs/tooling/'
 )
-RECOVERY_RUNBOOK_STRINGS=(
-  'Supervision and recovery'
-  'restart_count'
-  'last_exit_reason'
-  'recovered_jobs'
-  'last_recovery_at'
-  'last_recovery_job_id'
-  'last_recovery_count'
-  'recovery_active'
-  'Worker crash proof'
-  'Process restart proof'
+GENERIC_GUIDES=(
+  "$WEB_PAGE"
+  "$DATABASES_PAGE"
+  "$TESTING_PAGE"
+  "$CONCURRENCY_PAGE"
 )
-PROOF_PAGE_RECOVERY_STRINGS=(
-  'restart_count'
-  'last_exit_reason'
-  'recovered_jobs'
-  'last_recovery_at'
-  'last_recovery_job_id'
-  'last_recovery_count'
-  'recovery_active'
-  'Worker crash recovery'
-  'Whole-process restart recovery'
-  'Recovery window visibility'
+PROOF_DIRECT_RAIL_MARKERS=(
+  'bash scripts/verify-m047-s04.sh'
+  'bash scripts/verify-m047-s05.sh'
+  'cargo test -p meshc --test e2e_m047_s07 -- --nocapture'
+  'bash scripts/verify-m047-s06.sh'
+  'bash scripts/verify-m043-s04-fly.sh --help'
+)
+STALE_TESTING_EXAMPLES=(
+  'meshc test reference-backend'
+  'meshc test reference-backend/tests'
+  'meshc test reference-backend/tests/config.test.mpl'
+  'meshc test --coverage reference-backend'
 )
 
 phase() {
@@ -132,30 +133,20 @@ require_command rg
 require_command python3
 
 phase "checking canonical files exist"
-require_file "$PROOF_PAGE"
-require_file "$README_FILE"
-require_file "$RUNBOOK_FILE"
-require_file "$SIDEBAR_FILE"
-require_file "$GETTING_STARTED_FILE"
-
-phase "checking public entrypoints keep the production proof surface discoverable but secondary"
-require_contains "$README_FILE" "$PROOF_URL" "production proof link"
-require_contains "$README_FILE" "$RUNBOOK_REF" "reference backend runbook reference"
-require_contains "$README_FILE" "$CLUSTERED_EXAMPLE_URL" "clustered example link"
-require_order \
-  "$README_FILE" \
-  "$README_CLUSTERED_EXAMPLE_NEXT_STEP" \
-  "$README_PROOF_NEXT_STEP" \
-  'README keeps the clustered example ahead of the production proof path'
-
-require_contains "$GETTING_STARTED_FILE" "$PROOF_LINK" "production proof link"
-require_contains "$GETTING_STARTED_FILE" "$RUNBOOK_REF" "reference backend runbook reference"
-require_contains "$GETTING_STARTED_FILE" "$CLUSTERED_EXAMPLE_LINK" "clustered example link"
-require_order \
-  "$GETTING_STARTED_FILE" \
-  "$GETTING_STARTED_CLUSTERED_EXAMPLE_NEXT_STEP" \
-  "$GETTING_STARTED_PROOF_NEXT_STEP" \
-  'Getting Started keeps Clustered Example ahead of Production Backend Proof'
+for relative_path in \
+  "$PROOF_PAGE" \
+  "$DISTRIBUTED_PAGE" \
+  "$DISTRIBUTED_PROOF_PAGE" \
+  "$WEB_PAGE" \
+  "$DATABASES_PAGE" \
+  "$TESTING_PAGE" \
+  "$CONCURRENCY_PAGE" \
+  "$SIDEBAR_FILE" \
+  "$MESHER_RUNBOOK_FILE" \
+  "$MESHER_VERIFIER_FILE" \
+  "$RETAINED_VERIFIER_FILE"; do
+  require_file "$relative_path"
+done
 
 phase "checking the sidebar keeps the production proof surface public but secondary"
 if ! python3 - "$ROOT/$SIDEBAR_FILE" "$PROOF_LINK" <<'PY'
@@ -223,30 +214,100 @@ phase "checking the proof page opts out of the footer chain"
 require_contains "$PROOF_PAGE" 'prev: false' 'proof-page footer prev opt-out marker'
 require_contains "$PROOF_PAGE" 'next: false' 'proof-page footer next opt-out marker'
 
-phase "checking proof page points at the real runbook and verifier"
-require_contains "$PROOF_PAGE" "$RUNBOOK_REF" "reference backend runbook reference"
-require_contains "$PROOF_PAGE" "$RUNBOOK_LINK" "reference backend runbook link"
-require_contains "$PROOF_PAGE" "bash reference-backend/scripts/verify-production-proof-surface.sh" "doc truth verification command"
+phase "checking the proof page markers and maintainer commands"
+for needle in \
+  "$PROOF_ROLE_SENTENCE" \
+  "$PROOF_AUDIENCE_SENTENCE" \
+  "$PROOF_BOUNDARY_SENTENCE" \
+  '## Canonical surfaces' \
+  '## Named maintainer verifiers' \
+  '## Retained backend-only recovery signals' \
+  '## When to use this page vs the generic guides' \
+  '## Failure inspection map' \
+  "$CLUSTERED_EXAMPLE_LINK" \
+  "$MESHER_RUNBOOK_LINK" \
+  "$MESHER_VERIFIER_COMMAND" \
+  "$RETAINED_VERIFIER_COMMAND" \
+  "$PROOF_SURFACE_VERIFIER_COMMAND" \
+  'restart_count' \
+  'last_exit_reason' \
+  'recovered_jobs' \
+  'last_recovery_at' \
+  'last_recovery_job_id' \
+  'last_recovery_count' \
+  'recovery_active'; do
+  require_contains "$PROOF_PAGE" "$needle" 'proof-page marker'
+done
+for needle in "${GENERIC_GUIDE_LINKS[@]}"; do
+  require_contains "$PROOF_PAGE" "$needle" 'generic-guide routing marker'
+done
+for needle in \
+  "$STALE_RUNBOOK_LINK" \
+  "$STALE_FIXTURE_PATH"; do
+  require_not_contains "$PROOF_PAGE" "$needle" 'stale public backend handoff'
+done
+require_order "$PROOF_PAGE" '## Canonical surfaces' '## Named maintainer verifiers' 'proof page keeps surfaces ahead of named maintainer verifiers'
+require_order "$PROOF_PAGE" '## Named maintainer verifiers' '## Retained backend-only recovery signals' 'proof page keeps named maintainer verifiers ahead of retained recovery signals'
+require_order "$PROOF_PAGE" '## Retained backend-only recovery signals' '## When to use this page vs the generic guides' 'proof page keeps retained recovery signals ahead of generic-guide handoff'
+require_order "$PROOF_PAGE" '## When to use this page vs the generic guides' '## Failure inspection map' 'proof page keeps generic-guide handoff ahead of the failure map'
+require_order "$PROOF_PAGE" "$CLUSTERED_EXAMPLE_LINK" "$MESHER_RUNBOOK_LINK" 'proof page keeps the clustered starter handoff ahead of the Mesher runbook link'
+require_order "$PROOF_PAGE" "$MESHER_RUNBOOK_LINK" "$MESHER_VERIFIER_COMMAND" 'proof page keeps Mesher runbook ahead of Mesher verifier command'
+require_order "$PROOF_PAGE" "$MESHER_VERIFIER_COMMAND" "$RETAINED_VERIFIER_COMMAND" 'proof page keeps Mesher verifier ahead of retained verifier command'
 
-phase "checking the runbook exposes the recovery contract"
-for needle in "${RECOVERY_RUNBOOK_STRINGS[@]}"; do
-  require_contains "$RUNBOOK_FILE" "$needle" "recovery runbook wording"
+phase "checking generic guide handoffs"
+for guide in "${GENERIC_GUIDES[@]}"; do
+  require_contains "$guide" '> **Production backend proof:**' 'guide proof-callout marker'
+  require_contains "$guide" "$PRODUCTION_BACKEND_PROOF_LINK" 'Production Backend Proof handoff'
+  require_contains "$guide" "$MESHER_RUNBOOK_LINK" 'Mesher maintainer handoff'
+  require_contains "$guide" "$MESHER_VERIFIER_COMMAND" 'Mesher verifier handoff'
+  require_contains "$guide" "$RETAINED_VERIFIER_COMMAND" 'retained verifier handoff'
+  require_not_contains "$guide" "$STALE_RUNBOOK_LINK" 'stale repo-root backend link'
+  require_not_contains "$guide" "$STALE_FIXTURE_PATH" 'leaked retained fixture path'
+  require_order "$guide" "$PRODUCTION_BACKEND_PROOF_LINK" "$MESHER_RUNBOOK_LINK" 'generic guide keeps Production Backend Proof ahead of Mesher'
+  require_order "$guide" "$MESHER_RUNBOOK_LINK" "$MESHER_VERIFIER_COMMAND" 'generic guide keeps Mesher link ahead of Mesher verifier'
+  require_order "$guide" "$MESHER_VERIFIER_COMMAND" "$RETAINED_VERIFIER_COMMAND" 'generic guide keeps Mesher verifier ahead of retained verifier'
+done
+for needle in "${STALE_TESTING_EXAMPLES[@]}"; do
+  require_not_contains "$TESTING_PAGE" "$needle" 'stale testing example'
 done
 
-phase "checking the proof page exposes the recovery-aware public contract"
-for needle in "${PROOF_PAGE_RECOVERY_STRINGS[@]}"; do
-  require_contains "$PROOF_PAGE" "$needle" "recovery proof wording"
+phase "checking distributed guide and distributed-proof handoffs"
+for needle in \
+  '> **Clustered proof surfaces:**' \
+  "$CLUSTERED_EXAMPLE_LINK" \
+  "$PRODUCTION_BACKEND_PROOF_LINK" \
+  "$MESHER_RUNBOOK_LINK" \
+  "$MESHER_VERIFIER_COMMAND" \
+  "$RETAINED_VERIFIER_COMMAND"; do
+  require_contains "$DISTRIBUTED_PAGE" "$needle" 'distributed guide proof marker'
 done
-
-phase "checking the runbook and proof page share the same authoritative command list"
-for needle in "${CANONICAL_PUBLIC_PROOF_COMMANDS[@]}"; do
-  require_contains "$RUNBOOK_FILE" "$needle" "canonical public proof command"
-  require_contains "$PROOF_PAGE" "$needle" "canonical public proof command"
+require_not_contains "$DISTRIBUTED_PAGE" "$STALE_RUNBOOK_LINK" 'stale repo-root backend link on Distributed Actors'
+require_not_contains "$DISTRIBUTED_PAGE" "$STALE_FIXTURE_PATH" 'leaked retained fixture path on Distributed Actors'
+for needle in "${PROOF_DIRECT_RAIL_MARKERS[@]}"; do
+  require_not_contains "$DISTRIBUTED_PAGE" "$needle" 'named clustered verifier rail on Distributed Actors'
 done
+require_order "$DISTRIBUTED_PAGE" "$CLUSTERED_EXAMPLE_LINK" "$PRODUCTION_BACKEND_PROOF_LINK" 'Distributed Actors keeps Clustered Example ahead of Production Backend Proof'
+require_order "$DISTRIBUTED_PAGE" "$PRODUCTION_BACKEND_PROOF_LINK" "$MESHER_RUNBOOK_LINK" 'Distributed Actors keeps Production Backend Proof ahead of Mesher'
+require_order "$DISTRIBUTED_PAGE" "$MESHER_RUNBOOK_LINK" "$MESHER_VERIFIER_COMMAND" 'Distributed Actors keeps Mesher link ahead of Mesher verifier'
+require_order "$DISTRIBUTED_PAGE" "$MESHER_VERIFIER_COMMAND" "$RETAINED_VERIFIER_COMMAND" 'Distributed Actors keeps Mesher verifier ahead of retained verifier'
 
-phase "checking stale phrases are gone"
-require_not_contains "$GETTING_STARTED_FILE" "mesh-lang.org/install.sh" "stale install URL"
-require_not_contains "$README_FILE" "placeholder link" "placeholder documentation wording"
-require_not_contains "$README_FILE" "### Production Ready" "implicit production-ready heading"
+for needle in \
+  "$DISTRIBUTED_PROOF_ROLE_SENTENCE" \
+  '## Public surfaces and verifier rails' \
+  '## Named proof commands' \
+  "$CLUSTERED_EXAMPLE_LINK" \
+  "$PRODUCTION_BACKEND_PROOF_LINK" \
+  "$MESHER_RUNBOOK_LINK" \
+  "$MESHER_VERIFIER_COMMAND" \
+  "$RETAINED_VERIFIER_COMMAND"; do
+  require_contains "$DISTRIBUTED_PROOF_PAGE" "$needle" 'distributed-proof marker'
+done
+require_not_contains "$DISTRIBUTED_PROOF_PAGE" "$STALE_RUNBOOK_LINK" 'stale repo-root backend link on Distributed Proof'
+require_not_contains "$DISTRIBUTED_PROOF_PAGE" "$STALE_FIXTURE_PATH" 'leaked retained fixture path on Distributed Proof'
+require_order "$DISTRIBUTED_PROOF_PAGE" "$DISTRIBUTED_PROOF_ROLE_SENTENCE" '## Public surfaces and verifier rails' 'Distributed Proof keeps the role sentence ahead of the verifier ledger'
+require_order "$DISTRIBUTED_PROOF_PAGE" "$PRODUCTION_BACKEND_PROOF_LINK" "$MESHER_RUNBOOK_LINK" 'Distributed Proof keeps Production Backend Proof ahead of Mesher'
+require_order "$DISTRIBUTED_PROOF_PAGE" "$MESHER_RUNBOOK_LINK" "$MESHER_VERIFIER_COMMAND" 'Distributed Proof keeps Mesher link ahead of Mesher verifier'
+require_order "$DISTRIBUTED_PROOF_PAGE" "$MESHER_VERIFIER_COMMAND" "$RETAINED_VERIFIER_COMMAND" 'Distributed Proof keeps Mesher verifier ahead of retained verifier'
+require_order "$DISTRIBUTED_PROOF_PAGE" '## Public surfaces and verifier rails' '## Named proof commands' 'Distributed Proof keeps the verifier ledger ahead of named commands'
 
 phase "production proof surface verified"

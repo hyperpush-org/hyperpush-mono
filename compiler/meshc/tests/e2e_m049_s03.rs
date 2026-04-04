@@ -47,12 +47,14 @@ fn m049_s03_materializer_check_fails_closed_when_a_committed_example_root_is_mis
     let artifacts = todo::artifact_dir("todo-examples-missing-root");
     let temp_examples_root = artifacts.join("mutated/examples");
     todo::clone_examples_root(&temp_examples_root);
-    fs::remove_dir_all(temp_examples_root.join(todo::SQLITE_EXAMPLE_NAME)).unwrap_or_else(|error| {
-        panic!(
-            "failed to remove {}: {error}",
-            temp_examples_root.join(todo::SQLITE_EXAMPLE_NAME).display()
-        )
-    });
+    fs::remove_dir_all(temp_examples_root.join(todo::SQLITE_EXAMPLE_NAME)).unwrap_or_else(
+        |error| {
+            panic!(
+                "failed to remove {}: {error}",
+                temp_examples_root.join(todo::SQLITE_EXAMPLE_NAME).display()
+            )
+        },
+    );
 
     todo::write_json_artifact(
         &artifacts.join("scenario-meta.json"),
@@ -84,7 +86,9 @@ fn m049_s03_materializer_check_names_missing_extra_and_changed_files_in_mutated_
     let temp_examples_root = artifacts.join("mutated/examples");
     todo::clone_examples_root(&temp_examples_root);
 
-    let sqlite_mesh_toml = temp_examples_root.join(todo::SQLITE_EXAMPLE_NAME).join("mesh.toml");
+    let sqlite_mesh_toml = temp_examples_root
+        .join(todo::SQLITE_EXAMPLE_NAME)
+        .join("mesh.toml");
     let sqlite_mesh_toml_original = fs::read_to_string(&sqlite_mesh_toml)
         .unwrap_or_else(|error| panic!("failed to read {}: {error}", sqlite_mesh_toml.display()));
     fs::write(
@@ -157,7 +161,8 @@ fn m049_s03_materializer_check_names_missing_extra_and_changed_files_in_mutated_
         run.combined
     );
     assert!(
-        run.stderr.contains("missing=migrations/20260402120000_create_todos.mpl"),
+        run.stderr
+            .contains("missing=migrations/20260402120000_create_todos.mpl"),
         "expected Postgres missing migration report, got:\n{}",
         run.combined
     );

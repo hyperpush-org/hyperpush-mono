@@ -81,57 +81,70 @@ function validateOnboardingContract(baseRoot) {
   const clusteringSkill = readFrom(baseRoot, filePaths.clusteringSkill)
 
   requireIncludes(errors, filePaths.readme, readme, [
-    'meshc init --clustered',
+    'starter/examples-first',
     'examples/todo-postgres/README.md',
     'examples/todo-sqlite/README.md',
-    'reference-backend/README.md',
-    'serious shared/deployable PostgreSQL starter',
-    'honest local single-node SQLite starter',
+    'https://meshlang.dev/docs/production-backend-proof/',
+    'mesher/README.md',
   ])
 
   requireIncludes(errors, `${filePaths.scaffold} clustered README template`, scaffoldReadme, [
     'examples/todo-postgres/README.md',
     'examples/todo-sqlite/README.md',
-    'reference-backend/README.md',
-    'serious shared/deployable PostgreSQL starter',
-    'honest local single-node SQLite starter',
+    'https://meshlang.dev/docs/production-backend-proof/',
+    'mesher/README.md',
+    'bash scripts/verify-m051-s01.sh',
+    'bash scripts/verify-m051-s02.sh',
+    'repo maintainers',
   ])
 
   requireIncludes(errors, filePaths.clusteredExample, clusteredExample, [
     'meshc init --clustered',
     'examples/todo-postgres/README.md',
     'examples/todo-sqlite/README.md',
-    'reference-backend/README.md',
     'After the scaffold, pick the follow-on starter',
+    'Production Backend Proof',
   ])
 
   requireIncludes(errors, filePaths.distributed, distributed, [
-    'public scaffold/examples-first split',
+    'public route scaffold/examples-first',
     'examples/todo-postgres/README.md',
     'examples/todo-sqlite/README.md',
-    'reference-backend/README.md',
+    'Production Backend Proof',
+    'mesher/README.md',
+    'bash scripts/verify-m051-s01.sh',
+    'bash scripts/verify-m051-s02.sh',
   ])
 
   requireIncludes(errors, filePaths.distributedProof, distributedProof, [
+    'This is the only public-secondary docs page that carries the named clustered verifier rails.',
     'examples/todo-postgres/README.md',
     'examples/todo-sqlite/README.md',
-    'reference-backend/README.md',
+    'Production Backend Proof',
+    'mesher/README.md',
+    'bash scripts/verify-m051-s01.sh',
+    'bash scripts/verify-m051-s02.sh',
     'scripts/fixtures/clustered/tiny-cluster',
     'scripts/fixtures/clustered/cluster-proof',
-    'public starter contract',
+    'public starter split plus a deeper backend handoff',
   ])
 
   requireIncludes(errors, filePaths.tooling, tooling, [
     'examples/todo-postgres/README.md',
     'examples/todo-sqlite/README.md',
-    'reference-backend/README.md',
-    'follow-on guidance that points at',
+    'Production Backend Proof',
+    'starter/examples-first',
+    'named backend proof surfaces instead of a first-contact repo-root runbook',
   ])
 
   requireIncludes(errors, filePaths.clusteringSkill, clusteringSkill, [
     'examples/todo-postgres',
     'examples/todo-sqlite',
-    'reference-backend/README.md',
+    '/docs/production-backend-proof/',
+    'mesher/README.md',
+    'bash scripts/verify-m051-s01.sh',
+    'bash scripts/verify-m051-s02.sh',
+    'repo maintainers',
     '`meshc init --template todo-api --db postgres <name>` is the fuller shared or deployable starter layered on top of that same route-free clustered contract.',
     '`meshc init --template todo-api --db sqlite <name>` is the honest local single-node starter',
   ])
@@ -143,21 +156,10 @@ function validateOnboardingContract(baseRoot) {
     [filePaths.distributed, distributed],
     [filePaths.distributedProof, distributedProof],
     [filePaths.tooling, tooling],
-    [filePaths.clusteringSkill, clusteringSkill],
   ]) {
+    requireNoMatch(errors, relativePath, text, /reference-backend\/README\.md/, 'repo-root reference-backend onboarding handoff')
     requireNoMatch(errors, relativePath, text, /tiny-cluster\/README\.md/, 'stale tiny-cluster onboarding link')
     requireNoMatch(errors, relativePath, text, /cluster-proof\/README\.md/, 'stale cluster-proof onboarding link')
-  }
-
-  for (const [relativePath, text] of [
-    [filePaths.readme, readme],
-    [`${filePaths.scaffold} clustered README template`, scaffoldReadme],
-    [filePaths.clusteredExample, clusteredExample],
-    [filePaths.distributed, distributed],
-    [filePaths.distributedProof, distributedProof],
-    [filePaths.tooling, tooling],
-    [filePaths.clusteringSkill, clusteringSkill],
-  ]) {
     requireNoMatch(
       errors,
       relativePath,
@@ -166,6 +168,23 @@ function validateOnboardingContract(baseRoot) {
       'unsplit todo-api starter guidance',
     )
   }
+
+  requireNoMatch(
+    errors,
+    filePaths.clusteringSkill,
+    clusteringSkill,
+    /(keep|use) `reference-backend\/README\.md`|reference-backend\/README\.md` as the deeper backend proof/i,
+    'repo-root reference-backend onboarding handoff',
+  )
+  requireNoMatch(errors, filePaths.clusteringSkill, clusteringSkill, /tiny-cluster\/README\.md/, 'stale tiny-cluster onboarding link')
+  requireNoMatch(errors, filePaths.clusteringSkill, clusteringSkill, /cluster-proof\/README\.md/, 'stale cluster-proof onboarding link')
+  requireNoMatch(
+    errors,
+    filePaths.clusteringSkill,
+    clusteringSkill,
+    /meshc init --template todo-api(?! --db (sqlite|postgres))/,
+    'unsplit todo-api starter guidance',
+  )
 
   requireNoMatch(
     errors,
@@ -204,7 +223,7 @@ test('current repo publishes the scaffold/examples-first clustered onboarding co
   assert.deepEqual(errors, [], errors.join('\n'))
 })
 
-test('contract fails closed when README reintroduces a proof-app onboarding link', (t) => {
+test('contract fails closed when README reintroduces a repo-root backend runbook as the public next step', (t) => {
   const tmpRoot = mkTmpDir(t, 'verify-m049-s04-readme-')
   for (const relativePath of Object.values(filePaths)) {
     copyRepoFile(tmpRoot, relativePath)
@@ -213,17 +232,17 @@ test('contract fails closed when README reintroduces a proof-app onboarding link
   const relativePath = filePaths.readme
   let mutated = readFrom(tmpRoot, relativePath)
   mutated = mutated.replaceAll(
-    'examples/todo-postgres/README.md',
-    'tiny-cluster/README.md',
+    'https://meshlang.dev/docs/production-backend-proof/',
+    'https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md',
   )
   writeTo(tmpRoot, relativePath, mutated)
 
   const errors = validateOnboardingContract(tmpRoot)
-  assert.ok(errors.some((error) => error.includes('README.md missing "examples/todo-postgres/README.md"')), errors.join('\n'))
-  assert.ok(errors.some((error) => error.includes('README.md still contains stale tiny-cluster onboarding link')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('README.md missing "https://meshlang.dev/docs/production-backend-proof/"')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('README.md still contains repo-root reference-backend onboarding handoff')), errors.join('\n'))
 })
 
-test('contract fails closed when the clustered scaffold README drifts back toward proof fixtures', (t) => {
+test('contract fails closed when the clustered scaffold README drifts back toward a repo-root backend runbook', (t) => {
   const tmpRoot = mkTmpDir(t, 'verify-m049-s04-scaffold-')
   for (const relativePath of Object.values(filePaths)) {
     copyRepoFile(tmpRoot, relativePath)
@@ -232,20 +251,16 @@ test('contract fails closed when the clustered scaffold README drifts back towar
   const relativePath = filePaths.scaffold
   let mutated = readFrom(tmpRoot, relativePath)
   mutated = mutated.replaceAll(
-    'examples/todo-postgres/README.md',
-    'cluster-proof/README.md',
+    'https://meshlang.dev/docs/production-backend-proof/',
+    'https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md',
   )
-  mutated = mutated.replaceAll(
-    'reference-backend/README.md',
-    'tiny-cluster/README.md',
-  )
+  mutated = mutated.replaceAll('mesher/README.md', 'reference-backend/README.md')
   writeTo(tmpRoot, relativePath, mutated)
 
   const errors = validateOnboardingContract(tmpRoot)
-  assert.ok(errors.some((error) => error.includes('compiler/mesh-pkg/src/scaffold.rs clustered README template missing "examples/todo-postgres/README.md"')), errors.join('\n'))
-  assert.ok(errors.some((error) => error.includes('compiler/mesh-pkg/src/scaffold.rs clustered README template missing "reference-backend/README.md"')), errors.join('\n'))
-  assert.ok(errors.some((error) => error.includes('compiler/mesh-pkg/src/scaffold.rs clustered README template still contains stale tiny-cluster onboarding link')), errors.join('\n'))
-  assert.ok(errors.some((error) => error.includes('compiler/mesh-pkg/src/scaffold.rs clustered README template still contains stale cluster-proof onboarding link')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('compiler/mesh-pkg/src/scaffold.rs clustered README template missing "https://meshlang.dev/docs/production-backend-proof/"')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('compiler/mesh-pkg/src/scaffold.rs clustered README template missing "mesher/README.md"')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('compiler/mesh-pkg/src/scaffold.rs clustered README template still contains repo-root reference-backend onboarding handoff')), errors.join('\n'))
 })
 
 test('contract fails closed when distributed proof drifts back to deleted repo-root fixture commands', (t) => {
@@ -267,7 +282,7 @@ test('contract fails closed when distributed proof drifts back to deleted repo-r
   assert.ok(errors.some((error) => error.includes('website/docs/docs/distributed-proof/index.md still contains deleted root cluster-proof build command')), errors.join('\n'))
 })
 
-test('contract fails closed when the clustering skill collapses the scaffold/examples split', (t) => {
+test('contract fails closed when the clustering skill collapses the deeper handoff back to repo-root backend teaching', (t) => {
   const tmpRoot = mkTmpDir(t, 'verify-m049-s04-skill-')
   for (const relativePath of Object.values(filePaths)) {
     copyRepoFile(tmpRoot, relativePath)
@@ -275,14 +290,15 @@ test('contract fails closed when the clustering skill collapses the scaffold/exa
 
   const relativePath = filePaths.clusteringSkill
   let mutated = readFrom(tmpRoot, relativePath)
-  mutated = mutated.replaceAll('examples/todo-postgres', 'cluster-proof')
-  mutated = mutated.replaceAll('examples/todo-sqlite', 'tiny-cluster')
+  mutated = mutated.replaceAll('/docs/production-backend-proof/', 'reference-backend/README.md')
+  mutated = mutated.replaceAll('mesher/README.md', 'reference-backend/README.md')
   mutated = mutated.replaceAll('meshc init --template todo-api --db postgres', 'meshc init --template todo-api')
   writeTo(tmpRoot, relativePath, mutated)
 
   const errors = validateOnboardingContract(tmpRoot)
-  assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md missing "examples/todo-postgres"')), errors.join('\n'))
-  assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md missing "examples/todo-sqlite"')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md missing "/docs/production-backend-proof/"')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md missing "mesher/README.md"')), errors.join('\n'))
+  assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md still contains repo-root reference-backend onboarding handoff')), errors.join('\n'))
   assert.ok(errors.some((error) => error.includes('tools/skill/mesh/skills/clustering/SKILL.md still contains unsplit todo-api starter guidance')), errors.join('\n'))
 })
 

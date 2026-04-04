@@ -1433,8 +1433,9 @@ fn m046_s03_tiny_cluster_fixture_helper_fails_closed_on_missing_required_file() 
         )
     });
 
-    let error = route_free::validate_tiny_cluster_fixture_root(&broken_root)
-        .expect_err("missing fixture files should fail before the retained tiny-cluster rail starts");
+    let error = route_free::validate_tiny_cluster_fixture_root(&broken_root).expect_err(
+        "missing fixture files should fail before the retained tiny-cluster rail starts",
+    );
     write_artifact(&artifacts.join("fixture-error.txt"), &error);
     assert_contains(
         "broken tiny-cluster fixture error",

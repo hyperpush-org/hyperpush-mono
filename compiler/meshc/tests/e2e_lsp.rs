@@ -22,6 +22,7 @@ use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
 use support::m046_route_free as route_free;
+use support::m051_reference_backend as retained_backend;
 
 const MESSAGE_TIMEOUT: Duration = Duration::from_secs(8);
 const DEFAULT_ENTRYPOINT: &str = "main.mpl";
@@ -734,13 +735,13 @@ fn read_json_rpc_message_rejects_malformed_payload() {
 
 #[test]
 fn lsp_json_rpc_reference_backend_flow() {
-    let root = repo_root();
+    let repo_root = repo_root();
     let artifacts = artifact_dir("reference-backend-flow");
-    let reference_backend = root.join("reference-backend");
-    let health_path = fs::canonicalize(reference_backend.join("api/health.mpl"))
-        .expect("reference backend health file should exist");
-    let jobs_path = fs::canonicalize(reference_backend.join("api/jobs.mpl"))
-        .expect("reference backend jobs file should exist");
+    let reference_backend = retained_backend::retained_fixture_root();
+    let health_path = fs::canonicalize(retained_backend::retained_health_path())
+        .expect("retained reference-backend health file should exist");
+    let jobs_path = fs::canonicalize(retained_backend::retained_jobs_path())
+        .expect("retained reference-backend jobs file should exist");
     let health_uri = file_uri(&health_path);
     let jobs_uri = file_uri(&jobs_path);
     let health_source = fs::read_to_string(&health_path).expect("health source should be readable");
@@ -749,20 +750,25 @@ fn lsp_json_rpc_reference_backend_flow() {
     route_free::write_artifact(
         &artifacts.join("reference-paths.txt"),
         format!(
-            "root: {}\nhealth_path: {}\njobs_path: {}\n",
-            root.display(),
+            "repo_root: {}\nfixture_root: {}\nhealth_path: {}\njobs_path: {}\n",
+            repo_root.display(),
+            reference_backend.display(),
             health_path.display(),
             jobs_path.display()
         ),
     );
 
-    let mut session = LspSession::new(&root, artifacts.clone(), "reference-backend");
+    let mut session = LspSession::new(
+        &reference_backend,
+        artifacts.clone(),
+        "retained-reference-backend",
+    );
 
     let initialize = session.request(
         "initialize",
         json!({
             "processId": Value::Null,
-            "rootUri": file_uri(&root),
+            "rootUri": file_uri(&reference_backend),
             "capabilities": {},
         }),
     );
@@ -794,7 +800,8 @@ fn lsp_json_rpc_reference_backend_flow() {
     let health_open_diagnostics = session.wait_for_diagnostics(&health_uri, "health didOpen");
     assert!(
         health_open_diagnostics.is_empty(),
-        "reference-backend/api/health.mpl should open cleanly, got diagnostics: {:?}\nartifacts: {}",
+        "{} should open cleanly, got diagnostics: {:?}\nartifacts: {}",
+        retained_backend::RETAINED_FIXTURE_HEALTH_RELATIVE,
         health_open_diagnostics,
         artifacts.display()
     );
@@ -814,7 +821,8 @@ fn lsp_json_rpc_reference_backend_flow() {
     let jobs_open_diagnostics = session.wait_for_diagnostics(&jobs_uri, "jobs didOpen");
     assert!(
         jobs_open_diagnostics.is_empty(),
-        "reference-backend/api/jobs.mpl should open cleanly, got diagnostics: {:?}\nartifacts: {}",
+        "{} should open cleanly, got diagnostics: {:?}\nartifacts: {}",
+        retained_backend::RETAINED_FIXTURE_JOBS_RELATIVE,
         jobs_open_diagnostics,
         artifacts.display()
     );
@@ -862,7 +870,7 @@ fn lsp_json_rpc_reference_backend_flow() {
             },
         }),
     );
-    let definition_location = require_single_location(&definition, "reference-backend definition");
+    let definition_location = require_single_location(&definition, "retained reference-backend definition");
     println!(
         "[e2e_lsp] phase=reference-backend provider=definition uri={jobs_uri} response={} ",
         pretty_json(&definition)
@@ -870,7 +878,8 @@ fn lsp_json_rpc_reference_backend_flow() {
     assert_eq!(
         definition_location["uri"].as_str(),
         Some(jobs_uri.as_str()),
-        "definition should stay within reference-backend/api/jobs.mpl for create_job_response call: {definition:?}"
+        "definition should stay within {} for create_job_response call: {definition:?}",
+        retained_backend::RETAINED_FIXTURE_JOBS_RELATIVE,
     );
     assert_eq!(
         definition_location["range"]["start"]["line"].as_u64(),
@@ -945,7 +954,8 @@ fn lsp_json_rpc_reference_backend_flow() {
     assert_eq!(
         edits[0]["newText"].as_str(),
         Some(health_source.as_str()),
-        "formatting should restore canonical reference-backend/api/health.mpl text"
+        "formatting should restore canonical {} text",
+        retained_backend::RETAINED_FIXTURE_HEALTH_RELATIVE,
     );
 
     let invalid_health = format!(

@@ -23,7 +23,8 @@ fn required_database_url(test_name: &str) -> String {
 
 #[test]
 fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_crud() {
-    let test_name = "m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_crud";
+    let test_name =
+        "m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_crud";
     let base_database_url = required_database_url(test_name);
     let artifacts = todo::artifact_dir("todo-api-postgres-runtime-truth");
     let workspace_dir = artifacts.join("workspace");
@@ -37,7 +38,8 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
     let migrate = todo::run_meshc_migrate_up(&project_dir, &database.database_url, &artifacts);
     todo::assert_phase_success(&migrate, "meshc migrate <project> up should succeed");
     assert!(
-        migrate.combined.contains("Applying:") && migrate.combined.contains("Applied 1 migration(s)"),
+        migrate.combined.contains("Applying:")
+            && migrate.combined.contains("Applied 1 migration(s)"),
         "expected apply markers in migrate output, got:\n{}",
         migrate.combined
     );
@@ -63,16 +65,14 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
     );
 
     let run_result = catch_unwind(AssertUnwindSafe(|| {
-        let health = todo::wait_for_health(
-            &runtime_config,
-            &artifacts,
-            "health",
-            &secret_values,
-        );
+        let health = todo::wait_for_health(&runtime_config, &artifacts, "health", &secret_values);
         assert_eq!(health["status"].as_str(), Some("ok"));
         assert_eq!(health["db_backend"].as_str(), Some("postgres"));
         assert_eq!(health["migration_strategy"].as_str(), Some("meshc migrate"));
-        assert_eq!(health["clustered_handler"].as_str(), Some("Work.sync_todos"));
+        assert_eq!(
+            health["clustered_handler"].as_str(),
+            Some("Work.sync_todos")
+        );
         assert_eq!(
             health["rate_limit_window_seconds"].as_i64(),
             Some(runtime_config.rate_limit_window_seconds as i64)
@@ -88,7 +88,9 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
             &artifacts,
             "todos-empty",
             &todo::send_http_request(runtime_config.http_port, "GET", "/todos", None)
-                .unwrap_or_else(|error| panic!("GET /todos failed on {}: {error}", runtime_config.http_port)),
+                .unwrap_or_else(|error| {
+                    panic!("GET /todos failed on {}: {error}", runtime_config.http_port)
+                }),
             200,
             "GET /todos",
             &secret_values,
@@ -107,7 +109,12 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
                 &format!("/todos/{}", todo::MISSING_TODO_ID),
                 None,
             )
-            .unwrap_or_else(|error| panic!("GET missing todo failed on {}: {error}", runtime_config.http_port)),
+            .unwrap_or_else(|error| {
+                panic!(
+                    "GET missing todo failed on {}: {error}",
+                    runtime_config.http_port
+                )
+            }),
             404,
             "GET /todos/:id missing",
             &secret_values,
@@ -123,7 +130,12 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
                 "/todos",
                 Some(r#"{"title":"   "}"#),
             )
-            .unwrap_or_else(|error| panic!("POST empty-title todo failed on {}: {error}", runtime_config.http_port)),
+            .unwrap_or_else(|error| {
+                panic!(
+                    "POST empty-title todo failed on {}: {error}",
+                    runtime_config.http_port
+                )
+            }),
             400,
             "POST /todos empty title",
             &secret_values,
@@ -133,13 +145,13 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
         let invalid_json = todo::json_response_snapshot(
             &artifacts,
             "todos-invalid-json",
-            &todo::send_http_request(
-                runtime_config.http_port,
-                "POST",
-                "/todos",
-                Some("not-json"),
-            )
-            .unwrap_or_else(|error| panic!("POST invalid-json todo failed on {}: {error}", runtime_config.http_port)),
+            &todo::send_http_request(runtime_config.http_port, "POST", "/todos", Some("not-json"))
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "POST invalid-json todo failed on {}: {error}",
+                        runtime_config.http_port
+                    )
+                }),
             400,
             "POST /todos invalid JSON",
             &secret_values,
@@ -155,7 +167,12 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
                 &format!("/todos/{}", todo::MALFORMED_TODO_ID),
                 None,
             )
-            .unwrap_or_else(|error| panic!("GET malformed todo id failed on {}: {error}", runtime_config.http_port)),
+            .unwrap_or_else(|error| {
+                panic!(
+                    "GET malformed todo id failed on {}: {error}",
+                    runtime_config.http_port
+                )
+            }),
             500,
             "GET /todos/:id malformed id",
             &secret_values,
@@ -177,7 +194,12 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
                 "/todos",
                 Some(r#"{"title":"buy milk"}"#),
             )
-            .unwrap_or_else(|error| panic!("POST create todo failed on {}: {error}", runtime_config.http_port)),
+            .unwrap_or_else(|error| {
+                panic!(
+                    "POST create todo failed on {}: {error}",
+                    runtime_config.http_port
+                )
+            }),
             201,
             "POST /todos create",
             &secret_values,
@@ -189,7 +211,9 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
         assert_eq!(created["title"].as_str(), Some("buy milk"));
         assert_eq!(created["completed"].as_bool(), Some(false));
         assert!(
-            created["created_at"].as_str().is_some_and(|value| !value.is_empty()),
+            created["created_at"]
+                .as_str()
+                .is_some_and(|value| !value.is_empty()),
             "created todo should expose created_at, got: {created}"
         );
 
@@ -202,12 +226,20 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
                 &format!("/todos/{todo_id}"),
                 None,
             )
-            .unwrap_or_else(|error| panic!("GET created todo failed on {}: {error}", runtime_config.http_port)),
+            .unwrap_or_else(|error| {
+                panic!(
+                    "GET created todo failed on {}: {error}",
+                    runtime_config.http_port
+                )
+            }),
             200,
             "GET /todos/:id created",
             &secret_values,
         );
-        assert_eq!(fetched, created, "fetched todo should match the created todo");
+        assert_eq!(
+            fetched, created,
+            "fetched todo should match the created todo"
+        );
 
         let missing_toggle = todo::json_response_snapshot(
             &artifacts,
@@ -218,7 +250,12 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
                 &format!("/todos/{}", todo::MISSING_TODO_ID),
                 Some("{}"),
             )
-            .unwrap_or_else(|error| panic!("PUT missing todo failed on {}: {error}", runtime_config.http_port)),
+            .unwrap_or_else(|error| {
+                panic!(
+                    "PUT missing todo failed on {}: {error}",
+                    runtime_config.http_port
+                )
+            }),
             404,
             "PUT /todos/:id missing",
             &secret_values,
@@ -234,7 +271,12 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
                 &format!("/todos/{}", todo::MALFORMED_TODO_ID),
                 Some("{}"),
             )
-            .unwrap_or_else(|error| panic!("PUT malformed todo id failed on {}: {error}", runtime_config.http_port)),
+            .unwrap_or_else(|error| {
+                panic!(
+                    "PUT malformed todo id failed on {}: {error}",
+                    runtime_config.http_port
+                )
+            }),
             500,
             "PUT /todos/:id malformed id",
             &secret_values,
@@ -256,7 +298,12 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
                 &format!("/todos/{todo_id}"),
                 Some("{}"),
             )
-            .unwrap_or_else(|error| panic!("PUT toggle todo failed on {}: {error}", runtime_config.http_port)),
+            .unwrap_or_else(|error| {
+                panic!(
+                    "PUT toggle todo failed on {}: {error}",
+                    runtime_config.http_port
+                )
+            }),
             200,
             "PUT /todos/:id toggle",
             &secret_values,
@@ -274,7 +321,12 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
                 &format!("/todos/{}", todo::MISSING_TODO_ID),
                 None,
             )
-            .unwrap_or_else(|error| panic!("DELETE missing todo failed on {}: {error}", runtime_config.http_port)),
+            .unwrap_or_else(|error| {
+                panic!(
+                    "DELETE missing todo failed on {}: {error}",
+                    runtime_config.http_port
+                )
+            }),
             404,
             "DELETE /todos/:id missing",
             &secret_values,
@@ -290,7 +342,12 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
                 &format!("/todos/{}", todo::MALFORMED_TODO_ID),
                 None,
             )
-            .unwrap_or_else(|error| panic!("DELETE malformed todo id failed on {}: {error}", runtime_config.http_port)),
+            .unwrap_or_else(|error| {
+                panic!(
+                    "DELETE malformed todo id failed on {}: {error}",
+                    runtime_config.http_port
+                )
+            }),
             500,
             "DELETE /todos/:id malformed id",
             &secret_values,
@@ -312,7 +369,12 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
                 &format!("/todos/{todo_id}"),
                 None,
             )
-            .unwrap_or_else(|error| panic!("DELETE todo failed on {}: {error}", runtime_config.http_port)),
+            .unwrap_or_else(|error| {
+                panic!(
+                    "DELETE todo failed on {}: {error}",
+                    runtime_config.http_port
+                )
+            }),
             200,
             "DELETE /todos/:id",
             &secret_values,
@@ -324,7 +386,12 @@ fn m049_s01_postgres_todo_api_runtime_truth_proves_migrate_test_build_boot_and_c
             &artifacts,
             "todos-empty-after-delete",
             &todo::send_http_request(runtime_config.http_port, "GET", "/todos", None)
-                .unwrap_or_else(|error| panic!("GET /todos after delete failed on {}: {error}", runtime_config.http_port)),
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "GET /todos after delete failed on {}: {error}",
+                        runtime_config.http_port
+                    )
+                }),
             200,
             "GET /todos after delete",
             &secret_values,
@@ -365,9 +432,13 @@ fn m049_s01_postgres_todo_api_missing_database_url_fails_closed() {
 
     let project_dir = todo::init_postgres_todo_project(&workspace_dir, "todo-starter", &artifacts);
     let (build, binary_path) = todo::run_meshc_build(&project_dir, &artifacts);
-    todo::assert_phase_success(&build, "meshc build <project> should succeed for missing-DATABASE_URL proof");
+    todo::assert_phase_success(
+        &build,
+        "meshc build <project> should succeed for missing-DATABASE_URL proof",
+    );
 
-    let runtime_config = todo::default_runtime_config("todo-starter", "postgres://redacted-invalid-placeholder/db");
+    let runtime_config =
+        todo::default_runtime_config("todo-starter", "postgres://redacted-invalid-placeholder/db");
     let mut command = Command::new(&binary_path);
     command.current_dir(&project_dir);
     command
@@ -401,12 +472,15 @@ fn m049_s01_postgres_todo_api_missing_database_url_fails_closed() {
     );
 
     assert!(
-        run.combined.contains("[todo-api] Config error: Missing required environment variable DATABASE_URL"),
+        run.combined.contains(
+            "[todo-api] Config error: Missing required environment variable DATABASE_URL"
+        ),
         "expected explicit missing-DATABASE_URL error, got:\n{}",
         run.combined
     );
     assert!(
-        !run.combined.contains("[todo-api] HTTP server starting on :"),
+        !run.combined
+            .contains("[todo-api] HTTP server starting on :"),
         "runtime should fail closed before starting HTTP when DATABASE_URL is missing:\n{}",
         run.combined
     );
@@ -432,7 +506,10 @@ fn m049_s01_postgres_todo_api_unmigrated_database_returns_explicit_json_error() 
     let secret_values = [base_database_url.as_str(), database.database_url.as_str()];
 
     let (build, binary_path) = todo::run_meshc_build(&project_dir, &artifacts);
-    todo::assert_phase_success(&build, "meshc build <project> should succeed for unmigrated-db proof");
+    todo::assert_phase_success(
+        &build,
+        "meshc build <project> should succeed for unmigrated-db proof",
+    );
 
     let runtime_config = todo::default_runtime_config("todo-starter", &database.database_url);
     let spawned = todo::spawn_todo_app(
@@ -444,19 +521,19 @@ fn m049_s01_postgres_todo_api_unmigrated_database_returns_explicit_json_error() 
     );
 
     let run_result = catch_unwind(AssertUnwindSafe(|| {
-        let health = todo::wait_for_health(
-            &runtime_config,
-            &artifacts,
-            "health",
-            &secret_values,
-        );
+        let health = todo::wait_for_health(&runtime_config, &artifacts, "health", &secret_values);
         assert_eq!(health["status"].as_str(), Some("ok"));
 
         let unmigrated_list = todo::json_response_snapshot(
             &artifacts,
             "todos-unmigrated",
             &todo::send_http_request(runtime_config.http_port, "GET", "/todos", None)
-                .unwrap_or_else(|error| panic!("GET /todos on unmigrated database failed on {}: {error}", runtime_config.http_port)),
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "GET /todos on unmigrated database failed on {}: {error}",
+                        runtime_config.http_port
+                    )
+                }),
             500,
             "GET /todos on unmigrated database",
             &secret_values,
