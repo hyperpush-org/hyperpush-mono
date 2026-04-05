@@ -2,6 +2,9 @@ local repo_root = assert(os.getenv('MESH_REPO_ROOT'), 'MESH_REPO_ROOT is require
 local requested_phase = vim.g.mesh_smoke_phase or os.getenv('MESH_NVIM_SMOKE_PHASE') or 'all'
 local uv = vim.uv or vim.loop
 local mesh = require('mesh')
+local retained_backend_root = vim.fs.joinpath(repo_root, 'scripts', 'fixtures', 'backend', 'reference-backend')
+local retained_health_path = vim.fs.joinpath(retained_backend_root, 'api', 'health.mpl')
+local retained_jobs_path = vim.fs.joinpath(retained_backend_root, 'api', 'jobs.mpl')
 
 local run_syntax = requested_phase == 'all' or requested_phase == 'syntax'
 local run_lsp = requested_phase == 'all' or requested_phase == 'lsp'
@@ -632,8 +635,8 @@ local function assert_override_entry_project_attach()
 end
 
 local function assert_real_project_reuses_client()
-  local health_path = vim.fs.joinpath(repo_root, 'reference-backend', 'api', 'health.mpl')
-  local jobs_path = vim.fs.joinpath(repo_root, 'reference-backend', 'api', 'jobs.mpl')
+  local health_path = retained_health_path
+  local jobs_path = retained_jobs_path
 
   local health_buf = open_buffer(health_path)
   local health_client = wait_for_mesh_client(health_buf, 8000)
@@ -643,7 +646,7 @@ local function assert_real_project_reuses_client()
   summarize_client(health_buf, health_client, 'reference-health')
 
   local health_root = canonical(health_client.config.root_dir)
-  local expected_root = canonical(vim.fs.joinpath(repo_root, 'reference-backend'))
+  local expected_root = canonical(retained_backend_root)
   if health_root ~= expected_root then
     fail('lsp', string.format('reason=wrong_root case=health expected=%s actual=%s', rel(expected_root), rel(health_client.config.root_dir)))
   end
@@ -722,7 +725,7 @@ local function run_lsp_phase()
     fail('lsp', 'reason=missing_vim_lsp_enable')
   end
 
-  assert_missing_override_fails(vim.fs.joinpath(repo_root, 'reference-backend', 'api', 'health.mpl'))
+  assert_missing_override_fails(retained_health_path)
   assert_real_project_reuses_client()
   assert_override_entry_project_attach()
   assert_single_file_attach()

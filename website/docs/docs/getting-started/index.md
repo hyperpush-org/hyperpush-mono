@@ -89,10 +89,15 @@ Once hello-world runs, pick the starter that matches your next job.
 
 ## What's Next?
 
-The proof pages stay public, but they are follow-on reading after the starter chooser instead of the first stop.
+Keep the public first-contact ladder explicit and ordered: clustered scaffold first, then the honest local SQLite starter, then the serious shared/deployable PostgreSQL starter, and only then the maintainer-facing backend proof page.
 
 - [Clustered Example](/docs/getting-started/clustered-example/) -- the scaffold-first clustered tutorial using `meshc init --clustered`
-- [Production Backend Proof](/docs/production-backend-proof/) -- the deeper backend proof surface once the starter docs stop being enough, paired with `reference-backend/README.md`
+- [SQLite Todo starter](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md) -- the honest local single-node Todo starter
+- [PostgreSQL Todo starter](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md) -- the serious shared/deployable Todo starter
+- [Production Backend Proof](/docs/production-backend-proof/) -- the maintainer-facing backend proof page after the starter/examples-first ladder
+
+After that starter/examples-first ladder, continue with the language guides:
+
 - [Language Basics](/docs/language-basics/) -- variables, types, functions, pattern matching, control flow, and more
 - [Type System](/docs/type-system/) -- structs, sum types, generics, and type inference
 - [Concurrency](/docs/concurrency/) -- actors, message passing, supervision, and services

@@ -1,0 +1,61 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - area: release
+    commit-message:
+      prefix: "ci"
+
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - area: compiler
+    commit-message:
+      prefix: "cargo"
+
+  - package-ecosystem: npm
+    directory: "/website"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - area: docs
+    commit-message:
+      prefix: "website"
+
+  - package-ecosystem: npm
+    directory: "/packages-website"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - area: docs
+    commit-message:
+      prefix: "packages-website"
+
+  - package-ecosystem: npm
+    directory: "/mesher/landing"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - area: docs
+    commit-message:
+      prefix: "mesher-landing"
+
+  - package-ecosystem: npm
+    directory: "/tools/editors/vscode-mesh"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - area: editors
+    commit-message:
+      prefix: "vscode-mesh"

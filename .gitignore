@@ -23,7 +23,6 @@ website/docs/.vitepress/dist/
 website/docs/.vitepress/cache/
 
 # Compiled Mesh binaries (native LLVM output)
-reference-backend/reference-backend
 mesher/mesher
 benchmarks/*/benchmark
 cluster-proof/cluster-proof

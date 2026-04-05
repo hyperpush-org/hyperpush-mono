@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react"
 import { motion, useInView } from "framer-motion"
+import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 
 type MeshBackgroundVariant = "desktop" | "stacked"
 
@@ -289,12 +291,28 @@ export function Infrastructure() {
               Elixir&apos;s fault-tolerant actor model and the raw speed of compiled code. Every error event
               is handled by its own lightweight process that can&apos;t take down the system.
             </p>
-            <p className="text-muted-foreground text-pretty lg:mb-8">
+            <p className="text-muted-foreground text-pretty">
               The same concurrency model that makes Erlang/Elixir legendary for uptime, but
               <strong className="text-foreground"> 140% faster</strong> on equivalent workloads. Millions
               of concurrent processes, sub-millisecond spawn times, and automatic supervision trees
               that self-heal on failure.
             </p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="mt-8"
+            >
+              <Link
+                href="/mesh"
+                className="inline-flex items-center gap-2 rounded-lg border border-accent/25 bg-accent/[0.08] px-5 py-2.5 text-sm font-medium text-accent transition-colors hover:border-accent/40 hover:bg-accent/[0.15]"
+              >
+                What is Mesh? Why does it matter?
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </motion.div>
           </motion.div>
 
           {/* Mobile/tablet — move the mesh below the copy instead of behind it */}

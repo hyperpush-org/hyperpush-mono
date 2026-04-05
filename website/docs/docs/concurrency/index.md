@@ -7,7 +7,7 @@ description: Mesh concurrency guide covering actors, mailboxes, message passing,
 
 Mesh uses the actor model for concurrency, inspired by Erlang/Elixir. Actors are lightweight processes that communicate via message passing. They are isolated, supervised, and fault-tolerant.
 
-> **Production backend proof:** This guide teaches the concurrency model. For the concrete supervision and recovery proof on a real backend worker, start with [Production Backend Proof](/docs/production-backend-proof/) and the deeper runbook in `reference-backend/README.md`.
+> **Production backend proof:** This guide teaches the concurrency model. For the compact backend-proof handoff, start with [Production Backend Proof](/docs/production-backend-proof/). That page keeps public readers on the starter/examples-first route, points repo maintainers to [`mesher/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/mesher/README.md) plus `bash scripts/verify-m051-s01.sh`, and keeps the retained backend-only proof behind `bash scripts/verify-m051-s02.sh`.
 
 ## The Actor Model
 

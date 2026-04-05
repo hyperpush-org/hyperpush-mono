@@ -7,14 +7,14 @@ description: Write and run tests in Mesh with meshc test — assertions, groupin
 
 Mesh includes a first-class testing framework accessible via `meshc test`. Test files use the `.test.mpl` extension and can contain individual tests, grouped tests with shared setup/teardown, mock actors, and receive assertions.
 
-> **Production backend proof:** This page covers the testing primitives. For the real backend proof targets — including `reference-backend/` package tests, ignored deploy/runtime proofs, and the documentation verifier — start with [Production Backend Proof](/docs/production-backend-proof/) and `reference-backend/README.md`.
+> **Production backend proof:** This page covers the testing primitives. For the compact backend-proof handoff, start with [Production Backend Proof](/docs/production-backend-proof/). That page keeps public readers on the starter/examples-first route, points repo maintainers to [`mesher/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/mesher/README.md) plus `bash scripts/verify-m051-s01.sh`, and keeps the retained backend-only proof behind `bash scripts/verify-m051-s02.sh`.
 
 ## Running Tests
 
 ```bash
-meshc test reference-backend
-meshc test reference-backend/tests
-meshc test reference-backend/tests/config.test.mpl
+meshc test my-app
+meshc test my-app/tests
+meshc test my-app/tests/config.test.mpl
 ```
 
 `meshc test` discovers all `*.test.mpl` files under the requested project root or directory target, compiles and runs each independently, and prints a summary:
@@ -146,7 +146,7 @@ assert_receive "done", 1000   # explicit timeout
 Coverage requests are intentionally honest today:
 
 ```bash
-meshc test --coverage reference-backend
+meshc test --coverage my-app
 ```
 
 `--coverage` currently exits non-zero with an explicit unsupported message instead of returning a stub report.

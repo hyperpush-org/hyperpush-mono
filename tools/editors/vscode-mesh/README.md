@@ -17,7 +17,7 @@ VS Code is a **first-class** editor host in the public Mesh tooling contract. Th
 - **Verified Document Formatting** -- format the current Mesh document through `meshc lsp`
 - **Verified Signature Help** -- parameter hints with active-parameter tracking for function calls
 
-The current transport-level regression suite exercises the LSP path over real stdio JSON-RPC against `reference-backend/`, so the documented editor experience is tied to the same backend-shaped proof as the CLI tooling. The editor-host smoke remains intentionally bounded to same-file definition on `reference-backend/api/jobs.mpl` plus clean diagnostics and hover for a manifest-first override-entry fixture rooted by `mesh.toml` + `lib/start.mpl`. The bundled syntax grammar is also verified through the shared VS Code/docs parity corpus, including `@cluster`, `@cluster(N)`, and both `#{...}` plus `${...}` inside double- and triple-quoted strings.
+The current transport-level regression suite exercises the LSP path over real stdio JSON-RPC against a small backend-shaped Mesh project, so the documented editor experience stays tied to the same bounded tooling surface as the CLI. The editor-host smoke remains intentionally bounded to same-file go-to-definition inside backend-shaped project code plus clean diagnostics and hover for a manifest-first override-entry fixture rooted by `mesh.toml` + `lib/start.mpl`. The bundled syntax grammar is also verified through the shared VS Code/docs parity corpus, including `@cluster`, `@cluster(N)`, and both `#{...}` plus `${...}` inside double- and triple-quoted strings.
 
 ## Installation
 
@@ -42,7 +42,7 @@ meshc --version
 meshpkg --version
 ```
 
-For the named backend proof behind this public install contract, see [Production Backend Proof](https://meshlang.dev/docs/production-backend-proof/) and [`reference-backend/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md).
+For the broader backend/tooling proof behind this public install contract, start with [Production Backend Proof](https://meshlang.dev/docs/production-backend-proof/) and the public [Developer Tools](https://meshlang.dev/docs/tooling/) guide.
 
 Then build the current packaged extension from source:
 

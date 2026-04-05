@@ -7,7 +7,7 @@ description: Start the generated clustered scaffold, inspect runtime-owned start
 
 Use `meshc init --clustered` when you want the minimal public clustered-app contract first: package-only `mesh.toml`, source-declared `@cluster` work in `work.mpl`, and runtime-owned inspection through `meshc cluster ...`.
 
-This page stays on that scaffold first. Once you have the route-free clustered contract in hand, the explicit SQLite, PostgreSQL, and `reference-backend` follow-ons are listed below.
+This page stays on that scaffold first. Once you have the route-free clustered contract in hand, keep the public follow-on ladder ordered: honest local SQLite starter, serious shared/deployable PostgreSQL starter, then Production Backend Proof only when you need the maintainer-facing deeper backend proof. The retained verifier map stays behind the proof pages instead of a direct repo-root runbook handoff.
 
 ## Generate the scaffold
 
@@ -159,13 +159,15 @@ Use diagnostics when you need the broader cluster view after checking membership
 
 ## After the scaffold, pick the follow-on starter
 
-- `meshc init --template todo-api --db sqlite my_local_todo` — the honest local single-node starter. It matches [`examples/todo-sqlite/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md): generated package tests, local `/health`, and no `work.mpl`, `HTTP.clustered(...)`, or `meshc cluster` story.
-- `meshc init --template todo-api --db postgres my_shared_todo` — the serious shared/deployable starter. It matches [`examples/todo-postgres/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md): route-free `work.mpl`, PostgreSQL-backed state, explicit-count `HTTP.clustered(1, ...)` on `GET /todos` and `GET /todos/:id`, and local `/health` plus mutating routes.
-- [`reference-backend/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md) — the deeper backend proof surface once the starter docs stop being enough.
+Take the public follow-on ladder in order: honest local SQLite starter, serious shared/deployable PostgreSQL starter, then Production Backend Proof only when you need the maintainer-facing deeper backend proof.
+
+- `meshc init --template todo-api --db sqlite my_local_todo` — the honest local single-node starter. It matches [SQLite Todo starter](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md): generated package tests, local `/health`, and no `work.mpl`, `HTTP.clustered(...)`, or `meshc cluster` story.
+- `meshc init --template todo-api --db postgres my_shared_todo` — the serious shared/deployable starter. It matches [PostgreSQL Todo starter](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md): route-free `work.mpl`, PostgreSQL-backed state, explicit-count `HTTP.clustered(1, ...)` on `GET /todos` and `GET /todos/:id`, and local `/health` plus mutating routes.
+- [Production Backend Proof](/docs/production-backend-proof/) — the maintainer-facing backend proof page after the starter/examples-first ladder.
 
 ## Need the retained verifier map?
 
-Use [Distributed Proof](/docs/distributed-proof/) when you need the repo-owned verifier map, retained compatibility wrappers, or the lower-level fixture-backed rails behind this public starter story. This page stays focused on the scaffold plus the SQLite/Postgres/reference-backend split.
+Use [Distributed Proof](/docs/distributed-proof/) when you need the repo-owned verifier map, retained compatibility wrappers, or the lower-level fixture-backed rails behind this public starter story. This page stays focused on the scaffold plus the SQLite/PostgreSQL starter split.
 
 ## What to read next
 

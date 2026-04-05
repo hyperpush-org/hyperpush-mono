@@ -89,3 +89,38 @@ jobs:
           curl -fsSL https://hyperpush-landing.fly.dev > "$RUNNER_TEMP/hyperpush-landing.html"
           grep -q "hyperpush" "$RUNNER_TEMP/hyperpush-landing.html"
           grep -q "Open Source Error Tracking" "$RUNNER_TEMP/hyperpush-landing.html"
+
+      - name: Verify blog API is live
+        shell: bash
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          POSTS=$(curl -fsSL https://hyperpush-landing.fly.dev/api/blog/posts)
+          echo "$POSTS" | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          assert 'posts' in d, 'missing posts key'
+          assert isinstance(d['posts'], list), 'posts is not a list'
+          print('blog API ok --', len(d['posts']), 'published post(s)')
+          "
+
+      - name: Verify blog listing page renders
+        shell: bash
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          curl -fsSL https://hyperpush-landing.fly.dev/community/blog > "$RUNNER_TEMP/blog-listing.html"
+          grep -q "Blog" "$RUNNER_TEMP/blog-listing.html"
+
+      - name: Verify admin endpoint is auth-gated
+        shell: bash
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://hyperpush-landing.fly.dev/api/blog/posts?status=all")
+          if [ "$STATUS" != "401" ]; then
+            echo "ERROR: admin endpoint returned $STATUS (expected 401)"
+            exit 1
+          fi
+          echo "admin endpoint correctly returns 401 without credentials"

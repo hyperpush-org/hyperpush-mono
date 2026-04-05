@@ -89,19 +89,18 @@ Then follow the generated project README, or go straight to the docs:
 
 ## Where to go next
 
+Keep the public ladder starter/examples-first: the scaffold and `/examples` stay ahead of maintainer proof surfaces.
+
 - **Main getting started guide:** https://meshlang.dev/docs/getting-started/
 - **Clustered walkthrough:** use `meshc init --clustered` and then follow https://meshlang.dev/docs/getting-started/clustered-example/
-- **Production Backend Proof:** https://meshlang.dev/docs/production-backend-proof/
-- **Distributed Proof:** https://meshlang.dev/docs/distributed-proof/
+- **SQLite Todo starter:** https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md
+- **PostgreSQL Todo starter:** https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md
+- **Production Backend Proof:** https://meshlang.dev/docs/production-backend-proof/ — only after the starter/examples-first ladder when you need the maintainer-facing deeper backend proof page.
 - **Tooling docs:** https://meshlang.dev/docs/tooling/
-- If you are migrating older clustered code, move helper-shaped names like `execute_declared_work(...)` / `Work.execute_declared_work` to ordinary source-first declarations and follow the `e2e_m047_s07` route behavior notes in the docs.
-- `reference-backend/README.md` — the deeper backend runbook once the starter docs stop being enough.
-- `bash scripts/verify-m049-s05.sh` — the assembled repo verifier for the current scaffold/examples-first onboarding contract.
-- `bash scripts/verify-m048-s05.sh` — the retained public truth verifier for install/update, override-entry, and tooling markers.
 
 ## Maintainers / public release proof
 
-If you are working on Mesh itself rather than just using it, the public release proof is still tracked from this repo.
+If you are working on Mesh itself rather than just using it, start the deeper app/backend proof path at https://meshlang.dev/docs/production-backend-proof/ and then continue with `mesher/README.md` plus the named maintainer verifier commands surfaced from that proof page. Keep that path maintainer-facing; the public starter ladder above stays on scaffold output and `/examples`.
 
 Canonical assembled proof command:
 

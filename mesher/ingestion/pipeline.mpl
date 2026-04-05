@@ -441,17 +441,7 @@ fn register_global_services(registry_pid) do
   end
 end
 
-fn rate_limiter_window_seconds() do
-  Env.get_int("MESHER_RATE_LIMIT_WINDOW_SECONDS", 60)
-end
-
-fn rate_limiter_max_events() do
-  Env.get_int("MESHER_RATE_LIMIT_MAX_EVENTS", 1000)
-end
-
-fn start_configured_rate_limiter() do
-  let window_seconds = rate_limiter_window_seconds()
-  let max_events = rate_limiter_max_events()
+fn start_configured_rate_limiter(window_seconds :: Int, max_events :: Int) do
   let rate_limiter_pid = start_rate_limiter(window_seconds, max_events)
   println("[Mesher] RateLimiter started (#{window_seconds}s window, #{max_events} max)")
   rate_limiter_pid
@@ -461,8 +451,8 @@ end
 # Called by health_checker when the registry is unreachable (one_for_all strategy).
 # Defined after alert_evaluator actor (define-before-use, decision [90-03]).
 
-fn restart_all_services(pool :: PoolHandle) do
-  let rate_limiter_pid = start_configured_rate_limiter()
+fn restart_all_services(pool :: PoolHandle, window_seconds :: Int, max_events :: Int) do
+  let rate_limiter_pid = start_configured_rate_limiter(window_seconds, max_events)
   let processor_pid = EventProcessor.start(pool)
   let writer_pid = start_writer(pool, "default")
   let stream_mgr_pid = StreamManager.start()
@@ -491,7 +481,7 @@ end
 # 7. Spawn health checker + spike checker + alert evaluator
 # Returns registry PID.
 
-pub fn start_pipeline(pool :: PoolHandle) do
+pub fn start_pipeline(pool :: PoolHandle, window_seconds :: Int, max_events :: Int) do
   # Start stream manager (before other services so WS handler can find it)
   let stream_mgr_pid = StreamManager.start()
   Process.register("stream_manager", stream_mgr_pid)
@@ -500,7 +490,7 @@ pub fn start_pipeline(pool :: PoolHandle) do
   spawn(stream_drain_ticker, stream_mgr_pid, 250)
   println("[Mesher] StreamManager drain ticker started (250ms interval)")
   # Start rate limiter
-  let rate_limiter_pid = start_configured_rate_limiter()
+  let rate_limiter_pid = start_configured_rate_limiter(window_seconds, max_events)
   # Start event processor
   let processor_pid = EventProcessor.start(pool)
   println("[Mesher] EventProcessor started")

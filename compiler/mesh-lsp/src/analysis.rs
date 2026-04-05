@@ -1731,8 +1731,10 @@ mod tests {
             .parent()
             .expect("workspace root should be above compiler/")
             .to_path_buf();
-        let jobs_path = std::fs::canonicalize(repo_root.join("reference-backend/api/jobs.mpl"))
-            .expect("reference-backend jobs file should exist");
+        let jobs_path = std::fs::canonicalize(
+            repo_root.join("scripts/fixtures/backend/reference-backend/api/jobs.mpl"),
+        )
+        .expect("retained reference-backend fixture jobs file should exist");
         let uri = Url::from_file_path(&jobs_path)
             .expect("jobs path should convert to file URI")
             .to_string();
@@ -1747,7 +1749,7 @@ mod tests {
 
         assert!(
             messages.is_empty(),
-            "reference-backend/api/jobs.mpl should analyze without bogus import diagnostics, got: {:?}",
+            "scripts/fixtures/backend/reference-backend/api/jobs.mpl should analyze without bogus import diagnostics, got: {:?}",
             messages
         );
     }

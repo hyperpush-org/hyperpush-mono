@@ -7,7 +7,7 @@ description: HTTP servers, routing, middleware, WebSocket, and TLS in Mesh
 
 Mesh includes a built-in HTTP server and WebSocket server, so you can build web applications without external dependencies. This guide covers creating HTTP servers with routing and middleware, handling JSON, building real-time WebSocket applications with rooms and broadcasting, and securing connections with TLS.
 
-> **Production backend proof:** This page explains the web primitives in isolation. For the real backend proof surface — including `GET /health`, `POST /jobs`, `GET /jobs/:id`, deploy smoke, and the authoritative runbook — start with [Production Backend Proof](/docs/production-backend-proof/) and `reference-backend/README.md`.
+> **Production backend proof:** This page explains the web primitives in isolation. For the compact backend-proof handoff, start with [Production Backend Proof](/docs/production-backend-proof/). That page keeps public readers on the starter/examples-first route, points repo maintainers to [`mesher/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/mesher/README.md) plus `bash scripts/verify-m051-s01.sh`, and keeps the retained backend-only proof behind `bash scripts/verify-m051-s02.sh`.
 
 ## HTTP Server
 

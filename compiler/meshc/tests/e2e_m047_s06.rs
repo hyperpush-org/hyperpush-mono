@@ -9,6 +9,7 @@ const POSTGRES_STARTER_COMMAND: &str = "meshc init --template todo-api --db post
 const TODO_POSTGRES_README: &str = "examples/todo-postgres/README.md";
 const TODO_SQLITE_README: &str = "examples/todo-sqlite/README.md";
 const REFERENCE_BACKEND_RUNBOOK: &str = "reference-backend/README.md";
+const MESHER_RUNBOOK: &str = "mesher/README.md";
 const STALE_REPO_BLOB_BASE: &str = "https://github.com/hyperpush-org/hyperpush-mono/blob/main/";
 const TODO_POSTGRES_README_URL: &str =
     "https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md";
@@ -16,20 +17,33 @@ const TODO_SQLITE_README_URL: &str =
     "https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md";
 const REFERENCE_BACKEND_RUNBOOK_URL: &str =
     "https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md";
+const MESHER_RUNBOOK_URL: &str =
+    "https://github.com/snowdamiz/mesh-lang/blob/main/mesher/README.md";
+const VERIFY_M051_S01: &str = "bash scripts/verify-m051-s01.sh";
+const VERIFY_M051_S02: &str = "bash scripts/verify-m051-s02.sh";
 const DISTRIBUTED_PROOF_SITE_URL: &str = "https://meshlang.dev/docs/distributed-proof/";
 const PRODUCTION_BACKEND_PROOF_DOC_LINK: &str = "/docs/production-backend-proof/";
-const PRODUCTION_BACKEND_PROOF_SITE_URL: &str = "https://meshlang.dev/docs/production-backend-proof/";
+const PRODUCTION_BACKEND_PROOF_SITE_URL: &str =
+    "https://meshlang.dev/docs/production-backend-proof/";
 const CLUSTERED_EXAMPLE_DOC_LINK: &str = "/docs/getting-started/clustered-example/";
 const CUTOVER_RAIL: &str = "bash scripts/verify-m047-s04.sh";
 const TODO_SUBRAIL: &str = "bash scripts/verify-m047-s05.sh";
 const CLOSEOUT_RAIL: &str = "bash scripts/verify-m047-s06.sh";
 const S07_RAIL_COMMAND: &str = "cargo test -p meshc --test e2e_m047_s07 -- --nocapture";
+const FLY_READ_ONLY_RAIL: &str = "bash scripts/verify-m043-s04-fly.sh";
+const HISTORICAL_M046_CLOSEOUT_ALIAS: &str = "bash scripts/verify-m046-s06.sh";
+const HISTORICAL_M046_EQUAL_SURFACE_ALIAS: &str = "bash scripts/verify-m046-s05.sh";
+const HISTORICAL_M046_PACKAGE_ALIAS: &str = "bash scripts/verify-m046-s04.sh";
+const HISTORICAL_M045_CLOSEOUT_ALIAS: &str = "bash scripts/verify-m045-s05.sh";
+const HISTORICAL_M045_ASSEMBLED_ALIAS: &str = "bash scripts/verify-m045-s04.sh";
+const HISTORICAL_FAILOVER_SUBRAIL: &str = "bash scripts/verify-m045-s03.sh";
 const STALE_CLUSTERED_NON_GOAL: &str = "`HTTP.clustered(...)` is still not shipped.";
 const STALE_GENERIC_TODO_COMMAND: &str = "meshc init --template todo-api <name>";
 const STALE_SQLITE_CLUSTERED_GUIDANCE: &str = "adding a SQLite HTTP app";
 const STALE_SQLITE_CLUSTERED_ROUTES: &str =
     "local SQLite/HTTP routes plus explicit-count `HTTP.clustered(1, ...)`";
-const STALE_INTERNAL_FIXTURE_RUNBOOKS: &[&str] = &["tiny-cluster/README.md", "cluster-proof/README.md"];
+const STALE_INTERNAL_FIXTURE_RUNBOOKS: &[&str] =
+    &["tiny-cluster/README.md", "cluster-proof/README.md"];
 
 struct ContractSources {
     readme: String,
@@ -159,10 +173,7 @@ fn m047_s06_public_docs_split_sqlite_local_from_postgres_clustered_starters() {
     let artifacts = artifact_dir("docs-authority-contract");
     let sources = load_contract_sources(&artifacts);
 
-    assert_onboarding_graph_config(
-        "website/docs/.vitepress/config.mts",
-        &sources.docs_config,
-    );
+    assert_onboarding_graph_config("website/docs/.vitepress/config.mts", &sources.docs_config);
 
     assert_contains_all(
         "README.md",
@@ -173,8 +184,7 @@ fn m047_s06_public_docs_split_sqlite_local_from_postgres_clustered_starters() {
             POSTGRES_STARTER_COMMAND,
             TODO_POSTGRES_README,
             TODO_SQLITE_README,
-            REFERENCE_BACKEND_RUNBOOK,
-            DISTRIBUTED_PROOF_SITE_URL,
+            MESHER_RUNBOOK,
             PRODUCTION_BACKEND_PROOF_SITE_URL,
         ],
     );
@@ -182,6 +192,7 @@ fn m047_s06_public_docs_split_sqlite_local_from_postgres_clustered_starters() {
         "README.md",
         &sources.readme,
         &[
+            REFERENCE_BACKEND_RUNBOOK,
             CUTOVER_RAIL,
             TODO_SUBRAIL,
             CLOSEOUT_RAIL,
@@ -196,49 +207,144 @@ fn m047_s06_public_docs_split_sqlite_local_from_postgres_clustered_starters() {
         ],
     );
 
-    for (path_label, source) in [
-        ("website/docs/docs/tooling/index.md", &sources.tooling),
-        (
-            "website/docs/docs/distributed-proof/index.md",
-            &sources.distributed_proof,
-        ),
-        (
-            "website/docs/docs/distributed/index.md",
-            &sources.distributed,
-        ),
-    ] {
-        assert_contains_all(
-            path_label,
-            source,
-            &[
-                SQLITE_STARTER_COMMAND,
-                POSTGRES_STARTER_COMMAND,
-                TODO_POSTGRES_README,
-                TODO_SQLITE_README,
-                REFERENCE_BACKEND_RUNBOOK,
-                TODO_POSTGRES_README_URL,
-                TODO_SQLITE_README_URL,
-                REFERENCE_BACKEND_RUNBOOK_URL,
-                CUTOVER_RAIL,
-                TODO_SUBRAIL,
-                CLOSEOUT_RAIL,
-                S07_RAIL_COMMAND,
-            ],
-        );
-        assert_omits(path_label, source, STALE_CLUSTERED_NON_GOAL);
-        assert_omits_all(
-            path_label,
-            source,
-            &[
-                STALE_GENERIC_TODO_COMMAND,
-                STALE_SQLITE_CLUSTERED_GUIDANCE,
-                STALE_SQLITE_CLUSTERED_ROUTES,
-                STALE_INTERNAL_FIXTURE_RUNBOOKS[0],
-                STALE_INTERNAL_FIXTURE_RUNBOOKS[1],
-                STALE_REPO_BLOB_BASE,
-            ],
-        );
-    }
+    assert_contains_all(
+        "website/docs/docs/distributed-proof/index.md",
+        &sources.distributed_proof,
+        &[
+            SQLITE_STARTER_COMMAND,
+            POSTGRES_STARTER_COMMAND,
+            TODO_POSTGRES_README,
+            TODO_SQLITE_README,
+            TODO_POSTGRES_README_URL,
+            TODO_SQLITE_README_URL,
+            MESHER_RUNBOOK,
+            MESHER_RUNBOOK_URL,
+            VERIFY_M051_S01,
+            VERIFY_M051_S02,
+            "This is the only public-secondary docs page that carries the named clustered verifier rails.",
+            CLUSTERED_EXAMPLE_DOC_LINK,
+            PRODUCTION_BACKEND_PROOF_DOC_LINK,
+            CUTOVER_RAIL,
+            TODO_SUBRAIL,
+            CLOSEOUT_RAIL,
+            S07_RAIL_COMMAND,
+            FLY_READ_ONLY_RAIL,
+            HISTORICAL_M046_CLOSEOUT_ALIAS,
+            HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
+            HISTORICAL_M046_PACKAGE_ALIAS,
+            HISTORICAL_M045_CLOSEOUT_ALIAS,
+            HISTORICAL_M045_ASSEMBLED_ALIAS,
+            HISTORICAL_FAILOVER_SUBRAIL,
+        ],
+    );
+    assert_omits(
+        "website/docs/docs/distributed-proof/index.md",
+        &sources.distributed_proof,
+        STALE_CLUSTERED_NON_GOAL,
+    );
+    assert_omits_all(
+        "website/docs/docs/distributed-proof/index.md",
+        &sources.distributed_proof,
+        &[
+            REFERENCE_BACKEND_RUNBOOK,
+            REFERENCE_BACKEND_RUNBOOK_URL,
+            STALE_GENERIC_TODO_COMMAND,
+            STALE_SQLITE_CLUSTERED_GUIDANCE,
+            STALE_SQLITE_CLUSTERED_ROUTES,
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[0],
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[1],
+            STALE_REPO_BLOB_BASE,
+        ],
+    );
+
+    assert_contains_all(
+        "website/docs/docs/distributed/index.md",
+        &sources.distributed,
+        &[
+            TODO_POSTGRES_README,
+            TODO_SQLITE_README,
+            TODO_POSTGRES_README_URL,
+            TODO_SQLITE_README_URL,
+            CLUSTERED_EXAMPLE_DOC_LINK,
+            "/docs/distributed-proof/",
+            PRODUCTION_BACKEND_PROOF_DOC_LINK,
+            "honest local",
+            "shared/deployable",
+        ],
+    );
+    assert_omits("website/docs/docs/distributed/index.md", &sources.distributed, STALE_CLUSTERED_NON_GOAL);
+    assert_omits_all(
+        "website/docs/docs/distributed/index.md",
+        &sources.distributed,
+        &[
+            REFERENCE_BACKEND_RUNBOOK,
+            REFERENCE_BACKEND_RUNBOOK_URL,
+            CUTOVER_RAIL,
+            TODO_SUBRAIL,
+            CLOSEOUT_RAIL,
+            S07_RAIL_COMMAND,
+            FLY_READ_ONLY_RAIL,
+            HISTORICAL_M046_CLOSEOUT_ALIAS,
+            HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
+            HISTORICAL_M046_PACKAGE_ALIAS,
+            HISTORICAL_M045_CLOSEOUT_ALIAS,
+            HISTORICAL_M045_ASSEMBLED_ALIAS,
+            HISTORICAL_FAILOVER_SUBRAIL,
+            STALE_GENERIC_TODO_COMMAND,
+            STALE_SQLITE_CLUSTERED_GUIDANCE,
+            STALE_SQLITE_CLUSTERED_ROUTES,
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[0],
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[1],
+            STALE_REPO_BLOB_BASE,
+        ],
+    );
+
+    assert_contains_all(
+        "website/docs/docs/tooling/index.md",
+        &sources.tooling,
+        &[
+            TODO_POSTGRES_README,
+            TODO_SQLITE_README,
+            TODO_POSTGRES_README_URL,
+            TODO_SQLITE_README_URL,
+            CLUSTERED_EXAMPLE_DOC_LINK,
+            PRODUCTION_BACKEND_PROOF_DOC_LINK,
+            "honest local",
+            "shared/deployable",
+        ],
+    );
+    assert_omits("website/docs/docs/tooling/index.md", &sources.tooling, STALE_CLUSTERED_NON_GOAL);
+    assert_omits_all(
+        "website/docs/docs/tooling/index.md",
+        &sources.tooling,
+        &[
+            REFERENCE_BACKEND_RUNBOOK,
+            REFERENCE_BACKEND_RUNBOOK_URL,
+            CUTOVER_RAIL,
+            TODO_SUBRAIL,
+            CLOSEOUT_RAIL,
+            S07_RAIL_COMMAND,
+            FLY_READ_ONLY_RAIL,
+            HISTORICAL_M046_CLOSEOUT_ALIAS,
+            HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
+            HISTORICAL_M046_PACKAGE_ALIAS,
+            HISTORICAL_M045_CLOSEOUT_ALIAS,
+            HISTORICAL_M045_ASSEMBLED_ALIAS,
+            HISTORICAL_FAILOVER_SUBRAIL,
+            STALE_GENERIC_TODO_COMMAND,
+            STALE_SQLITE_CLUSTERED_GUIDANCE,
+            STALE_SQLITE_CLUSTERED_ROUTES,
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[0],
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[1],
+            STALE_REPO_BLOB_BASE,
+        ],
+    );
+
+    assert_contains_all(
+        "website/docs/docs/distributed/index.md",
+        &sources.distributed,
+        &[MESHER_RUNBOOK, MESHER_RUNBOOK_URL, VERIFY_M051_S01, VERIFY_M051_S02],
+    );
 
     assert_contains_all(
         "website/docs/docs/getting-started/clustered-example/index.md",
@@ -249,10 +355,9 @@ fn m047_s06_public_docs_split_sqlite_local_from_postgres_clustered_starters() {
             POSTGRES_STARTER_COMMAND,
             TODO_POSTGRES_README,
             TODO_SQLITE_README,
-            REFERENCE_BACKEND_RUNBOOK,
             TODO_POSTGRES_README_URL,
             TODO_SQLITE_README_URL,
-            REFERENCE_BACKEND_RUNBOOK_URL,
+            PRODUCTION_BACKEND_PROOF_DOC_LINK,
             "Node.start_from_env()",
             "@cluster pub fn add() -> Int do",
             "## After the scaffold, pick the follow-on starter",
@@ -269,6 +374,8 @@ fn m047_s06_public_docs_split_sqlite_local_from_postgres_clustered_starters() {
         "website/docs/docs/getting-started/clustered-example/index.md",
         &sources.clustered_example,
         &[
+            REFERENCE_BACKEND_RUNBOOK,
+            REFERENCE_BACKEND_RUNBOOK_URL,
             STALE_GENERIC_TODO_COMMAND,
             STALE_SQLITE_CLUSTERED_GUIDANCE,
             STALE_SQLITE_CLUSTERED_ROUTES,
@@ -279,6 +386,13 @@ fn m047_s06_public_docs_split_sqlite_local_from_postgres_clustered_starters() {
             TODO_SUBRAIL,
             CLOSEOUT_RAIL,
             S07_RAIL_COMMAND,
+            FLY_READ_ONLY_RAIL,
+            HISTORICAL_M046_CLOSEOUT_ALIAS,
+            HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
+            HISTORICAL_M046_PACKAGE_ALIAS,
+            HISTORICAL_M045_CLOSEOUT_ALIAS,
+            HISTORICAL_M045_ASSEMBLED_ALIAS,
+            HISTORICAL_FAILOVER_SUBRAIL,
             "execute_declared_work(...)",
             "Work.execute_declared_work",
         ],
@@ -293,10 +407,14 @@ fn m047_s06_public_docs_split_sqlite_local_from_postgres_clustered_starters() {
         "website/docs/docs/getting-started/index.md",
         &sources.getting_started,
         &[
-            REFERENCE_BACKEND_RUNBOOK,
             PRODUCTION_BACKEND_PROOF_DOC_LINK,
             CLUSTERED_EXAMPLE_DOC_LINK,
         ],
+    );
+    assert_omits(
+        "website/docs/docs/getting-started/index.md",
+        &sources.getting_started,
+        REFERENCE_BACKEND_RUNBOOK,
     );
 
     let getting_started_clustered_example_index = sources
@@ -350,8 +468,7 @@ fn m047_s06_docs_layer_s04_s05_s06_and_s07_truthfully() {
         &[
             TODO_POSTGRES_README,
             TODO_SQLITE_README,
-            REFERENCE_BACKEND_RUNBOOK,
-            DISTRIBUTED_PROOF_SITE_URL,
+            MESHER_RUNBOOK,
             PRODUCTION_BACKEND_PROOF_SITE_URL,
         ],
     );
@@ -359,6 +476,7 @@ fn m047_s06_docs_layer_s04_s05_s06_and_s07_truthfully() {
         "README.md",
         &sources.readme,
         &[
+            REFERENCE_BACKEND_RUNBOOK,
             CUTOVER_RAIL,
             TODO_SUBRAIL,
             CLOSEOUT_RAIL,
@@ -369,33 +487,126 @@ fn m047_s06_docs_layer_s04_s05_s06_and_s07_truthfully() {
         ],
     );
 
-    for (path_label, source) in [
-        ("website/docs/docs/tooling/index.md", &sources.tooling),
-        (
-            "website/docs/docs/distributed-proof/index.md",
-            &sources.distributed_proof,
-        ),
-        (
-            "website/docs/docs/distributed/index.md",
-            &sources.distributed,
-        ),
-    ] {
-        assert_contains_all(
-            path_label,
-            source,
-            &[
-                CUTOVER_RAIL,
-                TODO_SUBRAIL,
-                CLOSEOUT_RAIL,
-                S07_RAIL_COMMAND,
-                TODO_POSTGRES_README_URL,
-                TODO_SQLITE_README_URL,
-                REFERENCE_BACKEND_RUNBOOK_URL,
-            ],
-        );
-        assert_omits_all(path_label, source, STALE_INTERNAL_FIXTURE_RUNBOOKS);
-        assert_omits(path_label, source, STALE_REPO_BLOB_BASE);
-    }
+    assert_contains_all(
+        "website/docs/docs/distributed-proof/index.md",
+        &sources.distributed_proof,
+        &[
+            CUTOVER_RAIL,
+            TODO_SUBRAIL,
+            CLOSEOUT_RAIL,
+            S07_RAIL_COMMAND,
+            FLY_READ_ONLY_RAIL,
+            HISTORICAL_M046_CLOSEOUT_ALIAS,
+            HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
+            HISTORICAL_M046_PACKAGE_ALIAS,
+            HISTORICAL_M045_CLOSEOUT_ALIAS,
+            HISTORICAL_M045_ASSEMBLED_ALIAS,
+            HISTORICAL_FAILOVER_SUBRAIL,
+            TODO_POSTGRES_README_URL,
+            TODO_SQLITE_README_URL,
+            MESHER_RUNBOOK_URL,
+            VERIFY_M051_S01,
+            VERIFY_M051_S02,
+            "/docs/production-backend-proof/",
+        ],
+    );
+    assert_omits_all(
+        "website/docs/docs/distributed-proof/index.md",
+        &sources.distributed_proof,
+        &[
+            REFERENCE_BACKEND_RUNBOOK,
+            REFERENCE_BACKEND_RUNBOOK_URL,
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[0],
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[1],
+        ],
+    );
+    assert_omits(
+        "website/docs/docs/distributed-proof/index.md",
+        &sources.distributed_proof,
+        STALE_REPO_BLOB_BASE,
+    );
+
+    assert_contains_all(
+        "website/docs/docs/distributed/index.md",
+        &sources.distributed,
+        &[
+            "/docs/distributed-proof/",
+            CLUSTERED_EXAMPLE_DOC_LINK,
+            PRODUCTION_BACKEND_PROOF_DOC_LINK,
+            TODO_POSTGRES_README_URL,
+            TODO_SQLITE_README_URL,
+        ],
+    );
+    assert_omits_all(
+        "website/docs/docs/distributed/index.md",
+        &sources.distributed,
+        &[
+            REFERENCE_BACKEND_RUNBOOK,
+            REFERENCE_BACKEND_RUNBOOK_URL,
+            CUTOVER_RAIL,
+            TODO_SUBRAIL,
+            CLOSEOUT_RAIL,
+            S07_RAIL_COMMAND,
+            FLY_READ_ONLY_RAIL,
+            HISTORICAL_M046_CLOSEOUT_ALIAS,
+            HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
+            HISTORICAL_M046_PACKAGE_ALIAS,
+            HISTORICAL_M045_CLOSEOUT_ALIAS,
+            HISTORICAL_M045_ASSEMBLED_ALIAS,
+            HISTORICAL_FAILOVER_SUBRAIL,
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[0],
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[1],
+        ],
+    );
+    assert_omits(
+        "website/docs/docs/distributed/index.md",
+        &sources.distributed,
+        STALE_REPO_BLOB_BASE,
+    );
+
+    assert_contains_all(
+        "website/docs/docs/tooling/index.md",
+        &sources.tooling,
+        &[
+            CLUSTERED_EXAMPLE_DOC_LINK,
+            PRODUCTION_BACKEND_PROOF_DOC_LINK,
+            TODO_POSTGRES_README_URL,
+            TODO_SQLITE_README_URL,
+        ],
+    );
+    assert_omits_all(
+        "website/docs/docs/tooling/index.md",
+        &sources.tooling,
+        &[
+            "/docs/distributed-proof/",
+            REFERENCE_BACKEND_RUNBOOK,
+            REFERENCE_BACKEND_RUNBOOK_URL,
+            CUTOVER_RAIL,
+            TODO_SUBRAIL,
+            CLOSEOUT_RAIL,
+            S07_RAIL_COMMAND,
+            FLY_READ_ONLY_RAIL,
+            HISTORICAL_M046_CLOSEOUT_ALIAS,
+            HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
+            HISTORICAL_M046_PACKAGE_ALIAS,
+            HISTORICAL_M045_CLOSEOUT_ALIAS,
+            HISTORICAL_M045_ASSEMBLED_ALIAS,
+            HISTORICAL_FAILOVER_SUBRAIL,
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[0],
+            STALE_INTERNAL_FIXTURE_RUNBOOKS[1],
+        ],
+    );
+    assert_omits(
+        "website/docs/docs/tooling/index.md",
+        &sources.tooling,
+        STALE_REPO_BLOB_BASE,
+    );
+
+    assert_contains_all(
+        "website/docs/docs/distributed/index.md",
+        &sources.distributed,
+        &[MESHER_RUNBOOK_URL, VERIFY_M051_S01, VERIFY_M051_S02],
+    );
 
     assert_contains_all(
         "website/docs/docs/getting-started/clustered-example/index.md",
@@ -404,17 +615,26 @@ fn m047_s06_docs_layer_s04_s05_s06_and_s07_truthfully() {
             "/docs/distributed-proof/",
             TODO_POSTGRES_README_URL,
             TODO_SQLITE_README_URL,
-            REFERENCE_BACKEND_RUNBOOK_URL,
+            "/docs/production-backend-proof/",
         ],
     );
     assert_omits_all(
         "website/docs/docs/getting-started/clustered-example/index.md",
         &sources.clustered_example,
         &[
+            REFERENCE_BACKEND_RUNBOOK,
+            REFERENCE_BACKEND_RUNBOOK_URL,
             CUTOVER_RAIL,
             TODO_SUBRAIL,
             CLOSEOUT_RAIL,
             S07_RAIL_COMMAND,
+            FLY_READ_ONLY_RAIL,
+            HISTORICAL_M046_CLOSEOUT_ALIAS,
+            HISTORICAL_M046_EQUAL_SURFACE_ALIAS,
+            HISTORICAL_M046_PACKAGE_ALIAS,
+            HISTORICAL_M045_CLOSEOUT_ALIAS,
+            HISTORICAL_M045_ASSEMBLED_ALIAS,
+            HISTORICAL_FAILOVER_SUBRAIL,
             STALE_INTERNAL_FIXTURE_RUNBOOKS[0],
             STALE_INTERNAL_FIXTURE_RUNBOOKS[1],
             STALE_REPO_BLOB_BASE,
@@ -422,7 +642,6 @@ fn m047_s06_docs_layer_s04_s05_s06_and_s07_truthfully() {
     );
 
     for (path_label, source) in [
-        ("website/docs/docs/tooling/index.md", &sources.tooling),
         (
             "website/docs/docs/getting-started/clustered-example/index.md",
             &sources.clustered_example,
@@ -433,8 +652,18 @@ fn m047_s06_docs_layer_s04_s05_s06_and_s07_truthfully() {
         ),
     ] {
         assert_contains(path_label, source, "/docs/distributed-proof/");
-        assert_contains(path_label, source, REFERENCE_BACKEND_RUNBOOK);
+        assert_omits(path_label, source, REFERENCE_BACKEND_RUNBOOK);
     }
+    assert_omits(
+        "website/docs/docs/tooling/index.md",
+        &sources.tooling,
+        "/docs/distributed-proof/",
+    );
+    assert_omits(
+        "website/docs/docs/tooling/index.md",
+        &sources.tooling,
+        REFERENCE_BACKEND_RUNBOOK,
+    );
 }
 
 #[test]
@@ -463,6 +692,12 @@ fn m047_s06_verifier_contract_wraps_s05_and_owns_retained_bundle() {
             "contract-sidebar-distributed-proof-link",
             "contract-sidebar-production-proof-link",
             "contract-sidebar-proof-footer-opt-out",
+            "contract-distributed-proof-canonical-marker",
+            "contract-distributed-proof-s05",
+            "contract-distributed-proof-s07",
+            "contract-distributed-proof-fly",
+            "${safe_name}-proof-ledger",
+            "${safe_name}-proof-ledger",
             "https://github\\.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README\\.md",
             "https://github\\.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README\\.md",
             "https://github\\.com/snowdamiz/mesh-lang/blob/main/reference-backend/README\\.md",

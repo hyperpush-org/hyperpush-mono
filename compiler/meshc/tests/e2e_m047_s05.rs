@@ -1630,6 +1630,10 @@ fn m047_s05_public_clustered_surfaces_use_source_first_names_and_todo_template()
         &repo_root().join("website/docs/docs/distributed-proof/index.md"),
         &artifacts.join("distributed-proof.index.md"),
     );
+    let distributed = todo::read_and_archive(
+        &repo_root().join("website/docs/docs/distributed/index.md"),
+        &artifacts.join("distributed.index.md"),
+    );
     let tooling = todo::read_and_archive(
         &repo_root().join("website/docs/docs/tooling/index.md"),
         &artifacts.join("tooling.index.md"),
@@ -1657,8 +1661,10 @@ fn m047_s05_public_clustered_surfaces_use_source_first_names_and_todo_template()
         "https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md";
     let todo_sqlite_readme_url =
         "https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md";
-    let reference_backend_readme_url =
-        "https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md";
+    let mesher_readme_url =
+        "https://github.com/snowdamiz/mesh-lang/blob/main/mesher/README.md";
+    let verify_m051_s01 = "bash scripts/verify-m051-s01.sh";
+    let verify_m051_s02 = "bash scripts/verify-m051-s02.sh";
 
     assert_contains("README.md", &readme, "meshc init --clustered hello_cluster");
     assert_contains(
@@ -1678,8 +1684,57 @@ fn m047_s05_public_clustered_surfaces_use_source_first_names_and_todo_template()
     assert_contains(
         "website/docs/docs/distributed-proof/index.md",
         &distributed_proof,
+        "This is the only public-secondary docs page that carries the named clustered verifier rails.",
+    );
+    assert_contains(
+        "website/docs/docs/distributed-proof/index.md",
+        &distributed_proof,
         "ordinary `@cluster pub fn add()` / `@cluster pub fn sync_todos()`-style declaration",
     );
+    assert_contains(
+        "website/docs/docs/distributed-proof/index.md",
+        &distributed_proof,
+        "/docs/production-backend-proof/",
+    );
+    assert_contains(
+        "website/docs/docs/distributed-proof/index.md",
+        &distributed_proof,
+        "bash scripts/verify-m047-s04.sh",
+    );
+    assert_contains(
+        "website/docs/docs/distributed-proof/index.md",
+        &distributed_proof,
+        "bash scripts/verify-m047-s05.sh",
+    );
+    assert_contains(
+        "website/docs/docs/distributed-proof/index.md",
+        &distributed_proof,
+        "cargo test -p meshc --test e2e_m047_s07 -- --nocapture",
+    );
+    assert_contains(
+        "website/docs/docs/distributed-proof/index.md",
+        &distributed_proof,
+        "bash scripts/verify-m047-s06.sh",
+    );
+    assert_contains(
+        "website/docs/docs/distributed-proof/index.md",
+        &distributed_proof,
+        "bash scripts/verify-m043-s04-fly.sh",
+    );
+    for needle in [
+        "bash scripts/verify-m046-s06.sh",
+        "bash scripts/verify-m046-s05.sh",
+        "bash scripts/verify-m046-s04.sh",
+        "bash scripts/verify-m045-s05.sh",
+        "bash scripts/verify-m045-s04.sh",
+        "bash scripts/verify-m045-s03.sh",
+    ] {
+        assert_contains(
+            "website/docs/docs/distributed-proof/index.md",
+            &distributed_proof,
+            needle,
+        );
+    }
     assert_contains(
         "website/docs/docs/tooling/index.md",
         &tooling,
@@ -1699,6 +1754,16 @@ fn m047_s05_public_clustered_surfaces_use_source_first_names_and_todo_template()
         "website/docs/docs/tooling/index.md",
         &tooling,
         "The SQLite Todo starter is the honest local starter",
+    );
+    assert_contains(
+        "website/docs/docs/tooling/index.md",
+        &tooling,
+        "/docs/getting-started/clustered-example/",
+    );
+    assert_contains(
+        "website/docs/docs/tooling/index.md",
+        &tooling,
+        "/docs/production-backend-proof/",
     );
     assert_contains(
         "website/docs/docs/getting-started/clustered-example/index.md",
@@ -1756,9 +1821,19 @@ fn m047_s05_public_clustered_surfaces_use_source_first_names_and_todo_template()
         todo_postgres_readme_url,
     );
     assert_contains(
-        "website/docs/docs/getting-started/clustered-example/index.md",
-        &clustered_example,
-        reference_backend_readme_url,
+        "website/docs/docs/distributed-proof/index.md",
+        &distributed_proof,
+        mesher_readme_url,
+    );
+    assert_contains(
+        "website/docs/docs/distributed-proof/index.md",
+        &distributed_proof,
+        verify_m051_s01,
+    );
+    assert_contains(
+        "website/docs/docs/distributed-proof/index.md",
+        &distributed_proof,
+        verify_m051_s02,
     );
     assert_contains(
         "website/docs/docs/getting-started/clustered-example/index.md",
@@ -1799,13 +1874,29 @@ fn m047_s05_public_clustered_surfaces_use_source_first_names_and_todo_template()
     ] {
         assert_contains(label, source, todo_postgres_readme_url);
         assert_contains(label, source, todo_sqlite_readme_url);
-        assert_contains(label, source, reference_backend_readme_url);
+        assert_contains(label, source, "/docs/production-backend-proof/");
         assert_contains(label, source, current_repo_blob_base);
+        assert_omits(label, source, "reference-backend/README.md");
         assert_omits(label, source, stale_repo_blob_base);
     }
 
+    assert_contains(
+        "website/docs/docs/distributed/index.md",
+        &distributed,
+        mesher_readme_url,
+    );
+    assert_contains(
+        "website/docs/docs/distributed/index.md",
+        &distributed,
+        verify_m051_s01,
+    );
+    assert_contains(
+        "website/docs/docs/distributed/index.md",
+        &distributed,
+        verify_m051_s02,
+    );
+
     for (label, source) in [
-        ("README.md", &readme),
         (
             "website/docs/docs/distributed-proof/index.md",
             &distributed_proof,
@@ -1819,8 +1910,38 @@ fn m047_s05_public_clustered_surfaces_use_source_first_names_and_todo_template()
         assert_contains(label, source, "GET /todos/:id");
         assert_contains(label, source, "GET /health");
         assert_contains(label, source, "mutating routes stay local");
-        assert_contains(label, source, "e2e_m047_s07");
         assert_omits(label, source, "HTTP.clustered(...) is still not shipped");
+    }
+
+    for (label, source) in [("README.md", &readme)] {
+        assert_contains(label, source, "HTTP.clustered(1, ...)");
+        assert_contains(label, source, "GET /todos");
+        assert_contains(label, source, "GET /todos/:id");
+        assert_contains(label, source, "GET /health");
+        assert_contains(label, source, "mutating routes stay local");
+        assert_omits(label, source, "HTTP.clustered(...) is still not shipped");
+    }
+
+    assert_contains(
+        "website/docs/docs/distributed-proof/index.md",
+        &distributed_proof,
+        "e2e_m047_s07",
+    );
+
+    for needle in [
+        "bash scripts/verify-m047-s04.sh",
+        "bash scripts/verify-m047-s05.sh",
+        "bash scripts/verify-m047-s06.sh",
+        "e2e_m047_s07",
+        "bash scripts/verify-m043-s04-fly.sh",
+        "bash scripts/verify-m046-s06.sh",
+        "bash scripts/verify-m046-s05.sh",
+        "bash scripts/verify-m046-s04.sh",
+        "bash scripts/verify-m045-s05.sh",
+        "bash scripts/verify-m045-s04.sh",
+        "bash scripts/verify-m045-s03.sh",
+    ] {
+        assert_omits("website/docs/docs/tooling/index.md", &tooling, needle);
     }
 
     for needle in [

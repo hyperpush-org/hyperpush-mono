@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Article 2 — X Banner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #080808;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .banner {
+    position: relative;
+    width: 1500px;
+    height: 600px;
+    overflow: hidden;
+    background: #08080c;
+  }
+
+  /* ── BG ── */
+  .bg-wash {
+    position: absolute;
+    width: 1200px;
+    height: 1000px;
+    border-radius: 50%;
+    top: 50%;
+    left: 42%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(
+      ellipse at center,
+      rgba(89, 193, 132, 0.06) 0%,
+      rgba(89, 193, 132, 0.02) 40%,
+      transparent 70%
+    );
+    pointer-events: none;
+  }
+
+  .bg-wash-2 {
+    position: absolute;
+    width: 700px;
+    height: 700px;
+    border-radius: 50%;
+    bottom: -250px;
+    right: 50px;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(200, 160, 60, 0.035) 0%,
+      transparent 70%
+    );
+    pointer-events: none;
+  }
+
+  .grain {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .top-line {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to right, transparent 5%, rgba(89,193,132,0.25) 40%, rgba(200,160,60,0.15) 70%, transparent 95%);
+    z-index: 10;
+  }
+
+  /* ── RING — big, simple, background texture ── */
+  .ring-wrap {
+    position: absolute;
+    top: 50%;
+    left: 54%;
+    transform: translate(-50%, -50%);
+    width: 580px;
+    height: 580px;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .ring-outer {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.035);
+  }
+
+  .ring-inner {
+    position: absolute;
+    inset: 90px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.025);
+  }
+
+  /* colored arc highlights — thick enough to see at small sizes */
+  .arc {
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+  }
+
+  .arc-green {
+    border: 3px solid transparent;
+    border-top-color: rgba(89,193,132,0.35);
+    border-right-color: rgba(89,193,132,0.12);
+    transform: rotate(-30deg);
+  }
+
+  .arc-gold {
+    border: 3px solid transparent;
+    border-bottom-color: rgba(220,170,50,0.2);
+    transform: rotate(20deg);
+  }
+
+  .arc-purple {
+    border: 3px solid transparent;
+    border-left-color: rgba(150,110,240,0.18);
+    transform: rotate(10deg);
+  }
+
+  /* center glow */
+  .ring-center-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(89,193,132,0.08) 0%, transparent 70%);
+  }
+
+  /* ── LEFT: headline ── */
+  .left {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 58%;
+    height: 100%;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 0 0 80px;
+  }
+
+  .badge-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .badge {
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .badge.green {
+    background: rgba(89,193,132,0.12);
+    border: 1.5px solid rgba(89,193,132,0.25);
+    color: #59C184;
+  }
+
+  .badge.gold {
+    background: rgba(220,170,50,0.08);
+    border: 1.5px solid rgba(220,170,50,0.2);
+    color: rgba(220,170,50,0.9);
+  }
+
+  .badge .times {
+    color: rgba(255,255,255,0.2);
+    margin: 0 2px;
+  }
+
+  h1 {
+    font-size: 68px;
+    font-weight: 900;
+    letter-spacing: -3.5px;
+    line-height: 1.02;
+    color: #f0f0f0;
+  }
+
+  h1 .dim {
+    color: rgba(255,255,255,0.28);
+  }
+
+  h1 .accent {
+    color: #59C184;
+  }
+
+  .tagline {
+    margin-top: 24px;
+    font-size: 20px;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.3);
+    max-width: 520px;
+    letter-spacing: -0.3px;
+  }
+
+  .tagline strong {
+    color: rgba(255,255,255,0.55);
+    font-weight: 600;
+  }
+
+  /* ── RIGHT: 3 bold lines ── */
+  .right {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 38%;
+    height: 100%;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-right: 80px;
+    gap: 40px;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .step-dot {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+  }
+
+  .step-dot.c1 { background: #59C184; box-shadow: 0 0 12px rgba(89,193,132,0.3); }
+  .step-dot.c2 { background: rgba(150,110,240,0.7); box-shadow: 0 0 12px rgba(150,110,240,0.25); }
+  .step-dot.c3 { background: rgba(220,170,50,0.7); box-shadow: 0 0 12px rgba(220,170,50,0.2); }
+
+  .step-label {
+    font-size: 22px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.75);
+    letter-spacing: -0.5px;
+  }
+
+  .step-label .hl-green { color: #59C184; font-weight: 800; }
+  .step-label .hl-purple { color: rgba(170,140,255,0.85); font-weight: 800; }
+  .step-label .hl-gold { color: rgba(230,185,60,0.85); font-weight: 800; }
+
+  /* ── BOTTOM STRIP ── */
+  .bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 80px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand .bname {
+    font-size: 17px;
+    font-weight: 800;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: -0.3px;
+  }
+
+  .sol-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.3px;
+  }
+
+  .sol-pill .sol-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #9945FF, #14F195);
+  }
+</style>
+</head>
+<body>
+
+<div class="banner" id="article-2-banner">
+
+  <div class="bg-wash"></div>
+  <div class="bg-wash-2"></div>
+  <div class="grain"></div>
+  <div class="top-line"></div>
+
+  <!-- ring — large background texture element, no labels -->
+  <div class="ring-wrap">
+    <div class="ring-outer"></div>
+    <div class="ring-inner"></div>
+    <div class="arc arc-green"></div>
+    <div class="arc arc-gold"></div>
+    <div class="arc arc-purple"></div>
+    <div class="ring-center-glow"></div>
+  </div>
+
+  <!-- LEFT -->
+  <div class="left">
+    <div class="badge-row">
+      <span class="badge green">Hyperpush</span>
+      <span class="badge gold">Bags.fm</span>
+    </div>
+    <h1>
+      Track errors.<br>
+      <span class="accent">Fund</span> <span class="dim">your</span><br>
+      project.
+    </h1>
+    <p class="tagline">
+      One install → <strong>token minted on Solana</strong> → fees fund bounties → developers get paid. Automatically.
+    </p>
+  </div>
+
+  <!-- RIGHT — 3 bold, scannable lines -->
+  <div class="right">
+    <div class="step">
+      <div class="step-dot c1"></div>
+      <div class="step-label">Setup <span class="hl-green">mints a token</span></div>
+    </div>
+    <div class="step">
+      <div class="step-dot c2"></div>
+      <div class="step-label">Trades <span class="hl-purple">pay developers</span></div>
+    </div>
+    <div class="step">
+      <div class="step-dot c3"></div>
+      <div class="step-label">Volume <span class="hl-gold">kills your bill</span></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="bottom">
+    <div class="brand">
+      <svg width="22" height="22" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M58.4637 127.026C49.371 111.277 54.767 91.1387 70.5159 82.0461L122.475 172.041C131.567 187.79 126.171 207.928 110.422 217.021L58.4637 127.026Z" fill="rgba(89,193,132,0.5)"/>
+        <path d="M79.1494 77.0625C95.0428 67.8864 115.366 73.3319 124.542 89.2253L152.938 138.409C137.044 147.585 116.722 142.139 107.545 126.246L79.1494 77.0625Z" fill="rgba(255,255,255,0.3)"/>
+        <path d="M133.024 83.9788C123.931 68.2299 129.327 48.0919 145.076 38.9992L182.534 103.879C191.627 119.628 186.231 139.766 170.482 148.859L133.024 83.9788Z" fill="rgba(89,193,132,0.5)"/>
+      </svg>
+      <span class="bname">hyperpush</span>
+    </div>
+    <div class="sol-pill">
+      <span class="sol-dot"></span>
+      Solana
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

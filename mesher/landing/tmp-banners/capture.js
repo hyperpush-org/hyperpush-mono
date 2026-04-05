@@ -81,6 +81,24 @@ const path = require('path');
   await roadmap.screenshot({ path: path.join(publicDir, 'roadmap-banner.png') });
   console.log('✓ roadmap-banner.png');
 
+  // 9. Article 1 X banner (1500x600, 5:2)
+  console.log('Capturing article-1 banner...');
+  await page.setViewportSize({ width: 1600, height: 800 });
+  await page.goto(`file://${path.resolve(__dirname, 'article-1.html')}`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1000);
+  const article1 = await page.$('#article-1-banner');
+  await article1.screenshot({ path: path.join(publicDir, 'article-1.png') });
+  console.log('✓ article-1.png');
+
+  // 10. Article 2 X banner (1500x600, 5:2)
+  console.log('Capturing article-2 banner...');
+  await page.setViewportSize({ width: 1600, height: 800 });
+  await page.goto(`file://${path.resolve(__dirname, 'article-2.html')}`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1000);
+  const article2 = await page.$('#article-2-banner');
+  await article2.screenshot({ path: path.join(publicDir, 'article-2.png') });
+  console.log('✓ article-2.png');
+
   await browser.close();
   console.log('\nDone! All images saved to public/');
 })();

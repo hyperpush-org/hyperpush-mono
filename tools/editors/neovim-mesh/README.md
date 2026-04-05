@@ -81,7 +81,7 @@ The command exits `0` only after these named phases pass:
 1. `corpus` — materialize the shared S01 interpolation corpus, including markdown-backed docs snippets, into temporary `.mpl` files under `.tmp/m036-s02/`
 2. `shared-grammar` — replay `bash scripts/verify-m036-s01.sh`
 3. `upstream-lsp` — replay `cargo test -q -p meshc --test e2e_lsp -- --nocapture`
-4. `neovim` — install this pack through a real `pack/*/start/mesh-nvim` path and run the headless Neovim smoke covering syntax plus LSP attach/root-resolution assertions for `reference-backend/`, a manifest-first override-entry fixture, and honest single-file mode
+4. `neovim` — install this pack through a real `pack/*/start/mesh-nvim` path and run the headless Neovim smoke covering syntax plus LSP attach/root-resolution assertions for a backend-shaped manifest-rooted fixture, a manifest-first override-entry fixture, and honest single-file mode
 
 The syntax side of phase 4 stays intentionally bounded: it replays the shared S01 interpolation corpus and then opens `scripts/fixtures/m048-s04-cluster-decorators.mpl` to prove `@cluster`, `@cluster(3)`, and bare `cluster` boundaries with explicit line/column synstack output.
 

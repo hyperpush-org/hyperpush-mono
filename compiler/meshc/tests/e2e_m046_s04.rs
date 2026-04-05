@@ -277,7 +277,11 @@ fn assert_cluster_proof_source_contract(sources: &ClusterProofSources) {
         &sources.dockerfile,
         "EXPOSE 4370",
     );
-    for needle in ["docker-entrypoint.sh", "EXPOSE 8080", "meshc build cluster-proof --output /tmp/cluster-proof --no-color"] {
+    for needle in [
+        "docker-entrypoint.sh",
+        "EXPOSE 8080",
+        "meshc build cluster-proof --output /tmp/cluster-proof --no-color",
+    ] {
         assert_omits("cluster-proof/Dockerfile", &sources.dockerfile, needle);
     }
 
@@ -296,7 +300,12 @@ fn assert_cluster_proof_source_contract(sources: &ClusterProofSources) {
         &sources.fly_toml,
         "MESH_DISCOVERY_SEED = 'mesh-cluster-proof.internal'",
     );
-    for needle in ["http_service", "\n  PORT =", "\nPORT =", "dockerfile = 'cluster-proof/Dockerfile'"] {
+    for needle in [
+        "http_service",
+        "\n  PORT =",
+        "\nPORT =",
+        "dockerfile = 'cluster-proof/Dockerfile'",
+    ] {
         assert_omits("cluster-proof/fly.toml", &sources.fly_toml, needle);
     }
 
@@ -515,7 +524,10 @@ fn m046_s04_cluster_proof_helpers_reject_missing_dockerfile() {
     let error = route_free::validate_cluster_proof_fixture_root(&broken_fixture_root)
         .expect_err("missing fixture Dockerfile should fail closed");
     route_free::write_artifact(&artifacts.join("fixture-validation.error.txt"), &error);
-    assert!(error.contains("missing required files: Dockerfile"), "{error}");
+    assert!(
+        error.contains("missing required files: Dockerfile"),
+        "{error}"
+    );
 }
 
 #[test]

@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { X_HANDLE } from '@/lib/external-links'
-import { CountdownOverlay } from '@/components/countdown-overlay'
 import './globals.css'
 
 const _geist = Geist({ subsets: ['latin'] })
@@ -107,7 +106,6 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className="font-sans antialiased overflow-x-hidden">
-        <CountdownOverlay />
         {children}
         <Analytics />
       </body>

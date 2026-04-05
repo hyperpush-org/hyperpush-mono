@@ -1,0 +1,23 @@
+# Default review owners
+#
+# These owners are inferred from current repo history and active maintenance.
+# If the maintainer roster changes, update this file before relying on automatic review requests.
+* @rcodyp @snowdamiz
+
+# Core compiler, runtime, and packaging
+/compiler/ @rcodyp @snowdamiz
+/registry/ @rcodyp @snowdamiz
+
+# Docs and public sites
+/website/ @rcodyp @snowdamiz
+/packages-website/ @rcodyp @snowdamiz
+/*.md @rcodyp @snowdamiz
+
+# Editors and tooling integrations
+/tools/ @rcodyp @snowdamiz
+
+# Examples and starter templates
+/examples/ @rcodyp @snowdamiz
+/scripts/fixtures/ @rcodyp @snowdamiz
+/reference-backend/ @rcodyp @snowdamiz
+/mesher/ @rcodyp @snowdamiz

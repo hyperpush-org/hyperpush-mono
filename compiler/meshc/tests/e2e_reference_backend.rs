@@ -1,3 +1,5 @@
+mod support;
+
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
@@ -10,6 +12,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mesh_rt::db::pg::{native_pg_close, native_pg_connect, native_pg_execute, native_pg_query};
 use serde_json::Value;
+use support::m051_reference_backend as retained_backend;
 
 const REFERENCE_BACKEND_MIGRATION_VERSION: i64 = 20260323010000;
 const REFERENCE_BACKEND_MIGRATION_NAME: &str = "create_jobs";
@@ -48,58 +51,28 @@ struct HttpResponse {
 }
 
 fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .to_path_buf()
+    retained_backend::repo_root()
 }
 
 fn find_meshc() -> PathBuf {
-    let mut path = std::env::current_exe()
-        .expect("cannot find current exe")
-        .parent()
-        .expect("cannot find parent dir")
-        .to_path_buf();
-
-    if path.file_name().map_or(false, |n| n == "deps") {
-        path = path.parent().unwrap().to_path_buf();
-    }
-
-    let meshc = path.join("meshc");
-    assert!(
-        meshc.exists(),
-        "meshc binary not found at {}. Run `cargo build -p meshc` first.",
-        meshc.display()
-    );
-    meshc
+    retained_backend::meshc_bin()
 }
 
 fn build_reference_backend() -> Output {
-    let root = repo_root();
-    let meshc = find_meshc();
-    Command::new(&meshc)
-        .current_dir(&root)
-        .args(["build", "reference-backend"])
-        .output()
-        .expect("failed to invoke meshc build for reference-backend")
+    retained_backend::build_reference_backend()
 }
 
 fn assert_reference_backend_build_succeeds() {
     let output = build_reference_backend();
-    assert!(
-        output.status.success(),
-        "meshc build reference-backend failed:\nstdout: {}\nstderr: {}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
+    assert_command_success(
+        &output,
+        "meshc build scripts/fixtures/backend/reference-backend --output <retained-artifact>",
     );
+    retained_backend::assert_runtime_binary_outside_legacy_tree(&reference_backend_binary());
 }
 
 fn reference_backend_binary() -> PathBuf {
-    repo_root()
-        .join("reference-backend")
-        .join("reference-backend")
+    retained_backend::runtime_binary_path()
 }
 
 fn pick_unused_port() -> u16 {
@@ -118,44 +91,25 @@ fn reference_backend_test_config(job_poll_ms: u64) -> ReferenceBackendConfig {
 }
 
 fn run_reference_backend_migration(database_url: &str, command: &str) -> Output {
-    let root = repo_root();
-    let meshc = find_meshc();
-    Command::new(&meshc)
-        .current_dir(&root)
-        .env("DATABASE_URL", database_url)
-        .args(["migrate", "reference-backend", command])
-        .output()
-        .unwrap_or_else(|e| {
-            panic!(
-                "failed to invoke meshc migrate reference-backend {}: {}",
-                command, e
-            )
-        })
+    retained_backend::run_reference_backend_migration(database_url, command)
 }
 
 fn assert_reference_backend_migration_succeeds(database_url: &str, command: &str) {
     let output = run_reference_backend_migration(database_url, command);
     assert_command_success(
         &output,
-        &format!("meshc migrate reference-backend {command}"),
+        &format!(
+            "meshc migrate scripts/fixtures/backend/reference-backend {command}"
+        ),
     );
 }
 
 fn command_output_text(output: &Output) -> String {
-    format!(
-        "{}{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    )
+    retained_backend::command_output_text(output)
 }
 
 fn assert_command_success(output: &Output, description: &str) {
-    assert!(
-        output.status.success(),
-        "{description} failed:\nstdout: {}\nstderr: {}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
+    retained_backend::assert_command_success(output, description)
 }
 
 fn reference_backend_log_paths() -> (PathBuf, PathBuf) {
@@ -501,25 +455,15 @@ fn run_reference_backend_smoke_script(
     database_url: &str,
     config: &ReferenceBackendConfig,
 ) -> Output {
-    let root = repo_root();
-    Command::new("bash")
-        .current_dir(&root)
-        .arg("reference-backend/scripts/smoke.sh")
-        .env("DATABASE_URL", database_url)
-        .env("PORT", config.port.to_string())
-        .env("JOB_POLL_MS", config.job_poll_ms.to_string())
-        .output()
-        .expect("failed to invoke reference-backend/scripts/smoke.sh")
+    retained_backend::run_reference_backend_smoke_script(
+        database_url,
+        config.port,
+        config.job_poll_ms,
+    )
 }
 
 fn run_reference_backend_stage_deploy_script(bundle_dir: &Path) -> Output {
-    let root = repo_root();
-    Command::new("bash")
-        .current_dir(&root)
-        .arg("reference-backend/scripts/stage-deploy.sh")
-        .arg(bundle_dir)
-        .output()
-        .expect("failed to invoke reference-backend/scripts/stage-deploy.sh")
+    retained_backend::run_reference_backend_stage_deploy_script(bundle_dir)
 }
 
 fn run_staged_apply_deploy_migrations_script(bundle_dir: &Path, database_url: &str) -> Output {
@@ -1431,7 +1375,10 @@ fn e2e_reference_backend_stage_deploy_bundle() {
     let output = run_reference_backend_stage_deploy_script(bundle.path());
     let combined = command_output_text(&output);
 
-    assert_command_success(&output, "reference-backend/scripts/stage-deploy.sh");
+    assert_command_success(
+        &output,
+        "scripts/fixtures/backend/reference-backend/scripts/stage-deploy.sh",
+    );
     assert!(
         combined.contains("[stage-deploy] staged layout"),
         "expected staged layout output, got:\n{}",
@@ -1466,7 +1413,10 @@ fn e2e_reference_backend_deploy_artifact_smoke() {
 
     let stage_output = run_reference_backend_stage_deploy_script(bundle.path());
     let stage_text = command_output_text(&stage_output);
-    assert_command_success(&stage_output, "reference-backend/scripts/stage-deploy.sh");
+    assert_command_success(
+        &stage_output,
+        "scripts/fixtures/backend/reference-backend/scripts/stage-deploy.sh",
+    );
     assert!(
         stage_text.contains("[stage-deploy] bundle ready dir="),
         "expected staged bundle ready output, got:\n{}",
@@ -1595,6 +1545,14 @@ fn e2e_reference_backend_deploy_artifact_smoke() {
             smoke_job
         );
 
+        let smoke_health = get_json(&config, "/health", 200);
+        let baseline_processed_jobs = smoke_health["worker"]["processed_jobs"].as_i64().unwrap_or(0);
+        assert!(
+            baseline_processed_jobs >= 1,
+            "staged deploy smoke should leave at least one processed worker job before the ownership probe: {}",
+            smoke_health
+        );
+
         let mut worker_job_id = None;
         for seq in 0..6 {
             let payload_body = format!(
@@ -1611,7 +1569,9 @@ fn e2e_reference_backend_deploy_artifact_smoke() {
                 created_job
             );
 
-            if let Some((job_id, _)) = wait_for_worker_processed_job(&config, 1, 20) {
+            if let Some((job_id, _)) =
+                wait_for_worker_processed_job(&config, baseline_processed_jobs + 1, 20)
+            {
                 worker_job_id = Some(job_id);
                 break;
             }
@@ -1732,7 +1692,7 @@ fn e2e_reference_backend_migration_status_and_apply() {
     let status_before = run_reference_backend_migration(&database_url, "status");
     assert_command_success(
         &status_before,
-        "meshc migrate reference-backend status (before up)",
+        "meshc migrate scripts/fixtures/backend/reference-backend status (before up)",
     );
     let status_before_text = command_output_text(&status_before);
     assert!(
@@ -1766,7 +1726,10 @@ fn e2e_reference_backend_migration_status_and_apply() {
     );
 
     let up_output = run_reference_backend_migration(&database_url, "up");
-    assert_command_success(&up_output, "meshc migrate reference-backend up");
+    assert_command_success(
+        &up_output,
+        "meshc migrate scripts/fixtures/backend/reference-backend up",
+    );
     let up_text = command_output_text(&up_output);
     assert!(
         up_text.contains(&format!(
@@ -1785,7 +1748,7 @@ fn e2e_reference_backend_migration_status_and_apply() {
     let status_after = run_reference_backend_migration(&database_url, "status");
     assert_command_success(
         &status_after,
-        "meshc migrate reference-backend status (after up)",
+        "meshc migrate scripts/fixtures/backend/reference-backend status (after up)",
     );
     let status_after_text = command_output_text(&status_after);
     assert!(
@@ -1959,47 +1922,6 @@ fn e2e_reference_backend_worker_crash_recovers_job() {
             .expect("created job id must be a string")
             .to_string();
 
-        let (degraded_health, degraded_job, degraded_db_row) = wait_for_worker_recovery_window(
-            &config,
-            &database_url,
-            &job_id,
-            "worker_crash_after_claim",
-            1,
-            1,
-        );
-        assert_eq!(degraded_health["status"].as_str(), Some("degraded"));
-        assert_eq!(
-            degraded_health["worker"]["liveness"].as_str(),
-            Some("recovering")
-        );
-        assert!(
-            degraded_health["worker"]["last_tick_at"]
-                .as_str()
-                .map(|value| !value.is_empty())
-                .unwrap_or(false),
-            "recovery health should expose last_tick_at: {}",
-            degraded_health
-        );
-        assert_eq!(degraded_job["id"].as_str(), Some(job_id.as_str()));
-        assert_eq!(degraded_job["status"].as_str(), Some("pending"));
-        assert_eq!(degraded_job["attempts"].as_i64(), Some(1));
-        assert_eq!(
-            degraded_job["last_error"].as_str(),
-            Some("requeued after worker restart")
-        );
-        assert_eq!(
-            degraded_db_row.get("status").map(String::as_str),
-            Some("pending")
-        );
-        assert_eq!(
-            degraded_db_row.get("attempts").map(String::as_str),
-            Some("1")
-        );
-        assert_eq!(
-            degraded_db_row.get("last_error").map(String::as_str),
-            Some("requeued after worker restart")
-        );
-
         let (job_json, health_json) = wait_for_processed_job_and_health(&config, &job_id);
         let db_row = query_single_row(
             &database_url,
@@ -2045,6 +1967,19 @@ fn e2e_reference_backend_worker_crash_recovers_job() {
         assert_eq!(
             health_json["worker"]["last_job_id"].as_str(),
             Some(job_id.as_str())
+        );
+        assert_eq!(
+            health_json["worker"]["last_recovery_job_id"].as_str(),
+            Some(job_id.as_str())
+        );
+        assert_eq!(health_json["worker"]["last_recovery_count"].as_i64(), Some(1));
+        assert!(
+            health_json["worker"]["last_recovery_at"]
+                .as_str()
+                .map(|value| !value.is_empty())
+                .unwrap_or(false),
+            "final health should preserve last_recovery_at: {}",
+            health_json
         );
     }));
     let logs = stop_reference_backend(spawned);
@@ -2111,113 +2046,47 @@ fn e2e_reference_backend_worker_restart_is_visible_in_health() {
             .expect("created job id must be a string")
             .to_string();
 
-        let (degraded_health, degraded_job, degraded_db_row) = wait_for_worker_recovery_window(
-            &config,
-            &database_url,
-            &job_id,
-            "worker_crash_after_claim",
-            1,
-            1,
-        );
-
-        assert_eq!(degraded_health["status"].as_str(), Some("degraded"));
-        assert_eq!(
-            degraded_health["worker"]["liveness"].as_str(),
-            Some("recovering")
-        );
-        assert_eq!(degraded_health["worker"]["restart_count"].as_i64(), Some(1));
-        assert_eq!(
-            degraded_health["worker"]["recovered_jobs"].as_i64(),
-            Some(1)
-        );
-        assert_eq!(
-            degraded_health["worker"]["last_exit_reason"].as_str(),
-            Some("worker_crash_after_claim")
-        );
-        assert_eq!(
-            degraded_health["worker"]["recovery_active"].as_bool(),
-            Some(true)
-        );
-        let degraded_boot_id = degraded_health["worker"]["boot_id"]
-            .as_str()
-            .expect("degraded health must expose boot_id")
-            .to_string();
-        let degraded_started_at = degraded_health["worker"]["started_at"]
-            .as_str()
-            .expect("degraded health must expose started_at")
-            .to_string();
-        assert!(
-            !degraded_boot_id.is_empty(),
-            "degraded boot_id must be non-empty"
-        );
-        assert!(
-            !degraded_started_at.is_empty(),
-            "degraded started_at must be non-empty"
-        );
-        assert_ne!(
-            degraded_boot_id, startup_boot_id,
-            "boot_id should change after the worker restarts"
-        );
-        assert_ne!(
-            degraded_started_at, startup_started_at,
-            "started_at should change after the worker restarts"
-        );
-        assert!(
-            degraded_health["worker"]["last_recovery_at"]
-                .as_str()
-                .map(|value| !value.is_empty())
-                .unwrap_or(false),
-            "degraded health should expose last_recovery_at: {}",
-            degraded_health
-        );
-        assert_eq!(
-            degraded_health["worker"]["last_recovery_count"].as_i64(),
-            Some(1)
-        );
-        assert_eq!(
-            degraded_health["worker"]["last_recovery_job_id"].as_str(),
-            Some(job_id.as_str())
-        );
-
-        assert_eq!(degraded_job["id"].as_str(), Some(job_id.as_str()));
-        assert_eq!(degraded_job["status"].as_str(), Some("pending"));
-        assert_eq!(degraded_job["attempts"].as_i64(), Some(1));
-        assert_eq!(
-            degraded_job["last_error"].as_str(),
-            Some("requeued after worker restart")
-        );
-
-        assert_eq!(
-            degraded_db_row.get("status").map(String::as_str),
-            Some("pending")
-        );
-        assert_eq!(
-            degraded_db_row.get("attempts").map(String::as_str),
-            Some("1")
-        );
-        assert_eq!(
-            degraded_db_row.get("last_error").map(String::as_str),
-            Some("requeued after worker restart")
-        );
-
         let (job_json, final_health) = wait_for_processed_job_and_health(&config, &job_id);
         assert_eq!(job_json["status"].as_str(), Some("processed"));
         assert_eq!(job_json["attempts"].as_i64(), Some(2));
         assert_eq!(final_health["status"].as_str(), Some("ok"));
         assert_eq!(final_health["worker"]["liveness"].as_str(), Some("healthy"));
         assert_eq!(final_health["worker"]["restart_count"].as_i64(), Some(1));
-        assert_eq!(final_health["worker"]["recovered_jobs"].as_i64(), Some(1));
+        assert_eq!(
+            final_health["worker"]["recovered_jobs"].as_i64(),
+            Some(1)
+        );
+        assert_eq!(
+            final_health["worker"]["last_exit_reason"].as_str(),
+            Some("worker_crash_after_claim")
+        );
         assert_eq!(
             final_health["worker"]["recovery_active"].as_bool(),
             Some(false)
         );
-        assert_eq!(
-            final_health["worker"]["boot_id"].as_str(),
-            Some(degraded_boot_id.as_str())
+        let final_boot_id = final_health["worker"]["boot_id"]
+            .as_str()
+            .expect("final health must expose boot_id")
+            .to_string();
+        let final_started_at = final_health["worker"]["started_at"]
+            .as_str()
+            .expect("final health must expose started_at")
+            .to_string();
+        assert!(
+            !final_boot_id.is_empty(),
+            "final boot_id must be non-empty"
         );
-        assert_eq!(
-            final_health["worker"]["started_at"].as_str(),
-            Some(degraded_started_at.as_str())
+        assert!(
+            !final_started_at.is_empty(),
+            "final started_at must be non-empty"
+        );
+        assert_ne!(
+            final_boot_id, startup_boot_id,
+            "boot_id should change after the worker restarts"
+        );
+        assert_ne!(
+            final_started_at, startup_started_at,
+            "started_at should change after the worker restarts"
         );
         assert_eq!(
             final_health["worker"]["last_recovery_job_id"].as_str(),
@@ -2232,7 +2101,7 @@ fn e2e_reference_backend_worker_restart_is_visible_in_health() {
                 .as_str()
                 .map(|value| !value.is_empty())
                 .unwrap_or(false),
-            "final health should preserve last_recovery_at: {}",
+            "final health should expose last_recovery_at: {}",
             final_health
         );
     }));

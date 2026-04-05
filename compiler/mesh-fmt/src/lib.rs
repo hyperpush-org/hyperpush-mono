@@ -313,11 +313,11 @@ mod edge_case_tests {
 
     const REFERENCE_BACKEND_HEALTH: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../reference-backend/api/health.mpl"
+        "/../../scripts/fixtures/backend/reference-backend/api/health.mpl"
     ));
     const REFERENCE_BACKEND_JOB_TYPES: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../reference-backend/types/job.mpl"
+        "/../../scripts/fixtures/backend/reference-backend/types/job.mpl"
     ));
 
     fn fmt(source: &str) -> String {
@@ -447,7 +447,7 @@ mod edge_case_tests {
 
         assert_eq!(
             result, REFERENCE_BACKEND_HEALTH,
-            "reference-backend/api/health.mpl should stay canonically formatted"
+            "scripts/fixtures/backend/reference-backend/api/health.mpl should stay canonically formatted"
         );
         assert_eq!(
             result, second,
@@ -462,7 +462,7 @@ mod edge_case_tests {
 
         assert_eq!(
             result, REFERENCE_BACKEND_JOB_TYPES,
-            "reference-backend/types/job.mpl should stay canonically formatted"
+            "scripts/fixtures/backend/reference-backend/types/job.mpl should stay canonically formatted"
         );
         assert_eq!(
             result, second,

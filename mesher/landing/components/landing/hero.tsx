@@ -97,8 +97,8 @@ export function Hero() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="mx-auto mb-6 max-w-[22rem] text-[15px] leading-7 text-muted-foreground text-pretty sm:hidden"
         >
-          Drop-in replacement for Sentry — same SDK, better dashboards, zero lock-in. Ship a project token once and it
-          funds your treasury while paying the devs who fix the bugs.
+          Drop-in Sentry replacement. Same SDK, better dashboards, zero lock-in — plus a project token that funds your
+          treasury and pays the devs who fix your bugs.
         </motion.p>
 
         <motion.p
@@ -107,10 +107,8 @@ export function Hero() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="hidden text-base text-muted-foreground text-pretty sm:mx-auto sm:mb-10 sm:block sm:max-w-3xl sm:text-lg md:text-xl"
         >
-          Tired of writing checks to error-tracking companies? Hyperpush is the direct drop-in replacement for
-          Sentry — same SDK, better dashboards, zero lock-in. The difference? Ship a project token once and it
-          automatically fills your treasury while paying the devs who actually fix the bugs. Open-source error
-          tracking that funds itself.
+          Drop-in Sentry replacement. Same SDK, better dashboards, zero lock-in — plus a project token that funds your
+          treasury and pays the devs who fix your bugs.
         </motion.p>
 
         <motion.div

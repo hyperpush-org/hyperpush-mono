@@ -17,8 +17,40 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  whitespace-guard:
+    name: Whitespace guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify incoming diff is whitespace-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "${{ github.event_name }}" in
+            pull_request)
+              range="${{ github.event.pull_request.base.sha }}...HEAD"
+              ;;
+            push)
+              if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+                range="HEAD^..HEAD"
+              else
+                range="${{ github.event.before }}..HEAD"
+              fi
+              ;;
+            *)
+              range="HEAD^..HEAD"
+              ;;
+          esac
+
+          bash scripts/verify-whitespace.sh --diff-range "$range"
+
   live-proof:
     name: Authoritative live proof
+    needs: whitespace-guard
     # Fork PRs stay on the repo's secret-free build/test lanes. This workflow only
     # reruns the live publish proof when the checked-out PR head is this repository,
     # so untrusted forks never receive publish secrets.

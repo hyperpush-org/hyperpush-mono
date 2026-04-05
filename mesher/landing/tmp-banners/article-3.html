@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Article 3 — Blog Launch Banner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #080a0c;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .banner {
+    position: relative;
+    width: 1500px;
+    height: 600px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 18% 30%, rgba(89,193,132,0.10), transparent 34%),
+      radial-gradient(circle at 82% 70%, rgba(89,193,132,0.06), transparent 28%),
+      linear-gradient(135deg, #070809 0%, #0d1114 48%, #0a0d10 100%);
+    color: #f5f7f8;
+  }
+
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 52px 52px;
+    opacity: 0.28;
+    pointer-events: none;
+  }
+
+  .grain {
+    position: absolute;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.035;
+    pointer-events: none;
+  }
+
+  .top-line,
+  .bottom-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    z-index: 5;
+    background: linear-gradient(to right, transparent, rgba(89,193,132,0.28) 25%, rgba(255,255,255,0.05) 55%, transparent 100%);
+  }
+
+  .top-line { top: 0; }
+  .bottom-line { bottom: 0; }
+
+  .paper {
+    position: absolute;
+    top: 48px;
+    left: 54px;
+    right: 54px;
+    bottom: 48px;
+    border-radius: 30px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.98), rgba(249,250,248,0.98));
+    box-shadow:
+      0 18px 50px rgba(0,0,0,0.30),
+      inset 0 0 0 1px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+
+  .paper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.032) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.032) 1px, transparent 1px);
+    background-size: 42px 42px;
+    opacity: 0.5;
+  }
+
+  .paper::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(89,193,132,0.035), transparent 24%, transparent 76%, rgba(89,193,132,0.02));
+    pointer-events: none;
+  }
+
+  .content {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    height: 100%;
+  }
+
+  .left {
+    padding: 58px 54px 54px 58px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    padding: 11px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.82);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #0b1116;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  }
+
+  .eyebrow .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #59C184;
+    box-shadow: 0 0 14px rgba(89,193,132,0.5);
+  }
+
+  h1 {
+    margin-top: 26px;
+    font-size: 88px;
+    line-height: 0.94;
+    letter-spacing: -5px;
+    font-weight: 900;
+    color: #090d10;
+  }
+
+  h1 .accent {
+    color: #2d9c5b;
+    font-style: italic;
+  }
+
+  .subcopy {
+    margin-top: 24px;
+    max-width: 680px;
+    font-size: 24px;
+    line-height: 1.45;
+    letter-spacing: -0.5px;
+    color: rgba(9,13,16,0.62);
+  }
+
+  .subcopy strong {
+    color: rgba(9,13,16,0.92);
+    font-weight: 700;
+  }
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 28px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand .name {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    color: rgba(9,13,16,0.85);
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(9,13,16,0.04);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: rgba(9,13,16,0.55);
+  }
+
+  .right {
+    position: relative;
+    padding: 28px 52px 22px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .stack {
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transform: translateY(-24px);
+  }
+
+  .card {
+    position: relative;
+    border-radius: 22px;
+    padding: 18px 20px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.84);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+  }
+
+  .card:nth-child(1) { transform: translateX(0) rotate(-1.1deg); }
+  .card:nth-child(2) { transform: translateX(16px) rotate(1.2deg); }
+  .card:nth-child(3) { transform: translateX(-4px) rotate(-0.7deg); }
+
+  .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #2d9c5b;
+    margin-bottom: 10px;
+  }
+
+  .title {
+    font-size: 25px;
+    line-height: 1.06;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: #0b1116;
+  }
+
+  .meta {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .pill {
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: rgba(9,13,16,0.05);
+    border: 1px solid rgba(0,0,0,0.06);
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(9,13,16,0.56);
+    letter-spacing: -0.1px;
+  }
+
+  .side-glow {
+    position: absolute;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(89,193,132,0.12), transparent 70%);
+    top: 58px;
+    right: 18px;
+    pointer-events: none;
+    filter: blur(10px);
+  }
+</style>
+</head>
+<body>
+
+<div class="banner" id="article-3-banner">
+  <div class="grid"></div>
+  <div class="grain"></div>
+  <div class="top-line"></div>
+  <div class="bottom-line"></div>
+
+  <div class="paper">
+    <div class="content">
+      <div class="left">
+        <div>
+          <div class="eyebrow">
+            <span class="dot"></span>
+            Blog launch
+          </div>
+
+          <h1>
+            The <span class="accent">blog</span><br>
+            is live.
+          </h1>
+
+          <p class="subcopy">
+            A place for <strong>shipping notes</strong>, runtime tradeoffs, product thinking, and the reasoning that does not belong in docs or changelogs.
+          </p>
+        </div>
+
+        <div class="brand-row">
+          <div class="brand">
+            <svg width="26" height="26" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M58.4637 127.026C49.371 111.277 54.767 91.1387 70.5159 82.0461L122.475 172.041C131.567 187.79 126.171 207.928 110.422 217.021L58.4637 127.026Z" fill="#59C184"/>
+              <path d="M79.1494 77.0625C95.0428 67.8864 115.366 73.3319 124.542 89.2253L152.938 138.409C137.044 147.585 116.722 142.139 107.545 126.246L79.1494 77.0625Z" fill="rgba(9,13,16,0.38)"/>
+              <path d="M133.024 83.9788C123.931 68.2299 129.327 48.0919 145.076 38.9992L182.534 103.879C191.627 119.628 186.231 139.766 170.482 148.859L133.024 83.9788Z" fill="#59C184"/>
+            </svg>
+            <span class="name">hyperpush</span>
+          </div>
+
+          <div class="tag">community / blog</div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="side-glow"></div>
+        <div class="stack">
+          <div class="card">
+            <div class="label">What goes here</div>
+            <div class="title">Shipping notes that say what actually changed.</div>
+            <div class="meta">
+              <span class="pill">releases</span>
+              <span class="pill">product</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="label">The useful middle</div>
+            <div class="title">The reasoning between docs, diffs, and decisions.</div>
+            <div class="meta">
+              <span class="pill">tradeoffs</span>
+              <span class="pill">runtime</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="label">Standard</div>
+            <div class="title">No filler. No SEO sludge. Only posts worth keeping.</div>
+            <div class="meta">
+              <span class="pill">build logs</span>
+              <span class="pill">postmortems</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

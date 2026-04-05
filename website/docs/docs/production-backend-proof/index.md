@@ -1,58 +1,43 @@
 ---
 title: Production Backend Proof
-description: Canonical proof surface for Mesh's real backend package, staged deploy path, supervision signals, and documentation-truth checks
+description: Compact public-secondary handoff for Mesh's starter/examples-first backend story, Mesher maintainer runbook, and retained backend-only proof verifiers
 prev: false
 next: false
 ---
 
 # Production Backend Proof
 
-This is the public entrypoint for Mesh's real backend proof surface.
+This is the compact public-secondary handoff for Mesh's backend proof story.
 
-It is intentionally small: the deepest operator/developer runbook lives in [`reference-backend/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md), and this page tells you which concrete commands back the public claims.
+Public readers should still stay scaffold/examples first: start with [Clustered Example](/docs/getting-started/clustered-example/), [`examples/todo-sqlite/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md), or [`examples/todo-postgres/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md) before using this page as a deeper handoff.
+
+This page only names the deeper maintainer surfaces behind that public story: Mesher as the maintained app, and a retained backend-only verifier kept behind a named replay instead of a public repo-root runbook.
 
 ## Canonical surfaces
 
-- [`reference-backend/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md) — deepest runbook for build, runtime, staged deploy, supervision, and recovery interpretation
-- `compiler/meshc/tests/e2e_reference_backend.rs` — authoritative Rust harness for the backend e2e proofs
-- `reference-backend/scripts/deploy-smoke.sh` — probe-only staged deploy smoke contract
-- `reference-backend/scripts/verify-production-proof-surface.sh` — documentation-truth verifier for this public proof surface
+- [Clustered Example](/docs/getting-started/clustered-example/) — public scaffold-first clustered walkthrough
+- [`examples/todo-sqlite/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-sqlite/README.md) — honest local single-node starter
+- [`examples/todo-postgres/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/examples/todo-postgres/README.md) — shared/deployable PostgreSQL starter
+- [`mesher/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/mesher/README.md) — deeper maintained app runbook for repo maintainers
+- `bash scripts/verify-m051-s01.sh` — maintainer verifier for the shipped Mesher app surface
+- `bash scripts/verify-m051-s02.sh` — maintainer verifier for the retained backend-only proof replay
+- `bash scripts/verify-production-proof-surface.sh` — compatibility verifier that keeps this public proof page truthful
 
-## What the backend proof covers
+## Named maintainer verifiers
 
-The `reference-backend/` package is the canonical proof target for backend claims in this repo. It proves one real Mesh backend can compose:
-
-- env-driven startup validation
-- Postgres migrations
-- `GET /health`
-- `POST /jobs`
-- `GET /jobs/:id`
-- a supervised worker that processes persisted jobs
-- a staged deploy bundle with a smoke-check script
-- worker-crash recovery and whole-process restart recovery that stay visible in `/health`
-- a repeatable documentation verifier that keeps the public proof links honest
-
-## Named proof commands
-
-These are the repo-level commands behind the public proof story:
+These are the named commands behind the current deeper backend-maintainer story:
 
 ```bash
-cargo run -p meshc -- build reference-backend
-cargo run -p meshc -- fmt --check reference-backend
-cargo run -p meshc -- test reference-backend
-DATABASE_URL=${DATABASE_URL:?set DATABASE_URL} cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_migration_status_and_apply -- --ignored --nocapture
-DATABASE_URL=${DATABASE_URL:?set DATABASE_URL} cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_deploy_artifact_smoke -- --ignored --nocapture
-DATABASE_URL=${DATABASE_URL:?set DATABASE_URL} cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_worker_crash_recovers_job -- --ignored --nocapture
-DATABASE_URL=${DATABASE_URL:?set DATABASE_URL} cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_worker_restart_is_visible_in_health -- --ignored --nocapture
-DATABASE_URL=${DATABASE_URL:?set DATABASE_URL} cargo test -p meshc --test e2e_reference_backend e2e_reference_backend_process_restart_recovers_inflight_job -- --ignored --nocapture
-bash reference-backend/scripts/verify-production-proof-surface.sh
+bash scripts/verify-m051-s01.sh
+bash scripts/verify-m051-s02.sh
+bash scripts/verify-production-proof-surface.sh
 ```
 
-> **Note:** Run the ignored `e2e_reference_backend` database-backed proofs serially against a single `DATABASE_URL`. They share reset/migrate state and are not safe to run in parallel against the same database.
+Use `bash scripts/verify-m051-s01.sh` when you are verifying the maintained deeper app that repo maintainers actually work on. Use `bash scripts/verify-m051-s02.sh` when you need the retained backend-only proof replay without turning its internal fixture layout into public teaching.
 
-## Recovery signals to inspect
+## Retained backend-only recovery signals
 
-The runbook in `reference-backend/README.md` explains the full interpretation, but these are the public recovery fields that matter:
+When `bash scripts/verify-m051-s02.sh` fails on the retained backend-only proof, inspect the recovery markers it preserves:
 
 - `restart_count`
 - `last_exit_reason`
@@ -62,28 +47,20 @@ The runbook in `reference-backend/README.md` explains the full interpretation, b
 - `last_recovery_count`
 - `recovery_active`
 
-Interpret them with the named proofs above:
-
-- **Worker crash recovery:** expect `restart_count=1`, `last_exit_reason="worker_crash_after_claim"`, and `recovered_jobs=1`.
-- **Whole-process restart recovery:** expect a new worker `boot_id` / `started_at`, `recovered_jobs=1`, and `last_exit_reason=null` because the worker did not exit under in-process supervision; the backend process was replaced.
-- **Recovery window visibility:** while recovery is in progress, `/health` should be `status: "degraded"`, worker `liveness: "recovering"`, and `recovery_active=true`. Once the recovered job finishes, the backend should return to `status: "ok"`, worker `liveness: "healthy"`, and `recovery_active=false`.
+Those signals stay maintainer-facing on purpose: they prove the retained backend-only recovery story without turning the compatibility fixture tree into a public tutorial.
 
 ## When to use this page vs the generic guides
 
-Use the generic guides when you want to learn a subsystem API such as HTTP routing, database access, supervision, tooling, or testing.
+Use [Web](/docs/web/), [Databases](/docs/databases/), [Testing](/docs/testing/), [Concurrency](/docs/concurrency/), or [Developer Tools](/docs/tooling/) when you want a subsystem API in isolation.
 
-Use this page and `reference-backend/README.md` when you want to evaluate whether Mesh currently proves a real backend workflow end to end instead of inferring readiness from feature tutorials.
+Use this page when you need the handoff from the public starter/examples-first route into the maintainer-only backend surfaces. From here, continue to [`mesher/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/mesher/README.md) plus `bash scripts/verify-m051-s01.sh` for the deeper maintained app, or use `bash scripts/verify-m051-s02.sh` for the retained backend-only proof.
 
 ## Failure inspection map
 
-If a proof fails, rerun the named command for the exact surface you care about:
+If a maintainer proof fails, rerun the smallest named surface that matches the drift:
 
-- **Backend assembly or formatting:** `meshc build`, `meshc fmt --check`, `meshc test`
-- **Migration truth:** `e2e_reference_backend_migration_status_and_apply`
-- **Staged deploy path:** `e2e_reference_backend_deploy_artifact_smoke` and `reference-backend/scripts/deploy-smoke.sh`
-- **Worker crash recovery:** `e2e_reference_backend_worker_crash_recovers_job`
-- **Restart visibility in `/health`:** `e2e_reference_backend_worker_restart_is_visible_in_health`
-- **Whole-process restart recovery:** `e2e_reference_backend_process_restart_recovers_inflight_job`
-- **Documentation drift:** `bash reference-backend/scripts/verify-production-proof-surface.sh`
+- **Public proof-page contract:** `bash scripts/verify-production-proof-surface.sh`
+- **Maintained deeper app:** [`mesher/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/mesher/README.md) and `bash scripts/verify-m051-s01.sh`
+- **Retained backend-only proof:** `bash scripts/verify-m051-s02.sh`
 
-For the full environment contract and the full supervision/recovery runbook, continue to [`reference-backend/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/reference-backend/README.md).
+If a public docs page starts teaching the old repo-root compatibility surfaces again, treat that as contract drift instead of a docs cleanup detail.

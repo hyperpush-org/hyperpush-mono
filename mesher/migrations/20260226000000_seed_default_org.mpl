@@ -1,10 +1,13 @@
 # Seed migration: default organization, project, and API key for development.
-# After running `meshc migrate up`, use this API key to test ingestion:
+# The canonical maintainer runbook lives in `mesher/README.md`.
+# After running `cargo run -q -p meshc -- migrate mesher up` and starting `./mesher/mesher`, use:
 #
-#   curl -X POST http://localhost:8080/api/v1/events \
+#   curl -X POST http://127.0.0.1:8080/api/v1/events \
 #     -H "x-sentry-auth: mshr_devdefaultapikey000000000000000000000000000" \
 #     -H "Content-Type: application/json" \
-#     -d '{"message":"test error","level":"error"}'
+#     -d '{"message":"README smoke event","level":"error"}'
+#
+#   curl http://127.0.0.1:8080/api/v1/projects/default/issues?status=unresolved
 #
 # This seed is idempotent: safe to apply multiple times (ON CONFLICT DO NOTHING).
 

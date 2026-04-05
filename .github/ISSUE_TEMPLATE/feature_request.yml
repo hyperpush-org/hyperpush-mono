@@ -1,0 +1,68 @@
+name: Feature request
+description: Propose a new capability or improvement for Mesh, its tooling, docs, or starter templates.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the problem you are trying to solve, not only the shape of the solution.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched existing issues, docs, and examples for prior discussion or an existing workflow.
+          required: true
+        - label: I explained the user problem or workflow gap this request is addressing.
+          required: true
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - language / compiler
+        - runtime / distribution
+        - meshpkg / packaging
+        - LSP / editor support
+        - starter templates / examples
+        - docs / website
+        - release / installer workflow
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What are you trying to do, and where does the current workflow break down?
+      placeholder: Describe the workflow, limitation, or recurring pain point.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the change you want to see.
+      placeholder: Describe the smallest useful improvement.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds, rejected approaches, or prior art.
+  - type: textarea
+    id: impact
+    attributes:
+      label: Expected impact
+      description: Who benefits, and how would success be measured?
+      placeholder: Better onboarding, fewer manual steps, simpler deployment proof, lower runtime overhead, etc.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Links, screenshots, code snippets, or related issues/PRs.

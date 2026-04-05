@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Article 1 — X Banner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,800;1,900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─────────────────────────────────────────
+     BANNER  1500 × 600  (5:2)
+  ───────────────────────────────────────── */
+  .banner {
+    position: relative;
+    width: 1500px;
+    height: 600px;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* ── DARK HALF ── */
+  .dark-half {
+    position: absolute;
+    inset: 0;
+    background: #0a0a0a;
+    clip-path: polygon(0 0, calc(55% + 40px) 0, calc(55% - 40px) 100%, 0 100%);
+  }
+
+  .dark-half::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .dark-half::after {
+    content: '';
+    position: absolute;
+    inset: -50%;
+    width: 300%;
+    height: 300%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+  }
+
+  /* glows */
+  .glow-main {
+    position: absolute;
+    width: 800px;
+    height: 800px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(89,193,132,0.1) 0%, rgba(89,193,132,0.03) 40%, transparent 70%);
+    top: 50%;
+    left: 24%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .glow-tl {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(89,193,132,0.06) 0%, transparent 70%);
+    top: -80px;
+    left: -50px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* edges */
+  .fade-left {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 50px;
+    background: linear-gradient(to right, #0a0a0a, transparent);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .top-accent {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(89,193,132,0.2) 35%, transparent 60%);
+    z-index: 10;
+  }
+
+  .bottom-accent {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(89,193,132,0.1) 35%, transparent 60%);
+    z-index: 10;
+  }
+
+  /* ── LIGHT HALF ── */
+  .light-half {
+    position: absolute;
+    inset: 0;
+    background: #fafaf8;
+    clip-path: polygon(calc(55% + 40px) 0, 100% 0, 100% 100%, calc(55% - 40px) 100%);
+  }
+
+  .light-half::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  .fade-right {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 50px;
+    background: linear-gradient(to left, #fafaf8, transparent);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  /* ── SEAM ── */
+  .seam-glow {
+    position: absolute;
+    top: -20px;
+    bottom: -20px;
+    left: calc(55% - 3px);
+    width: 6px;
+    background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(89,193,132,0.12) 12%,
+      rgba(89,193,132,0.6) 35%,
+      rgba(89,193,132,0.85) 50%,
+      rgba(89,193,132,0.6) 65%,
+      rgba(89,193,132,0.12) 88%,
+      transparent 100%
+    );
+    transform: skewX(-3.4deg);
+    transform-origin: center;
+    filter: blur(3px);
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  .seam-hard {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(55% - 0.5px);
+    width: 1px;
+    background: linear-gradient(180deg,
+      transparent,
+      rgba(89,193,132,0.4) 18%,
+      rgba(89,193,132,0.75) 50%,
+      rgba(89,193,132,0.4) 82%,
+      transparent
+    );
+    transform: skewX(-3.4deg);
+    transform-origin: center;
+    z-index: 21;
+    pointer-events: none;
+  }
+
+  /* ── NODES (dark side, minimal) ── */
+  .nodes-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    clip-path: polygon(0 0, calc(55% + 40px) 0, calc(55% - 40px) 100%, 0 100%);
+    pointer-events: none;
+  }
+
+  .node {
+    position: absolute;
+    border-radius: 50%;
+    background: #59C184;
+  }
+  .node.dim { background: rgba(255,255,255,0.2); }
+
+  /* ══════════════════════════════════════
+     DARK SIDE — headline only
+  ══════════════════════════════════════ */
+  .dark-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 55%;
+    height: 100%;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 60px 0 64px;
+  }
+
+  .headline {
+    font-size: 62px;
+    font-weight: 900;
+    letter-spacing: -3.2px;
+    line-height: 1.0;
+    color: #f5f5f5;
+  }
+
+  .headline .em {
+    color: #59C184;
+    font-style: italic;
+  }
+
+  .headline .dim {
+    color: rgba(255,255,255,0.4);
+  }
+
+  /* brand mark — bottom-left */
+  .dark-brand {
+    position: absolute;
+    bottom: 36px;
+    left: 64px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .dark-brand .name {
+    font-size: 17px;
+    font-weight: 800;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: -0.3px;
+  }
+
+  /* ══════════════════════════════════════
+     LIGHT SIDE — code + mesh mark
+  ══════════════════════════════════════ */
+  .light-content {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 45%;
+    height: 100%;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 48px;
+  }
+
+  .terminal-window {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: #ffffff;
+    overflow: hidden;
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.05),
+      0 8px 32px rgba(0,0,0,0.07),
+      0 24px 56px rgba(0,0,0,0.05);
+  }
+
+  .terminal-chrome {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    background: rgba(0,0,0,0.012);
+  }
+
+  .dot-r { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,95,87,0.7); }
+  .dot-y { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,189,46,0.7); }
+  .dot-g { width: 12px; height: 12px; border-radius: 50%; background: rgba(89,193,132,0.7); }
+
+  .terminal-body {
+    padding: 22px 26px 26px;
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    font-size: 15px;
+    line-height: 1.85;
+    color: #374151;
+    background: #ffffff;
+  }
+
+  .c-comment  { color: #9ca3af; }
+  .c-keyword  { color: #0a0a0a; font-weight: 600; }
+  .c-type     { color: #059669; font-style: italic; }
+  .c-fn       { color: #1d4ed8; }
+  .c-cluster  { color: #059669; font-weight: 700; }
+  .c-pipe     { color: rgba(0,0,0,0.3); }
+  .c-op       { color: rgba(0,0,0,0.45); }
+
+  /* mesh mark — top-right */
+  .mesh-mark {
+    position: absolute;
+    top: 36px;
+    right: 48px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mesh-mark .name {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0a0a0a;
+    letter-spacing: -0.5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner" id="article-1-banner">
+
+  <!-- backgrounds -->
+  <div class="dark-half"></div>
+  <div class="glow-main"></div>
+  <div class="glow-tl"></div>
+  <div class="fade-left"></div>
+  <div class="top-accent"></div>
+  <div class="bottom-accent"></div>
+
+  <div class="light-half"></div>
+  <div class="fade-right"></div>
+
+  <!-- seam -->
+  <div class="seam-glow"></div>
+  <div class="seam-hard"></div>
+
+  <!-- nodes (sparse) -->
+  <div class="nodes-layer">
+    <div class="node" style="width:5px;height:5px;top:52px;left:580px;opacity:0.45"></div>
+    <div class="node dim" style="width:3px;height:3px;top:90px;left:500px;opacity:0.25"></div>
+    <div class="node" style="width:6px;height:6px;top:150px;left:640px;opacity:0.28"></div>
+    <div class="node dim" style="width:3px;height:3px;top:180px;left:560px;opacity:0.18"></div>
+    <div class="node" style="width:4px;height:4px;bottom:90px;left:600px;opacity:0.22"></div>
+    <div class="node dim" style="width:3px;height:3px;bottom:60px;left:520px;opacity:0.15"></div>
+    <div class="node" style="width:4px;height:4px;top:30px;left:350px;opacity:0.18"></div>
+
+    <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="580" y1="52" x2="500" y2="90" stroke="rgba(89,193,132,0.09)" stroke-width="1"/>
+      <line x1="580" y1="52" x2="640" y2="150" stroke="rgba(89,193,132,0.07)" stroke-width="1"/>
+      <line x1="640" y1="150" x2="560" y2="180" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+      <line x1="500" y1="90" x2="560" y2="180" stroke="rgba(89,193,132,0.05)" stroke-width="1"/>
+      <line x1="600" y1="510" x2="520" y2="540" stroke="rgba(89,193,132,0.06)" stroke-width="1"/>
+    </svg>
+  </div>
+
+  <!-- ═══ DARK SIDE: headline ═══ -->
+  <div class="dark-content">
+    <div class="headline">
+      The <span class="em">Sentry</span><br>
+      <span class="dim">replacement</span><br>
+      that required<br>
+      inventing a<br>
+      <span class="em">language.</span>
+    </div>
+  </div>
+
+  <div class="dark-brand">
+    <svg width="24" height="24" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M58.4637 127.026C49.371 111.277 54.767 91.1387 70.5159 82.0461L122.475 172.041C131.567 187.79 126.171 207.928 110.422 217.021L58.4637 127.026Z" fill="#59C184"/>
+      <path d="M79.1494 77.0625C95.0428 67.8864 115.366 73.3319 124.542 89.2253L152.938 138.409C137.044 147.585 116.722 142.139 107.545 126.246L79.1494 77.0625Z" fill="rgba(255,255,255,0.75)"/>
+      <path d="M133.024 83.9788C123.931 68.2299 129.327 48.0919 145.076 38.9992L182.534 103.879C191.627 119.628 186.231 139.766 170.482 148.859L133.024 83.9788Z" fill="#59C184"/>
+    </svg>
+    <span class="name">hyperpush</span>
+  </div>
+
+  <!-- ═══ LIGHT SIDE: code + mark ═══ -->
+  <div class="mesh-mark">
+    <svg width="32" height="26" viewBox="0 0 283 229" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="21.6411" y="31.3867" width="20.7307" height="165.647" rx="10.3653" transform="rotate(-35.5729 21.6411 31.3867)" fill="#0F0F0F"/>
+      <rect x="111" y="156.408" width="20.7307" height="139.948" rx="10.3653" transform="rotate(-69.4271 111 156.408)" fill="#0F0F0F"/>
+      <rect x="233.777" y="40.3652" width="20.7307" height="165.647" rx="10.3653" transform="rotate(51.1097 233.777 40.3652)" fill="#0F0F0F"/>
+      <circle cx="247" cy="193" r="36" fill="#0F0F0F"/>
+      <ellipse cx="235" cy="50.5" rx="36" ry="35.5" fill="#0F0F0F"/>
+      <circle cx="36" cy="36" r="36" fill="#0F0F0F"/>
+      <ellipse cx="121" cy="143.5" rx="46" ry="46.5" fill="#0F0F0F"/>
+    </svg>
+    <span class="name">mesh</span>
+  </div>
+
+  <div class="light-content">
+    <div class="terminal-window">
+      <div class="terminal-chrome">
+        <div class="dot-r"></div>
+        <div class="dot-y"></div>
+        <div class="dot-g"></div>
+      </div>
+      <div class="terminal-body">
+        <div><span class="c-comment"># every error = its own process</span></div>
+        <div><span class="c-cluster">@cluster</span></div>
+        <div><span class="c-keyword">pub fn</span> <span class="c-fn">ingest</span>(event <span class="c-op">::</span> <span class="c-type">ErrorEvent</span>) <span class="c-keyword">do</span></div>
+        <div>&nbsp;&nbsp;event</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-pipe">|></span> <span class="c-fn">ErrorEvent.fingerprint</span>()</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-pipe">|></span> <span class="c-fn">IssueTracker.group</span>()</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-pipe">|></span> <span class="c-fn">Alerts.evaluate</span>()</div>
+        <div><span class="c-keyword">end</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

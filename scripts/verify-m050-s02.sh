@@ -398,10 +398,12 @@ for html_label, html in [
 for current_link in [
     f'{CURRENT_REPO_BLOB_BASE}examples/todo-postgres/README.md',
     f'{CURRENT_REPO_BLOB_BASE}examples/todo-sqlite/README.md',
-    f'{CURRENT_REPO_BLOB_BASE}reference-backend/README.md',
 ]:
     if current_link not in tooling_html:
         raise SystemExit(f'tooling: missing current repo link {current_link!r} in built HTML')
+
+if '/docs/production-backend-proof/' not in tooling_html:
+    raise SystemExit("tooling: missing /docs/production-backend-proof/ link in built HTML")
 
 summary_path.write_text(json.dumps(summary, indent=2) + '\n')
 print('built-html-contract: ok')

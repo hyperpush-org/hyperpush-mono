@@ -13,7 +13,7 @@ This page does **not** promise a universal ORM that erases backend differences. 
 - explicit PostgreSQL-only helpers under `Pg.*`
 - a named set of raw escape hatches that stays honest instead of pretending every SQL shape is portable
 
-> **Production backend proof:** This page explains the database boundary itself. For the end-to-end backend proof surface that wires migrations, health checks, workers, and deploy artifacts together, start with [Production Backend Proof](/docs/production-backend-proof/) and `reference-backend/README.md`.
+> **Production backend proof:** This page explains the database boundary itself. For the compact backend-proof handoff, start with [Production Backend Proof](/docs/production-backend-proof/). That page keeps public readers on the starter/examples-first route, points repo maintainers to [`mesher/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/mesher/README.md) plus `bash scripts/verify-m051-s01.sh`, and keeps the retained backend-only proof behind `bash scripts/verify-m051-s02.sh`.
 
 ## What is runtime-proven today
 
@@ -277,4 +277,4 @@ If this surface drifts, rerun the proof that matches the boundary you touched:
 
 - [Production Backend Proof](/docs/production-backend-proof/) — repo-level proof surface for the assembled backend
 - [Web](/docs/web/) — HTTP and WebSocket primitives that consume these storage helpers
-- `reference-backend/README.md` — operator/developer runbook for the broader backend package
+- [`mesher/README.md`](https://github.com/snowdamiz/mesh-lang/blob/main/mesher/README.md) — deeper maintained app runbook after Production Backend Proof
