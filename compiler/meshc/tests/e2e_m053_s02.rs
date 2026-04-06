@@ -571,7 +571,7 @@ fn m053_s02_staged_postgres_failover_proves_clustered_http_and_runtime_recovery(
     let runtime = deploy::default_cluster_runtime_pair_for_primary_owned_startup(
         deploy::PACKAGE_NAME,
         &database.database_url,
-        Some(8_000),
+        Some(20_000),
     );
     let secret_values = [
         base_database_url.as_str(),
