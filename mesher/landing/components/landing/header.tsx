@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X } from "lucide-react"
+import { Menu, Target, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { WaitlistDialog } from "@/components/landing/waitlist-dialog"
 
@@ -11,7 +11,7 @@ const navigation = [
   { name: "Features", href: "#features" },
   { name: "How It Works", href: "#flywheel" },
   { name: "Pricing", href: "#pricing" },
-  { name: "Docs", href: "/docs" },
+  { name: "Docs", href: "https://docs.hyperpush.dev", target: "_blank" },
   { name: "Bounties", href: "/community/bounties" },
 ]
 
@@ -51,6 +51,7 @@ export function Header({ section, maxWidth = "max-w-7xl", extraActions }: Header
                 <Link
                   key={item.name}
                   href={item.href}
+                  target={item.target}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {item.name}
