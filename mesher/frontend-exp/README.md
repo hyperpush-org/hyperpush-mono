@@ -1,35 +1,67 @@
-# v0-error-tracking-dashboard-s4
+# Frontend Experiment
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+`mesher/frontend-exp` is a product-owned Next.js service surface for the operator app.
 
-## Built with v0
-
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
-
-[Continue working on v0 →](https://v0.app/chat/projects/prj_vyXizp32DIDPEz3QJjFD2VTajAXt)
-
-## Getting Started
-
-First, run the development server:
+## Local development
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Default local URL: `http://127.0.0.1:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Production container path
 
-## Learn More
+This app ships a production multi-stage Docker build in `mesher/frontend-exp/Dockerfile`.
 
-To learn more, take a look at the following resources:
+Build image:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+```bash
+docker build -t hyperpush-frontend-exp:latest mesher/frontend-exp
+```
 
-<a href="https://v0.app/chat/api/kiro/clone/snowdamiz/v0-error-tracking-dashboard-s4" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+Run container:
+
+```bash
+docker run --rm -p 3000:3000 \
+	-e PORT=3000 \
+	-e HOSTNAME=0.0.0.0 \
+	--name hyperpush-frontend-exp \
+	hyperpush-frontend-exp:latest
+```
+
+## Startup contract
+
+Container runtime contract:
+
+- Entrypoint: `node server.js`
+- Bind host: `HOSTNAME` (default `0.0.0.0`)
+- Listen port: `PORT` (default `3000`)
+- Runtime mode: `NODE_ENV=production`
+
+This contract is explicit in the Dockerfile and does not rely on local `next dev` assumptions.
+
+## Generic VM deployment model
+
+The service can run on a generic Linux VM with Docker or a compatible container runtime.
+
+Example systemd unit command shape:
+
+```bash
+docker run --rm --pull=always --name hyperpush-frontend-exp \
+	-p 3000:3000 \
+	-e PORT=3000 \
+	-e HOSTNAME=0.0.0.0 \
+	hyperpush-frontend-exp:latest
+```
+
+## Health verification
+
+After startup, verify service health from the VM:
+
+```bash
+curl -fsS http://127.0.0.1:3000/ > /dev/null
+```
+
+Exit status `0` confirms the service is serving HTTP traffic.

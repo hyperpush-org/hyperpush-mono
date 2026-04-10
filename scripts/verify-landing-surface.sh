@@ -116,14 +116,14 @@ require_contains readme-contract README.md 'hyperpush-mono/mesher'
 require_contains readme-contract README.md 'mesher/landing'
 require_contains readme-contract README.md 'bash mesher/scripts/verify-maintainer-surface.sh'
 require_contains readme-contract README.md 'bash scripts/verify-landing-surface.sh'
-require_contains readme-contract README.md 'https://github.com/hyperpush-org/hyperpush-mono'
+require_contains readme-contract README.md 'https://github.com/hyperpush-org/hyperpush'
 require_absent readme-contract README.md 'bash scripts/verify-m051-s01.sh'
 require_absent readme-contract README.md 'bash scripts/verify-production-proof-surface.sh'
 finish_phase readme-contract
 
 begin_phase landing-links "verify landing links point at the product repo"
-require_contains landing-links mesher/landing/lib/external-links.ts 'https://github.com/hyperpush-org/hyperpush-mono'
-require_contains landing-links mesher/landing/lib/external-links.ts 'github.com/hyperpush-org/hyperpush-mono'
+require_contains landing-links mesher/landing/lib/external-links.ts 'https://github.com/hyperpush-org/hyperpush'
+require_contains landing-links mesher/landing/lib/external-links.ts 'github.com/hyperpush-org/hyperpush'
 require_contains landing-links mesher/landing/lib/external-links.ts 'NEXT_PUBLIC_DISCORD_URL'
 finish_phase landing-links
 

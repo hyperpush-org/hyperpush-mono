@@ -54,7 +54,9 @@ If you are working in the blessed sibling workspace, the normal path is:
 
 ## Product repo identity
 
-Canonical product repo URL: https://github.com/hyperpush-org/hyperpush-mono
+Canonical product repo URL: https://github.com/hyperpush-org/hyperpush
+
+Local split-workspace paths may still use `hyperpush-mono/` as a compatibility checkout name.
 
 The landing app and `frontend-exp` stay product-owned here.
 

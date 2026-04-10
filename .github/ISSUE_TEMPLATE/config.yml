@@ -1,14 +1,14 @@
 blank_issues_enabled: false
 contact_links:
   - name: Support guide
-    url: https://github.com/hyperpush-org/hyperpush-mono/blob/main/SUPPORT.md
+    url: https://github.com/hyperpush-org/hyperpush/blob/main/SUPPORT.md
     about: Start with the product support guide and maintainer runbook links.
   - name: Mesher maintainer guide
-    url: https://github.com/hyperpush-org/hyperpush-mono/blob/main/mesher/README.md
+    url: https://github.com/hyperpush-org/hyperpush/blob/main/mesher/README.md
     about: Mesher maintainer-facing startup, smoke, and verification workflow.
   - name: Mesh language docs
     url: https://meshlang.dev/docs/getting-started/
     about: Mesh installation, language/tooling docs, and starter guidance.
   - name: Security policy
-    url: https://github.com/hyperpush-org/hyperpush-mono/blob/main/SECURITY.md
+    url: https://github.com/hyperpush-org/hyperpush/blob/main/SECURITY.md
     about: Use the private reporting path for vulnerabilities instead of public issues.
