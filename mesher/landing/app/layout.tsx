@@ -1,17 +1,20 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import { X_HANDLE } from '@/lib/external-links'
+import { buildSocialMetadata, siteUrl } from '@/lib/social-metadata'
 import './globals.css'
 
 const _geist = Geist({ subsets: ['latin'] })
 const _geistMono = Geist_Mono({ subsets: ['latin'] })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://hyperpush.dev'
-
 const title = 'hyperpush — Open Source Error Tracking with Token Rewards'
 const description =
   'Open-source error tracking with built-in token economics for Solana and beyond. Your project gets funded, contributors get paid, software gets healthier.'
+const socialMetadata = buildSocialMetadata({
+  title,
+  description,
+  canonicalPath: '/',
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -36,30 +39,7 @@ export const metadata: Metadata = {
   creator: 'hyperpush',
   publisher: 'hyperpush',
   formatDetection: { email: false, address: false, telephone: false },
-  openGraph: {
-    type: 'website',
-    url: siteUrl,
-    title,
-    description,
-    siteName: 'hyperpush',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'hyperpush — Open Source Error Tracking with Token Rewards',
-      },
-    ],
-    locale: 'en_US',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title,
-    description,
-    images: ['/og-image.png'],
-    site: X_HANDLE,
-    creator: X_HANDLE,
-  },
+  ...socialMetadata,
   robots: {
     index: true,
     follow: true,
@@ -82,9 +62,6 @@ export const metadata: Metadata = {
     apple: [
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
-  },
-  alternates: {
-    canonical: siteUrl,
   },
 }
 
