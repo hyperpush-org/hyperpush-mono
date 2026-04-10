@@ -27,7 +27,7 @@ const footerLinks = {
     { name: "Changelog", href: "#" },
   ],
   Developers: [
-    { name: "Documentation", href: "https://docs.hyperpush.dev", target: "_blank" },
+    { name: "Documentation", href: "/docs" },
     { name: "API Reference", href: "#" },
     { name: "SDKs", href: "#" },
     { name: "Status", href: "#" },
