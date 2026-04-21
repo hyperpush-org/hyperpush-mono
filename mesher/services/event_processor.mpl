@@ -113,7 +113,7 @@ fn next_processed_count(state :: ProcessorState, result :: String ! String) -> I
     else
       state.processed_count + 1
     end
-    Err( _) -> state.processed_count
+    Err -> state.processed_count
   end
 end
 

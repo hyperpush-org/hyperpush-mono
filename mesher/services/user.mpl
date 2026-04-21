@@ -28,7 +28,7 @@ service UserService do
     (pool,
     case authenticate_user(pool, email, password) do
       Ok( user) -> create_session(pool, user.id)
-      Err( _) -> Err("authentication failed")
+      Err -> Err("authentication failed")
     end)
   end
   

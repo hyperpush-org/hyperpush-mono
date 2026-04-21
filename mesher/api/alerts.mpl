@@ -61,7 +61,7 @@ end
 fn do_toggle(pool :: PoolHandle, rule_id :: String, enabled_str :: String) do
   let result = toggle_alert_rule(pool, rule_id, enabled_str)
   case result do
-    Ok( _) -> HTTP.response(200, json { status : "ok" })
+    Ok -> HTTP.response(200, json { status : "ok" })
     Err( e) -> HTTP.response(500, json { error : e })
   end
 end
@@ -128,7 +128,7 @@ pub fn handle_delete_alert_rule(request) do
   let rule_id = require_param(request, "rule_id")
   let result = delete_alert_rule(pool, rule_id)
   case result do
-    Ok( _) -> HTTP.response(200, json { status : "ok" })
+    Ok -> HTTP.response(200, json { status : "ok" })
     Err( e) -> HTTP.response(500, json { error : e })
   end
 end
@@ -161,7 +161,7 @@ pub fn handle_acknowledge_alert(request) do
   let alert_id = require_param(request, "id")
   let result = acknowledge_alert(pool, alert_id)
   case result do
-    Ok( _) -> HTTP.response(200, json { status : "ok" })
+    Ok -> HTTP.response(200, json { status : "ok" })
     Err( e) -> HTTP.response(500, json { error : e })
   end
 end
@@ -175,7 +175,7 @@ pub fn handle_resolve_alert(request) do
   let alert_id = require_param(request, "id")
   let result = resolve_fired_alert(pool, alert_id)
   case result do
-    Ok( _) -> HTTP.response(200, json { status : "ok" })
+    Ok -> HTTP.response(200, json { status : "ok" })
     Err( e) -> HTTP.response(500, json { error : e })
   end
 end

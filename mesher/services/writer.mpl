@@ -34,8 +34,8 @@ fn flush_retry3(pool :: PoolHandle, project_id :: String, events, event_count ::
   Timer.sleep(500)
   let r3 = flush_batch(pool, events)
   case r3 do
-    Ok( _) -> Ok("flushed")
-    Err( _) -> flush_drop(project_id, event_count)
+    Ok -> Ok("flushed")
+    Err -> flush_drop(project_id, event_count)
   end
 end
 
@@ -43,8 +43,8 @@ fn flush_retry2(pool :: PoolHandle, project_id :: String, events, event_count ::
   Timer.sleep(100)
   let r2 = flush_batch(pool, events)
   case r2 do
-    Ok( _) -> Ok("flushed")
-    Err( _) -> flush_retry3(pool, project_id, events, event_count)
+    Ok -> Ok("flushed")
+    Err -> flush_retry3(pool, project_id, events, event_count)
   end
 end
 
@@ -52,8 +52,8 @@ fn flush_with_retry(pool :: PoolHandle, project_id :: String, events) -> String 
   let event_count = List.length(events)
   let r1 = flush_batch(pool, events)
   case r1 do
-    Ok( _) -> Ok("flushed")
-    Err( _) -> flush_retry2(pool, project_id, events, event_count)
+    Ok -> Ok("flushed")
+    Err -> flush_retry2(pool, project_id, events, event_count)
   end
 end
 

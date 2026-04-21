@@ -169,7 +169,7 @@ message :: String) do
   let result = fire_alert(pool, rule_id, project_id, message, condition_type, rule_name)
   case result do
     Ok( alert_id) -> broadcast_alert(project_id, alert_id, rule_name, condition_type, message)
-    Err( _) -> 0
+    Err -> 0
   end
 end
 
@@ -219,7 +219,7 @@ window_str :: String) do
     should_fire,
     threshold_str,
     window_str)
-    Err( _) -> 0
+    Err -> 0
   end
 end
 
@@ -241,7 +241,7 @@ threshold_str :: String) do
     cooldown_str,
     threshold_str,
     window_str)
-    Err( _) -> 0
+    Err -> 0
   end
 end
 
@@ -262,7 +262,7 @@ cooldown_str :: String) do
     condition_json,
     cooldown_str,
     threshold_str)
-    Err( _) -> 0
+    Err -> 0
   end
 end
 

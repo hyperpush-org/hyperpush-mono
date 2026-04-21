@@ -76,7 +76,7 @@ pub fn handle_update_project_settings(request) do
   let body = Request.body(request)
   let result = update_project_settings(pool, project_id, body)
   case result do
-    Ok( _) -> HTTP.response(200, json { status : "ok" })
+    Ok -> HTTP.response(200, json { status : "ok" })
     Err( e) -> HTTP.response(400, json { error : e })
   end
 end

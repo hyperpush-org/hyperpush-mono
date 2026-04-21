@@ -112,7 +112,7 @@ fn handle_ingest_message(conn, message :: String) do
   let writer_pid = PipelineRegistry.get_writer(reg_pid)
   let result = EventProcessor.process_event(processor_pid, "ws-project", writer_pid, message)
   case result do
-    Ok( _) -> ws_send_accepted(conn)
+    Ok -> ws_send_accepted(conn)
     Err( reason) -> ws_send_error(conn, reason)
   end
 end

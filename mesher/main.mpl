@@ -162,7 +162,7 @@ fn on_runtime_ready(
   pool :: PoolHandle
 ) do
   case create_partitions_ahead(pool, 7) do
-    Ok( _) -> println("[Mesher] Partition bootstrap succeeded (7 days ahead)")
+    Ok -> println("[Mesher] Partition bootstrap succeeded (7 days ahead)")
     Err( e) -> println("[Mesher] Partition bootstrap failed: #{e}")
   end
 
@@ -211,7 +211,7 @@ fn start_with_values(
       println("[Mesher] PostgreSQL pool ready")
       maybe_boot_with_pool(http_port, ws_port, window_seconds, max_events, pool)
     end
-    Err( _) -> println("[Mesher] PostgreSQL connect failed")
+    Err -> println("[Mesher] PostgreSQL connect failed")
   end
 end
 
