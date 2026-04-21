@@ -90,7 +90,7 @@ fn drop_partitions_loop(pool :: PoolHandle, partitions, i :: Int, total :: Int) 
     let partition_name = List.get(partitions, i)
     let drop_result = drop_partition(pool, partition_name)
     case drop_result do
-      Ok( _) -> continue_partition_drop(pool, partitions, i, total, partition_name)
+      Ok -> continue_partition_drop(pool, partitions, i, total, partition_name)
       Err( e) -> stop_partition_drop(partition_name, e)
     end
   else

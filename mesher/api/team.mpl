@@ -354,7 +354,7 @@ pub fn handle_revoke_api_key(request) do
   let key_id = require_param(request, "key_id")
   let result = revoke_api_key(pool, key_id)
   case result do
-    Ok( _) -> revoke_key_success()
+    Ok -> revoke_key_success()
     Err( e) -> HTTP.response(500, json { error : e })
   end
 end

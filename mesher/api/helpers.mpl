@@ -30,7 +30,7 @@ pub fn resolve_project_id(pool :: PoolHandle, raw_id :: String) -> String do
     let result = get_project_id_by_slug(pool, raw_id)
     case result do
       Ok( uuid) -> uuid
-      Err( _) -> ""
+      Err -> ""
     end
   end
 end
@@ -47,7 +47,7 @@ pub fn resolve_org_id(pool :: PoolHandle, raw_id :: String) -> String do
     let result = get_org_id_by_slug(pool, raw_id)
     case result do
       Ok( uuid) -> uuid
-      Err( _) -> ""
+      Err -> ""
     end
   end
 end

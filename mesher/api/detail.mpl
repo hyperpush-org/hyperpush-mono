@@ -116,7 +116,7 @@ detail_json :: String) do
   let nav_result = get_event_neighbors(pool, issue_id, received_at, event_id)
   case nav_result do
     Ok( nav_rows) -> build_nav_response(detail_json, nav_rows)
-    Err( _) -> HTTP.response(200, build_detail_response(detail_json, empty_navigation_json()))
+    Err -> HTTP.response(200, build_detail_response(detail_json, empty_navigation_json()))
   end
 end
 

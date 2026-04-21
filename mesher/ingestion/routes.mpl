@@ -75,7 +75,7 @@ fn broadcast_issue_count(project_id :: String) do
   let count_result = count_unresolved_issues(pool, project_id)
   case count_result do
     Ok( rows) -> broadcast_count_from_rows(project_id, rows)
-    Err( _) -> 0
+    Err -> 0
   end
 end
 
@@ -128,7 +128,7 @@ issue_id :: String) do
     rule_name,
     condition_type,
     message)
-    Err( _) -> 0
+    Err -> 0
   end
 end
 
@@ -168,7 +168,7 @@ issue_id :: String) do
     issue_id,
     0,
     List.length(rules))
-    Err( _) -> 0
+    Err -> 0
   end
 end
 
@@ -209,12 +209,12 @@ fn check_event_alerts(pool :: PoolHandle, project_id :: String, issue_id :: Stri
   let new_result = check_new_issue(pool, issue_id)
   case new_result do
     Ok( is_new) -> handle_new_issue_alert(pool, project_id, issue_id, is_new)
-    Err( _) -> 0
+    Err -> 0
   end
   let reg_result = check_regression(pool, issue_id)
   case reg_result do
     Ok( is_regression) -> handle_regression_alert(pool, project_id, issue_id, is_regression)
-    Err( _) -> 0
+    Err -> 0
   end
 end
 
@@ -247,7 +247,7 @@ fn process_event_body(processor_pid, project_id :: String, writer_pid, body :: S
   let size_check = validate_payload_size(body, 1048576)
   case size_check do
     Err( reason) -> bad_request_response(reason)
-    Ok( _) -> route_to_processor(processor_pid, project_id, writer_pid, body)
+    Ok -> route_to_processor(processor_pid, project_id, writer_pid, body)
   end
 end
 
@@ -298,7 +298,7 @@ pub fn handle_event(request) do
   let pool = PipelineRegistry.get_pool(reg_pid)
   let auth_result = authenticate_request(pool, request)
   case auth_result do
-    Err( _) -> unauthorized_response()
+    Err -> unauthorized_response()
     Ok( project) -> handle_event_sampled(pool,
     project.id,
     PipelineRegistry.get_rate_limiter(reg_pid),
@@ -321,7 +321,7 @@ fn handle_bulk_authed(project_id :: String, rate_limiter_pid, processor_pid, wri
     let size_check = validate_payload_size(body, 5242880)
     case size_check do
       Err( reason) -> bad_request_response(reason)
-      Ok( _) -> route_to_processor(processor_pid, project_id, writer_pid, body)
+      Ok -> route_to_processor(processor_pid, project_id, writer_pid, body)
     end
   else
     rate_limited_response()
@@ -359,7 +359,7 @@ request) do
     processor_pid,
     writer_pid,
     request)
-    Err( _) -> handle_bulk_authed(project_id, rate_limiter_pid, processor_pid, writer_pid, request)
+    Err -> handle_bulk_authed(project_id, rate_limiter_pid, processor_pid, writer_pid, request)
   end
 end
 
@@ -374,7 +374,7 @@ pub fn handle_bulk(request) do
   let writer_pid = PipelineRegistry.get_writer(reg_pid)
   let auth_result = authenticate_request(pool, request)
   case auth_result do
-    Err( _) -> unauthorized_response()
+    Err -> unauthorized_response()
     Ok( project) -> handle_bulk_sampled(pool,
     project.id,
     rate_limiter_pid,
@@ -406,7 +406,7 @@ fn broadcast_issue_update(pool, issue_id :: String, action :: String) do
   let rows_result = get_issue_project_id(pool, issue_id)
   case rows_result do
     Ok( rows) -> broadcast_update_from_rows(rows, issue_id, action)
-    Err( _) -> 0
+    Err -> 0
   end
 end
 
@@ -480,7 +480,7 @@ pub fn handle_resolve_issue(request) do
   let issue_id = require_param(request, "id")
   let result = resolve_issue(pool, issue_id)
   case result do
-    Ok( _) -> resolve_success(pool, issue_id)
+    Ok -> resolve_success(pool, issue_id)
     Err( e) -> HTTP.response(500, json { error : e })
   end
 end
@@ -493,7 +493,7 @@ pub fn handle_archive_issue(request) do
   let issue_id = require_param(request, "id")
   let result = archive_issue(pool, issue_id)
   case result do
-    Ok( _) -> archive_success(pool, issue_id)
+    Ok -> archive_success(pool, issue_id)
     Err( e) -> HTTP.response(500, json { error : e })
   end
 end
@@ -506,7 +506,7 @@ pub fn handle_unresolve_issue(request) do
   let issue_id = require_param(request, "id")
   let result = unresolve_issue(pool, issue_id)
   case result do
-    Ok( _) -> unresolve_success(pool, issue_id)
+    Ok -> unresolve_success(pool, issue_id)
     Err( e) -> HTTP.response(500, json { error : e })
   end
 end
@@ -524,7 +524,7 @@ end
 fn assign_with_user_id(pool :: PoolHandle, issue_id :: String, user_id :: String) do
   let result = assign_issue(pool, issue_id, user_id)
   case result do
-    Ok( _) -> assign_success(pool, issue_id)
+    Ok -> assign_success(pool, issue_id)
     Err( e) -> HTTP.response(500, json { error : e })
   end
 end
@@ -549,7 +549,7 @@ pub fn handle_discard_issue(request) do
   let issue_id = require_param(request, "id")
   let result = discard_issue(pool, issue_id)
   case result do
-    Ok( _) -> discard_success(pool, issue_id)
+    Ok -> discard_success(pool, issue_id)
     Err( e) -> HTTP.response(500, json { error : e })
   end
 end
@@ -562,7 +562,7 @@ pub fn handle_delete_issue(request) do
   let issue_id = require_param(request, "id")
   let result = delete_issue(pool, issue_id)
   case result do
-    Ok( _) -> HTTP.response(200, json { status : "ok" })
+    Ok -> HTTP.response(200, json { status : "ok" })
     Err( e) -> HTTP.response(500, json { error : e })
   end
 end
